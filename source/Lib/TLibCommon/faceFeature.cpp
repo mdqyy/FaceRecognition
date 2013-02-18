@@ -449,6 +449,38 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 	LBP_W_Step = gf->LBP_W_Step;
 	LBPHist = gf->LBPHist;
 
+	//uniform LBP look up table
+#if UNIFORM_LBP
+	unsigned int  lookupTab[256];
+	unsigned int  temp[8] = { 1, 2, 4, 8, 16, 32, 64, 128};
+	unsigned int  curNum = 0;
+	for (int i = 0; i < 256; i++ )
+	{
+		lookupTab[i] = 0xF4; // a non-uniform pattern of LBP
+	}
+
+	// fill-in the uniform patterns
+	lookupTab[0] = 0; // flat
+	lookupTab[255] = 255; // spot
+	int pos = 0;
+
+	for (int addTimes = 1; addTimes < 7; addTimes++)
+	{
+		for (int i = 0; i < 8; i++ )
+		{
+			curNum = 0;
+			for (int j = 0; j < addTimes; j++ )
+			{
+				pos = i + j;
+				pos = pos % 8;
+				curNum += temp[ pos ];
+			}
+			lookupTab[curNum] = curNum;
+		}
+	}
+#endif
+
+
 	//----------------------------------------------------------
 	//extract ROI
 	rStep = ((RY1 - RY0) * 1.0) / tHeight;
@@ -531,12 +563,14 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 						W = tWidth / 2;
 						H = tHeight / 2;
 						for(gr=0; gr<=(H-LBP_H_Step); gr+=LBP_H_Step)
+						{
 							for(gc=0; gc<=(W-LBP_W_Step); gc+=LBP_W_Step)
 							{
 								//reset
 								for(i=0; i<256; i++) LBPHist[i] = 0; 
 
-								for(i=1; i<(LBP_H_Step-1); i++)
+								for(i=1; i<(LBP_H_Step-1); i++) 
+								{
 									for(j=1; j<(LBP_W_Step-1); j++)
 									{
 										LBPVal = 0;
@@ -553,9 +587,13 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 										if(currVal > (*(ptr - tWidth1 - 1))) LBPVal = LBPVal + 32;	//LBPFlag[5] = 1;
 										if(currVal > (*(ptr + tWidth1 + 1))) LBPVal = LBPVal + 64;	//LBPFlag[6] = 1;
 										if(currVal > (*(ptr + tWidth1 - 1))) LBPVal = LBPVal + 128;	//LBPFlag[7] = 1;
-
+#if UNIFORM_LBP
+										LBPHist[lookupTab[LBPVal]] ++;
+#else
 										LBPHist[LBPVal] = LBPHist[LBPVal] + 1;
+#endif
 									}
+								}
 
 									//save to the feature vector
 									for(i=0; i<256; i++)
@@ -566,6 +604,7 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 
 
 							}
+						}
 
 							//----------------------------------------------------------
 							//extract LBP features at fImage2
@@ -579,6 +618,7 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 									for(i=0; i<256; i++) LBPHist[i] = 0; 
 
 									for(i=1; i<(LBP_H_Step-1); i++)
+									{
 										for(j=1; j<(LBP_W_Step-1); j++)
 										{
 											LBPVal = 0;
@@ -595,9 +635,13 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 											if(currVal > (*(ptr - tWidth1 - 1))) LBPVal = LBPVal + 32;	//LBPFlag[5] = 1;
 											if(currVal > (*(ptr + tWidth1 + 1))) LBPVal = LBPVal + 64;	//LBPFlag[6] = 1;
 											if(currVal > (*(ptr + tWidth1 - 1))) LBPVal = LBPVal + 128;	//LBPFlag[7] = 1;
-
+#if UNIFORM_LBP
+										LBPHist[lookupTab[LBPVal]] ++;
+#else
 											LBPHist[LBPVal] = LBPHist[LBPVal] + 1;
+#endif
 										}
+									}
 
 										//save to the feature vector
 										for(i=0; i<256; i++)

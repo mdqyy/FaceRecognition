@@ -18,6 +18,7 @@
 #define DEFINE_H_INCLUDED
 
 #define	FACE_DATUM_FILENAME "../../image/faces.bin"
+#define UNIFORM_LBP   1  //use 58 uniform LBP patterns to be statistically efficient 
 
 #include "global.h"
 
