@@ -679,7 +679,7 @@ int main(int argc, char** argv)
 	//-------------------
 	// closing.
 	//-------------------
-	closeFaceWarping();
+	//closeFaceWarping();
 	system("pause");
 	
 }
