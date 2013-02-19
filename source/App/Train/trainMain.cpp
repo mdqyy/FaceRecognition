@@ -410,7 +410,23 @@ int testVideoData2()
 
 			// write feature to a binary file.
 			bufferSingleFeatureID->id	= ii+1;
-			memcpy( bufferSingleFeatureID->feature, gf.faceFeatures, sizeof(float)*FACE_FEATURE_LEN );
+			memcpy( bufferSingleFeatureID->feature, gf.faceFeatures, sizeof(float)*LBP_FACE_FEATURE_LEN );
+
+			//debug only - output histogram
+			char tmpHistPath[500];
+			sprintf(tmpHistPath, "../../image/Debug/%s.txt", fileinfo.name);
+			FILE* debugFile = fopen( tmpHistPath, "w+");
+			int tmpPtr = 0;
+			while (tmpPtr < LBP_FACE_FEATURE_LEN )
+			{
+				for (int ii = 0; ii < 256; ii++)
+				{
+					fprintf(debugFile, "%d	", (int) gf.faceFeatures[tmpPtr + ii]);
+				}
+				fprintf(debugFile, "\n");
+				tmpPtr += 256;
+			}
+			fclose(debugFile);
 
 			fwrite( bufferSingleFeatureID, 1, sizeof(unitFaceFeatClass), fpOutBinaryFile );
 #endif

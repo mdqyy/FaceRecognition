@@ -15,7 +15,7 @@ void config(FACE3D_Type * gf)
 	// York
 	gf->tWidth			= 80;
 	gf->tHeight			= 80;
-	gf->LBP_H_Step		= 10;
+	gf->LBP_H_Step		= 10;    
 	gf->LBP_W_Step		= 10;
 
 	gf->RX0				= 0;
@@ -549,19 +549,19 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 				featurePtr = 0;
 
 				// reset. 2013.01.24
-				memset(faceFeatures, 0, sizeof(float)*FACE_FEATURE_LEN );
+				memset(faceFeatures, 0, sizeof(float) * LBP_FACE_FEATURE_LEN );
 
 				//----------------------------------------------------------
 				//extract Gabor coefficients at fImage0
 				
 					//----------------------------------------------------------
 					//extract Gabor coefficients at fImage1
-					
-						//----------------------------------------------------------
-						//extract LBP features at fImage1
+					//----------------------------------------------------------
+#if 0
+						//extract LBP features at fImage0
 
-						W = tWidth / 2;
-						H = tHeight / 2;
+						W = tWidth ;
+						H = tHeight ;
 						for(gr=0; gr<=(H-LBP_H_Step); gr+=LBP_H_Step)
 						{
 							for(gc=0; gc<=(W-LBP_W_Step); gc+=LBP_W_Step)
@@ -596,6 +596,58 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 								}
 
 									//save to the feature vector
+								
+									for(i=0; i<256; i++)
+									{
+										faceFeatures[featurePtr] = LBPHist[i];
+										featurePtr++;
+									}
+
+
+							}
+						}
+#endif
+						//----------------------------------------------------------
+						//extract LBP features at fImage1
+
+						W = tWidth / 2;
+						H = tHeight / 2;
+						for(gr=0; gr<=(H-LBP_H_Step); gr+=LBP_H_Step)
+						{
+							for(gc=0; gc<=(W-LBP_W_Step); gc+=LBP_W_Step)
+							{
+								//reset
+								for(i=0; i<256; i++) LBPHist[i] = 0; 
+
+								for(i=1; i<(LBP_H_Step-1); i++) 
+								{
+									for(j=1; j<(LBP_W_Step-1); j++)
+									{
+										LBPVal = 0;
+
+										ptr = fImage1 + (gr + i) * tWidth1 + ( gc + j);
+										currVal = *ptr;
+
+
+										if(currVal < (*(ptr - 1))) LBPVal = LBPVal + 1;				//LBPFlag[0] = 1;
+										if(currVal < (*(ptr + 1))) LBPVal = LBPVal + 2;				//LBPFlag[1] = 1;
+										if(currVal < (*(ptr - tWidth1))) LBPVal = LBPVal + 4;		//LBPFlag[2] = 1;
+										if(currVal < (*(ptr + tWidth1))) LBPVal = LBPVal + 8;		//LBPFlag[3] = 1;
+
+										if(currVal < (*(ptr - tWidth1 + 1))) LBPVal = LBPVal + 16;	//LBPFlag[4] = 1;
+										if(currVal < (*(ptr - tWidth1 - 1))) LBPVal = LBPVal + 32;	//LBPFlag[5] = 1;
+										if(currVal < (*(ptr + tWidth1 + 1))) LBPVal = LBPVal + 64;	//LBPFlag[6] = 1;
+										if(currVal < (*(ptr + tWidth1 - 1))) LBPVal = LBPVal + 128;	//LBPFlag[7] = 1;
+#if UNIFORM_LBP
+										LBPHist[lookupTab[LBPVal]] ++;
+#else
+										LBPHist[LBPVal] = LBPHist[LBPVal] + 1;
+#endif
+									}
+								}
+
+									//save to the feature vector
+								
 									for(i=0; i<256; i++)
 									{
 										faceFeatures[featurePtr] = LBPHist[i];
@@ -626,15 +678,15 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 											ptr = fImage2 + (gr + i) * tWidth2 + ( gc + j);
 											currVal = *ptr;
 
-											if(currVal > (*(ptr - 1))) LBPVal = LBPVal + 1;				//LBPFlag[0] = 1;
-											if(currVal > (*(ptr + 1))) LBPVal = LBPVal + 2;				//LBPFlag[1] = 1;
-											if(currVal > (*(ptr - tWidth1))) LBPVal = LBPVal + 4;		//LBPFlag[2] = 1;
-											if(currVal > (*(ptr + tWidth1))) LBPVal = LBPVal + 8;		//LBPFlag[3] = 1;
+											if(currVal < (*(ptr - 1))) LBPVal = LBPVal + 1;				//LBPFlag[0] = 1;
+											if(currVal < (*(ptr + 1))) LBPVal = LBPVal + 2;				//LBPFlag[1] = 1;
+											if(currVal < (*(ptr - tWidth1))) LBPVal = LBPVal + 4;		//LBPFlag[2] = 1;
+											if(currVal < (*(ptr + tWidth1))) LBPVal = LBPVal + 8;		//LBPFlag[3] = 1;
 
-											if(currVal > (*(ptr - tWidth1 + 1))) LBPVal = LBPVal + 16;	//LBPFlag[4] = 1;
-											if(currVal > (*(ptr - tWidth1 - 1))) LBPVal = LBPVal + 32;	//LBPFlag[5] = 1;
-											if(currVal > (*(ptr + tWidth1 + 1))) LBPVal = LBPVal + 64;	//LBPFlag[6] = 1;
-											if(currVal > (*(ptr + tWidth1 - 1))) LBPVal = LBPVal + 128;	//LBPFlag[7] = 1;
+											if(currVal < (*(ptr - tWidth1 + 1))) LBPVal = LBPVal + 16;	//LBPFlag[4] = 1;
+											if(currVal < (*(ptr - tWidth1 - 1))) LBPVal = LBPVal + 32;	//LBPFlag[5] = 1;
+											if(currVal < (*(ptr + tWidth1 + 1))) LBPVal = LBPVal + 64;	//LBPFlag[6] = 1;
+											if(currVal < (*(ptr + tWidth1 - 1))) LBPVal = LBPVal + 128;	//LBPFlag[7] = 1;
 #if UNIFORM_LBP
 										LBPHist[lookupTab[LBPVal]] ++;
 #else
@@ -792,7 +844,7 @@ int	 matchFace( float * queryFeat, FACE3D_Type * gf )
 
 	// init.
 	matchedFaceID	= 0;
-	featEntryLen	= FACE_FEATURE_LEN;
+	featEntryLen	= LBP_FACE_FEATURE_LEN;
 	ptrFeatDistance = gf->featDistance;
 	ptrUsedDistFlag = gf->usedDistFlag;
 	ptrBestDistID	= gf->bestDistID;

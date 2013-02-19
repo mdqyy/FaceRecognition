@@ -407,7 +407,7 @@ int testVideoData2()
 
 			// write feature to a binary file.
 			bufferSingleFeatureID->id	= tmpFaceID;
-			memcpy( bufferSingleFeatureID->feature, gf.faceFeatures, sizeof(float)*FACE_FEATURE_LEN );
+			memcpy( bufferSingleFeatureID->feature, gf.faceFeatures, sizeof(float)*LBP_FACE_FEATURE_LEN );
 
 			fwrite( bufferSingleFeatureID, 1, sizeof(unitFaceFeatClass), fpOutBinaryFile );
 #endif

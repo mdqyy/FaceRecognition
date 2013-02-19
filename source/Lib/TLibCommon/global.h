@@ -18,7 +18,7 @@
 #define GLOBAL_H_INCLUDED
 
 #define NUM_NEAREST_NBOR	5
-#define FACE_FEATURE_LEN	5120
+#define LBP_FACE_FEATURE_LEN	5120
 #define MAX_FACE_ID			20
 
 
@@ -68,7 +68,7 @@ typedef struct face3DTag
 typedef struct unitFaceFeatClass
 {
 	int		id;
-	float	feature[FACE_FEATURE_LEN];
+	float	feature[LBP_FACE_FEATURE_LEN];
 
 }unitFaceFeatClass;
 
