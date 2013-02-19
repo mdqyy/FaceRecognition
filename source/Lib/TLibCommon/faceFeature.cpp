@@ -629,15 +629,15 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 										currVal = *ptr;
 
 
-										if(currVal < (*(ptr - 1))) LBPVal = LBPVal + 1;				//LBPFlag[0] = 1;
-										if(currVal < (*(ptr + 1))) LBPVal = LBPVal + 2;				//LBPFlag[1] = 1;
-										if(currVal < (*(ptr - tWidth1))) LBPVal = LBPVal + 4;		//LBPFlag[2] = 1;
-										if(currVal < (*(ptr + tWidth1))) LBPVal = LBPVal + 8;		//LBPFlag[3] = 1;
+										if(currVal < (*(ptr - 1)-THRESHOLD)) LBPVal = LBPVal + 1;				//LBPFlag[0] = 1;
+										if(currVal < (*(ptr + 1)-THRESHOLD)) LBPVal = LBPVal + 2;				//LBPFlag[1] = 1;
+										if(currVal < (*(ptr - tWidth1)-THRESHOLD)) LBPVal = LBPVal + 4;		//LBPFlag[2] = 1;
+										if(currVal < (*(ptr + tWidth1)-THRESHOLD)) LBPVal = LBPVal + 8;		//LBPFlag[3] = 1;
 
-										if(currVal < (*(ptr - tWidth1 + 1))) LBPVal = LBPVal + 16;	//LBPFlag[4] = 1;
-										if(currVal < (*(ptr - tWidth1 - 1))) LBPVal = LBPVal + 32;	//LBPFlag[5] = 1;
-										if(currVal < (*(ptr + tWidth1 + 1))) LBPVal = LBPVal + 64;	//LBPFlag[6] = 1;
-										if(currVal < (*(ptr + tWidth1 - 1))) LBPVal = LBPVal + 128;	//LBPFlag[7] = 1;
+										if(currVal < (*(ptr - tWidth1 + 1)-THRESHOLD)) LBPVal = LBPVal + 16;	//LBPFlag[4] = 1;
+										if(currVal < (*(ptr - tWidth1 - 1)-THRESHOLD)) LBPVal = LBPVal + 32;	//LBPFlag[5] = 1;
+										if(currVal < (*(ptr + tWidth1 + 1)-THRESHOLD)) LBPVal = LBPVal + 64;	//LBPFlag[6] = 1;
+										if(currVal < (*(ptr + tWidth1 - 1)-THRESHOLD)) LBPVal = LBPVal + 128;	//LBPFlag[7] = 1;
 #if UNIFORM_LBP
 										LBPHist[lookupTab[LBPVal]] ++;
 #else
@@ -678,15 +678,15 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 											ptr = fImage2 + (gr + i) * tWidth2 + ( gc + j);
 											currVal = *ptr;
 
-											if(currVal < (*(ptr - 1))) LBPVal = LBPVal + 1;				//LBPFlag[0] = 1;
-											if(currVal < (*(ptr + 1))) LBPVal = LBPVal + 2;				//LBPFlag[1] = 1;
-											if(currVal < (*(ptr - tWidth1))) LBPVal = LBPVal + 4;		//LBPFlag[2] = 1;
-											if(currVal < (*(ptr + tWidth1))) LBPVal = LBPVal + 8;		//LBPFlag[3] = 1;
+											if(currVal < (*(ptr - 1)-THRESHOLD)) LBPVal = LBPVal + 1;				//LBPFlag[0] = 1;
+											if(currVal < (*(ptr + 1)-THRESHOLD)) LBPVal = LBPVal + 2;				//LBPFlag[1] = 1;
+											if(currVal < (*(ptr - tWidth1)-THRESHOLD)) LBPVal = LBPVal + 4;		//LBPFlag[2] = 1;
+											if(currVal < (*(ptr + tWidth1)-THRESHOLD)) LBPVal = LBPVal + 8;		//LBPFlag[3] = 1;
 
-											if(currVal < (*(ptr - tWidth1 + 1))) LBPVal = LBPVal + 16;	//LBPFlag[4] = 1;
-											if(currVal < (*(ptr - tWidth1 - 1))) LBPVal = LBPVal + 32;	//LBPFlag[5] = 1;
-											if(currVal < (*(ptr + tWidth1 + 1))) LBPVal = LBPVal + 64;	//LBPFlag[6] = 1;
-											if(currVal < (*(ptr + tWidth1 - 1))) LBPVal = LBPVal + 128;	//LBPFlag[7] = 1;
+											if(currVal < (*(ptr - tWidth1 + 1)-THRESHOLD)) LBPVal = LBPVal + 16;	//LBPFlag[4] = 1;
+											if(currVal < (*(ptr - tWidth1 - 1)-THRESHOLD)) LBPVal = LBPVal + 32;	//LBPFlag[5] = 1;
+											if(currVal < (*(ptr + tWidth1 + 1)-THRESHOLD)) LBPVal = LBPVal + 64;	//LBPFlag[6] = 1;
+											if(currVal < (*(ptr + tWidth1 - 1)-THRESHOLD)) LBPVal = LBPVal + 128;	//LBPFlag[7] = 1;
 #if UNIFORM_LBP
 										LBPHist[lookupTab[LBPVal]] ++;
 #else

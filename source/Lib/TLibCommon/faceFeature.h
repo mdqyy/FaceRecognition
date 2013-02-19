@@ -20,7 +20,7 @@
 #define	FACE_DATUM_FILENAME "../../image/faces.bin"
 
 #define UNIFORM_LBP   0  //use 58 uniform LBP patterns to be statistically efficient 
-#define THRESHOLD 4  //use threshold to reduce local noise, if set to 0 means no threshold
+#define THRESHOLD 2  //use threshold to reduce local noise, if set to 0 means no threshold
 
 #include "global.h"
 

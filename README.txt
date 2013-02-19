@@ -9,3 +9,7 @@ THIS IS FOR FACE RECOGNITION USING OPENCV 2.4.3
 2/18/2013
 
 - Add uniform LBP patterns to make histogram statistically efficient( performance degraded? )
+
+2/19/2013
+
+- Add threshold to LBP comparison.
