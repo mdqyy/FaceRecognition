@@ -165,6 +165,9 @@ pip-log.txt
 #User Definition by Zhi
 
 *.jpg
+faces.bin
+matchOut.txt
+
 #33_18795_60__3400_120_12_s_q.txt
 #41268_60__340_lefteye_cnr_10.txt
 #41268_60__340_righteye_cnr_10.txt

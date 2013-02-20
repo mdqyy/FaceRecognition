@@ -60,10 +60,6 @@ DSC00912.JPG:	:		14
 
 
 
-DSC00918.JPG:	:		1
-
-
-
 DSC00920.JPG:	:		14
 
 
@@ -144,19 +140,19 @@ DSC01198.JPG:	:		18
 
 
 
-Gloria_Macapagal_Arroyo_0014.jpg:	:		1
+Gloria_Macapagal_Arroyo_0014.jpg:	:		24
 
 
 
-Gloria_Macapagal_Arroyo_0020.jpg:	:		1
+Gloria_Macapagal_Arroyo_0020.jpg:	:		24
 
 
 
-Gloria_Macapagal_Arroyo_0027.jpg:	:		1
+Gloria_Macapagal_Arroyo_0027.jpg:	:		17
 
 
 
-Gloria_Macapagal_Arroyo_0043.jpg:	:		1
+Gloria_Macapagal_Arroyo_0043.jpg:	:		21
 
 
 
@@ -296,51 +292,51 @@ IMAG0288_BURST007.jpg:	:		1
 
 
 
-Jack_Straw_0004.jpg:	:		1
+Jack_Straw_0004.jpg:	:		28
 
 
 
-Jack_Straw_0015.jpg:	:		1
+Jack_Straw_0015.jpg:	:		28
 
 
 
-Jack_Straw_0023.jpg:	:		1
+Jack_Straw_0023.jpg:	:		28
 
 
 
-Jack_Straw_0027.jpg:	:		1
+Jack_Straw_0027.jpg:	:		28
 
 
 
-Jacques_Chirac_0017.jpg:	:		1
+Jacques_Chirac_0017.jpg:	:		20
 
 
 
-Jacques_Chirac_0020.jpg:	:		19
+Jacques_Chirac_0020.jpg:	:		13
 
 
 
-Jacques_Chirac_0036.jpg:	:		1
+Jacques_Chirac_0036.jpg:	:		20
 
 
 
-Jean_Chretien_0004.jpg:	:		1
+Jean_Chretien_0004.jpg:	:		21
 
 
 
-Jean_Chretien_0020.jpg:	:		1
+Jean_Chretien_0020.jpg:	:		21
 
 
 
-Jean_Chretien_0027.jpg:	:		1
+Jean_Chretien_0027.jpg:	:		21
 
 
 
-Jean_Chretien_0031.jpg:	:		1
+Jean_Chretien_0031.jpg:	:		21
 
 
 
-Jean_Chretien_0042.jpg:	:		1
+Jean_Chretien_0042.jpg:	:		21
 
 
 
@@ -348,7 +344,7 @@ John_Ashcroft_0009.jpg:	:		19
 
 
 
-John_Ashcroft_0027.jpg:	:		19
+John_Ashcroft_0027.jpg:	:		14
 
 
 
@@ -360,7 +356,7 @@ John_Ashcroft_0035.jpg:	:		9
 
 
 
-John_Ashcroft_0036.jpg:	:		1
+John_Ashcroft_0036.jpg:	:		19
 
 
 
@@ -368,31 +364,31 @@ John_Ashcroft_0038.jpg:	:		19
 
 
 
-Luiz_Inacio_Lula_da_Silva_0005.jpg:	:		1
+Luiz_Inacio_Lula_da_Silva_0005.jpg:	:		20
 
 
 
-Luiz_Inacio_Lula_da_Silva_0007.jpg:	:		1
+Luiz_Inacio_Lula_da_Silva_0007.jpg:	:		23
 
 
 
-Luiz_Inacio_Lula_da_Silva_0008.jpg:	:		1
+Luiz_Inacio_Lula_da_Silva_0008.jpg:	:		23
 
 
 
-Luiz_Inacio_Lula_da_Silva_0029.jpg:	:		1
+Luiz_Inacio_Lula_da_Silva_0029.jpg:	:		23
 
 
 
-Luiz_Inacio_Lula_da_Silva_0045.jpg:	:		1
+Luiz_Inacio_Lula_da_Silva_0045.jpg:	:		21
 
 
 
-Mahmoud_Abbas_0008.jpg:	:		1
+Mahmoud_Abbas_0008.jpg:	:		29
 
 
 
-Mahmoud_Abbas_0014.jpg:	:		1
+Mahmoud_Abbas_0014.jpg:	:		20
 
 
 
@@ -400,31 +396,31 @@ Mahmoud_Abbas_0016.jpg:	:		17
 
 
 
-Mahmoud_Abbas_0023.jpg:	:		1
+Mahmoud_Abbas_0023.jpg:	:		6
 
 
 
-Nestor_Kirchner_0008.jpg:	:		1
+Nestor_Kirchner_0008.jpg:	:		25
 
 
 
-Nestor_Kirchner_0010.jpg:	:		1
+Nestor_Kirchner_0010.jpg:	:		25
 
 
 
-Nestor_Kirchner_0021.jpg:	:		1
+Nestor_Kirchner_0021.jpg:	:		21
 
 
 
-Nestor_Kirchner_0030.jpg:	:		1
+Nestor_Kirchner_0030.jpg:	:		26
 
 
 
-Nestor_Kirchner_0035.jpg:	:		1
+Nestor_Kirchner_0035.jpg:	:		15
 
 
 
-Roh_Moo-hyun_0008.jpg:	:		1
+Roh_Moo-hyun_0008.jpg:	:		27
 
 
 
@@ -432,53 +428,53 @@ Roh_Moo-hyun_0010.jpg:	:		15
 
 
 
-Roh_Moo-hyun_0016.jpg:	:		1
+Roh_Moo-hyun_0016.jpg:	:		27
 
 
 
-Roh_Moo-hyun_0024.jpg:	:		1
+Roh_Moo-hyun_0024.jpg:	:		6
 
 
 
-Rudolph_Giuliani_0002.jpg:	:		1
+Rudolph_Giuliani_0002.jpg:	:		28
 
 
 
-Rudolph_Giuliani_0004.jpg:	:		1
+Rudolph_Giuliani_0004.jpg:	:		21
 
 
 
-Rudolph_Giuliani_0026.jpg:	:		1
+Rudolph_Giuliani_0026.jpg:	:		30
 
 
 
-Serena_Williams_0012.jpg:	:		1
+Serena_Williams_0012.jpg:	:		22
 
 
 
-Serena_Williams_0014.jpg:	:		12
+Serena_Williams_0014.jpg:	:		22
 
 
 
-Serena_Williams_0027.jpg:	:		1
+Serena_Williams_0027.jpg:	:		22
 
 
 
-Serena_Williams_0048.jpg:	:		1
+Serena_Williams_0048.jpg:	:		22
 
 
 
-Silvio_Berlusconi_0006.jpg:	:		1
+Silvio_Berlusconi_0006.jpg:	:		14
 
 
 
-Silvio_Berlusconi_0007.jpg:	:		14
+Silvio_Berlusconi_0007.jpg:	:		26
 
 
 
-Silvio_Berlusconi_0018.jpg:	:		1
+Silvio_Berlusconi_0018.jpg:	:		20
 
 
 
-Silvio_Berlusconi_0033.jpg:	:		1
+Silvio_Berlusconi_0033.jpg:	:		19
 

@@ -884,6 +884,17 @@ int	 matchFace( float * queryFeat, FACE3D_Type * gf )
 		// distance.
 
 		sumDist				= 0;
+
+#if KAI_DISTANCE // use normalized distance
+		for (i=0; i<featEntryLen; i++)
+		{
+			tmpDist			= (tarFeat[i])-(queryFeat[i]);
+			if( !(tarFeat[i] == 0 && queryFeat[i] ==0))
+			{
+				sumDist += (tmpDist * tmpDist)/(tarFeat[i] + queryFeat[i]);
+			}
+		}
+#else
 		for (i=0; i<featEntryLen; i++)
 		{
 			tmpDist			= (tarFeat[i])-(queryFeat[i]);
@@ -895,6 +906,7 @@ int	 matchFace( float * queryFeat, FACE3D_Type * gf )
 			{	sumDist		= sumDist - tmpDist;
 			}
 		}
+#endif
 
 		// fill the top nearest neighbor.
 
