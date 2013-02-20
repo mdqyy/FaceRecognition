@@ -1,14 +1,14 @@
 
 
-DSC00724.JPG:	:		1
+DSC00724.JPG:	:		11
 
 
 
-DSC00733.JPG:	:		13
+DSC00733.JPG:	:		11
 
 
 
-DSC00735.JPG:	:		1
+DSC00735.JPG:	:		11
 
 
 
@@ -32,23 +32,23 @@ DSC00808.JPG:	:		12
 
 
 
-DSC00840.JPG:	:		1
+DSC00840.JPG:	:		13
 
 
 
-DSC00841.JPG:	:		10
+DSC00841.JPG:	:		13
 
 
 
-DSC00844.JPG:	:		1
+DSC00844.JPG:	:		13
 
 
 
-DSC00849.JPG:	:		1
+DSC00849.JPG:	:		13
 
 
 
-DSC00862.JPG:	:		1
+DSC00862.JPG:	:		13
 
 
 
@@ -56,11 +56,11 @@ DSC00887.JPG:	:		14
 
 
 
-DSC00912.JPG:	:		1
+DSC00912.JPG:	:		14
 
 
 
-DSC00918.JPG:	:		16
+DSC00918.JPG:	:		1
 
 
 
@@ -72,15 +72,15 @@ DSC00929.JPG:	:		15
 
 
 
-DSC00951.JPG:	:		1
+DSC00951.JPG:	:		15
 
 
 
-DSC00973.JPG:	:		1
+DSC00973.JPG:	:		15
 
 
 
-DSC00986.JPG:	:		1
+DSC00986.JPG:	:		15
 
 
 
@@ -100,35 +100,35 @@ DSC01030.JPG:	:		16
 
 
 
-DSC01042.JPG:	:		14
+DSC01042.JPG:	:		16
 
 
 
-DSC01055.JPG:	:		1
+DSC01055.JPG:	:		16
 
 
 
-DSC01067.JPG:	:		1
+DSC01067.JPG:	:		17
 
 
 
-DSC01072.JPG:	:		1
+DSC01072.JPG:	:		17
 
 
 
-DSC01086.JPG:	:		1
+DSC01086.JPG:	:		17
 
 
 
-DSC01093.JPG:	:		1
+DSC01093.JPG:	:		17
 
 
 
-DSC01102.JPG:	:		19
+DSC01102.JPG:	:		17
 
 
 
-DSC01176.JPG:	:		1
+DSC01176.JPG:	:		18
 
 
 
@@ -136,23 +136,23 @@ DSC01181.JPG:	:		18
 
 
 
-DSC01195.JPG:	:		1
+DSC01195.JPG:	:		18
 
 
 
-DSC01198.JPG:	:		1
+DSC01198.JPG:	:		18
 
 
 
-Gloria_Macapagal_Arroyo_0014.jpg:	:		15
+Gloria_Macapagal_Arroyo_0014.jpg:	:		1
 
 
 
-Gloria_Macapagal_Arroyo_0020.jpg:	:		19
+Gloria_Macapagal_Arroyo_0020.jpg:	:		1
 
 
 
-Gloria_Macapagal_Arroyo_0027.jpg:	:		14
+Gloria_Macapagal_Arroyo_0027.jpg:	:		1
 
 
 
@@ -160,31 +160,31 @@ Gloria_Macapagal_Arroyo_0043.jpg:	:		1
 
 
 
-IMAG0268_BURST002_COVER.jpg:	:		1
+IMAG0268_BURST002_COVER.jpg:	:		2
 
 
 
-IMAG0269_BURST001.jpg:	:		1
+IMAG0269_BURST001.jpg:	:		2
 
 
 
-IMAG0269_BURST003.jpg:	:		5
+IMAG0269_BURST003.jpg:	:		2
 
 
 
-IMAG0271_BURST004.jpg:	:		1
+IMAG0271_BURST004.jpg:	:		8
 
 
 
-IMAG0271_BURST006.jpg:	:		1
+IMAG0271_BURST006.jpg:	:		8
 
 
 
-IMAG0273_BURST001.jpg:	:		1
+IMAG0273_BURST001.jpg:	:		7
 
 
 
-IMAG0273_BURST003.jpg:	:		1
+IMAG0273_BURST003.jpg:	:		7
 
 
 
@@ -196,7 +196,7 @@ IMAG0273_BURST013.jpg:	:		7
 
 
 
-IMAG0273_BURST017.jpg:	:		1
+IMAG0273_BURST017.jpg:	:		7
 
 
 
@@ -204,11 +204,11 @@ IMAG0273_BURST018.jpg:	:		7
 
 
 
-IMAG0274_BURST001.jpg:	:		13
+IMAG0274_BURST001.jpg:	:		8
 
 
 
-IMAG0274_BURST002_COVER.jpg:	:		1
+IMAG0274_BURST002_COVER.jpg:	:		8
 
 
 
@@ -220,7 +220,7 @@ IMAG0274_BURST007.jpg:	:		8
 
 
 
-IMAG0276_BURST001.jpg:	:		1
+IMAG0276_BURST001.jpg:	:		3
 
 
 
@@ -228,23 +228,23 @@ IMAG0276_BURST009.jpg:	:		3
 
 
 
-IMAG0276_BURST015.jpg:	:		1
+IMAG0276_BURST015.jpg:	:		3
 
 
 
-IMAG0277_BURST002_COVER.jpg:	:		6
+IMAG0277_BURST002_COVER.jpg:	:		10
 
 
 
-IMAG0277_BURST003.jpg:	:		1
+IMAG0277_BURST003.jpg:	:		10
 
 
 
-IMAG0277_BURST019.jpg:	:		2
+IMAG0277_BURST019.jpg:	:		10
 
 
 
-IMAG0279_BURST002_COVER.jpg:	:		1
+IMAG0279_BURST002_COVER.jpg:	:		5
 
 
 
@@ -252,11 +252,11 @@ IMAG0279_BURST007.jpg:	:		5
 
 
 
-IMAG0281_BURST007.jpg:	:		1
+IMAG0281_BURST007.jpg:	:		9
 
 
 
-IMAG0282_BURST003.jpg:	:		15
+IMAG0282_BURST003.jpg:	:		9
 
 
 
@@ -264,15 +264,15 @@ IMAG0282_BURST006.jpg:	:		9
 
 
 
-IMAG0283_BURST007.jpg:	:		1
+IMAG0283_BURST007.jpg:	:		6
 
 
 
-IMAG0283_BURST011.jpg:	:		8
+IMAG0283_BURST011.jpg:	:		6
 
 
 
-IMAG0283_BURST017.jpg:	:		1
+IMAG0283_BURST017.jpg:	:		6
 
 
 
@@ -280,7 +280,7 @@ IMAG0283_BURST020.jpg:	:		6
 
 
 
-IMAG0287_BURST002_COVER.jpg:	:		13
+IMAG0287_BURST002_COVER.jpg:	:		1
 
 
 
@@ -288,7 +288,7 @@ IMAG0287_BURST013.jpg:	:		1
 
 
 
-IMAG0287_BURST015.jpg:	:		12
+IMAG0287_BURST015.jpg:	:		1
 
 
 
@@ -316,7 +316,7 @@ Jacques_Chirac_0017.jpg:	:		1
 
 
 
-Jacques_Chirac_0020.jpg:	:		16
+Jacques_Chirac_0020.jpg:	:		19
 
 
 
@@ -332,7 +332,7 @@ Jean_Chretien_0020.jpg:	:		1
 
 
 
-Jean_Chretien_0027.jpg:	:		4
+Jean_Chretien_0027.jpg:	:		1
 
 
 
@@ -344,19 +344,19 @@ Jean_Chretien_0042.jpg:	:		1
 
 
 
-John_Ashcroft_0009.jpg:	:		1
+John_Ashcroft_0009.jpg:	:		19
 
 
 
-John_Ashcroft_0027.jpg:	:		1
+John_Ashcroft_0027.jpg:	:		19
 
 
 
-John_Ashcroft_0030.jpg:	:		1
+John_Ashcroft_0030.jpg:	:		17
 
 
 
-John_Ashcroft_0035.jpg:	:		1
+John_Ashcroft_0035.jpg:	:		9
 
 
 
@@ -364,7 +364,7 @@ John_Ashcroft_0036.jpg:	:		1
 
 
 
-John_Ashcroft_0038.jpg:	:		1
+John_Ashcroft_0038.jpg:	:		19
 
 
 
@@ -376,7 +376,7 @@ Luiz_Inacio_Lula_da_Silva_0007.jpg:	:		1
 
 
 
-Luiz_Inacio_Lula_da_Silva_0008.jpg:	:		9
+Luiz_Inacio_Lula_da_Silva_0008.jpg:	:		1
 
 
 
@@ -396,11 +396,11 @@ Mahmoud_Abbas_0014.jpg:	:		1
 
 
 
-Mahmoud_Abbas_0016.jpg:	:		1
+Mahmoud_Abbas_0016.jpg:	:		17
 
 
 
-Mahmoud_Abbas_0023.jpg:	:		19
+Mahmoud_Abbas_0023.jpg:	:		1
 
 
 
@@ -428,7 +428,7 @@ Roh_Moo-hyun_0008.jpg:	:		1
 
 
 
-Roh_Moo-hyun_0010.jpg:	:		1
+Roh_Moo-hyun_0010.jpg:	:		15
 
 
 
@@ -452,19 +452,19 @@ Rudolph_Giuliani_0026.jpg:	:		1
 
 
 
-Serena_Williams_0012.jpg:	:		6
+Serena_Williams_0012.jpg:	:		1
 
 
 
-Serena_Williams_0014.jpg:	:		1
+Serena_Williams_0014.jpg:	:		12
 
 
 
-Serena_Williams_0027.jpg:	:		19
+Serena_Williams_0027.jpg:	:		1
 
 
 
-Serena_Williams_0048.jpg:	:		15
+Serena_Williams_0048.jpg:	:		1
 
 
 

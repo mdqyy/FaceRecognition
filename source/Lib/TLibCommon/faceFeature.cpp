@@ -480,7 +480,11 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 	}
 #endif
 
+	tWidth0 = tWidth;
+	tWidth1 = tWidth / 2;
+	tWidth2 = tWidth / 4;
 
+#if 0 // 2013.2.19 downsampling moved out of this module
 	//----------------------------------------------------------
 	//extract ROI
 	rStep = ((RY1 - RY0) * 1.0) / tHeight;
@@ -497,7 +501,8 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 			colorG = ptrChar[1];
 			colorR = ptrChar[2];
 
-			lum = (colorR + colorG + colorG + colorB) >> 2;
+			//lum = (colorR + colorG + colorG + colorB) >> 2; //?
+			lum = (colorR*38 + colorG*75 + colorB*15) >> 7;
 
 			*(fImage0 + r * tWidth + c) = lum;
 		}
@@ -515,7 +520,7 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 		for(r=0; r<H; r++)
 			for(c=0; c<W; c++)
 			{
-				ptr = fImage0 + (2 * r) * tWidth0;
+				ptr = fImage0 + (2 * r) * tWidth1;
 				sum = *ptr;	
 				sum = sum + *(ptr + 1);
 				sum = sum + *(ptr + tWidth0);
@@ -525,6 +530,7 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 				*(fImage1 + r * W + c) = sum;
 			}
 
+			
 			//----------------------------------------------------------
 			//down sample by 4
 
@@ -535,7 +541,7 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 			for(r=0; r<H; r++)
 				for(c=0; c<W; c++)
 				{
-					ptr = fImage1 + (2 * r) * tWidth1;
+					ptr = fImage1 + (2 * r) * tWidth2;
 					sum = *ptr;	
 					sum = sum + *(ptr + 1);
 					sum = sum + *(ptr + tWidth1);
@@ -544,6 +550,8 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 					sum = sum >> 2;
 					*(fImage2 + r * W + c) = sum;
 				}
+
+#endif
 
 				//----------------------------------------------------------
 				featurePtr = 0;

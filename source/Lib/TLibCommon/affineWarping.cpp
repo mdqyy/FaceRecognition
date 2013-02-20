@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <cv.h>
 #include <math.h>
+#include <highgui.h>
 
 #include "affineWarping.h"
 
@@ -407,3 +408,64 @@ void faceRotate(CvPoint* leftEye, CvPoint* rightEye, IplImage* src, IplImage* ds
 }
 
 
+//Convert to gray and downsampling twice
+void grayDownsample(IplImage* src, FACE3D_Type * gf)
+{
+	int *fImage0, *fImage1, *fImage2, *ptr;
+	int tWidth, tHeight, vR, vC, W, H,tWidth1, tWidth2, tHeight1, tHeight2;
+	int i;
+	fImage0 = gf->fImage0;
+	fImage1 = gf->fImage1;
+	fImage2 = gf->fImage2;
+	tWidth = gf->tWidth;
+	tHeight = gf->tHeight;
+	tWidth1 = tWidth / 2;
+	tWidth2 = tWidth / 4;
+	tHeight1 = tHeight/2;
+	tHeight2 = tHeight/4;
+
+	assert( tWidth == src->width);
+	assert( tHeight == src->height);
+
+	IplImage* tmpImg0 = cvCreateImage( cvGetSize(src), IPL_DEPTH_8U, 1);
+	IplImage* tmpImg1 = cvCreateImage( cvSize(tWidth/2, tHeight/2), IPL_DEPTH_8U, 1);
+	IplImage* tmpImg2 = cvCreateImage( cvSize(tWidth/4, tHeight/4), IPL_DEPTH_8U, 1);
+
+	//convert to gray
+	cvCvtColor(src,tmpImg0,CV_RGB2GRAY);
+
+	for (i = 0; i < tWidth * tHeight; i++)
+	{
+		fImage0[i] = (int) tmpImg0->imageData[i];
+	}
+
+	//downsample by 2
+	cvResize(tmpImg0, tmpImg1, 1);
+
+	for (i = 0; i < tWidth1 * tHeight1; i++)
+	{
+		fImage1[i] = (int) tmpImg1->imageData[i];
+	}
+
+	//downsample by 4
+	cvResize(tmpImg0, tmpImg2, 1);
+	for (i = 0; i < tWidth2 * tHeight2; i++)
+	{
+		fImage2[i] = (int) tmpImg2->imageData[i];
+	}
+
+#if 0
+	//Output faces only
+	(*count)++;
+	char tmpPath[500];
+	sprintf(tmpPath, "%s%d_0.jpg", "C:/Users/Zhang/Desktop/Debug/",*count);
+	cvSaveImage(tmpPath, tmpImg0);
+	sprintf(tmpPath, "%s%d_1.jpg", "C:/Users/Zhang/Desktop/Debug/",*count);
+	cvSaveImage(tmpPath, tmpImg1);
+	sprintf(tmpPath, "%s%d_2.jpg", "C:/Users/Zhang/Desktop/Debug/",*count);
+	cvSaveImage(tmpPath, tmpImg2);
+#endif
+	cvReleaseImage(&tmpImg0);
+	cvReleaseImage(&tmpImg1);
+	cvReleaseImage(&tmpImg2);
+}

@@ -398,6 +398,8 @@ int testVideoData2()
 			//2013.2.11 face rotation
 			faceRotate(leftEye, rightEye, pFrame, tarImg, faceDet->faceInformation.Width, faceDet->faceInformation.Height);
 
+			grayDownsample(tarImg, &gf);
+
 
 			// feature extraction.
 			extractLBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf);

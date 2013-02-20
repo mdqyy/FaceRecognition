@@ -164,4 +164,6 @@ pip-log.txt
 
 #User Definition by Zhi
 
-image/
+image\face.bin
+image\matchOut.txt
+*.jpg

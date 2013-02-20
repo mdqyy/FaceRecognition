@@ -191,7 +191,7 @@ int testLiveFace()
 
 int testVideoData2()
 {
-
+	//int count = 0;
 	CvFont font;
 	double hScale=0.5;
 	double vScale=0.5;
@@ -398,13 +398,26 @@ int testVideoData2()
 
 			cvReleaseImage(&faceFrame);
 #endif
-			//2013.2.11 face rotation
+			//2013.2.11 face rotation - Zhi
 			faceRotate(leftEye, rightEye, pFrame, tarImg, faceDet->faceInformation.Width, faceDet->faceInformation.Height);
 
+			//convert to gray and downsampling
+			
+			grayDownsample(tarImg, &gf);
 
 			// feature extraction.
 			extractLBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf);
 
+
+#if 0
+			//Debug only 
+			int WW = gf.tWidth/2 ;
+			int HH = gf.tHeight/2;
+			
+			FILE* f1 = fopen("../../image/debug/f2.bin","wb");
+			fwrite(gf.fImage1, sizeof(int), WW*HH, f1);
+			fclose(f1);
+#endif
 
 #ifdef WRITE_FEATURE_DATUM_2_FILE
 
@@ -677,6 +690,7 @@ int getSampleFaceFeatures()
 
 
 
+
 int main(int argc, char** argv)
 {
 	//-------------------
@@ -699,7 +713,7 @@ int main(int argc, char** argv)
 	//-------------------
 	// closing.
 	//-------------------
-	closeFaceWarping();
+	//closeFaceWarping();
 	system("pause");
 	
 }
