@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include "pam_face_defines.h"
 
-char* HAAR_CASCADE_FACE="haarcascade_frontalface_alt.xml";
+char* HAAR_CASCADE_FACE="../../source/XML/haarcascade_frontalface_alt.xml";
 
 int faceDetector::checkFaceDetected()
 {

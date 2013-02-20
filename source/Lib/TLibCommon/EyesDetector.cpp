@@ -29,11 +29,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 double CenterofMass(IplImage* src,int flagXY);
 
 //
-string facePara = "33_18795_60__3400_120_12_s_q.txt";
-string leftEyeCorner = "41268_60__340_lefteye_cnr_10.txt";
-string leftEyeBall = "41268_60__340_lefteye_cn_10.txt";
-string rightEyeCorner = "41268_60__340_righteye_cnr_10.txt";
-string rightEyeBall = "41268_60__340_lefteye_cn_10.txt";
+string facePara = "../../source/XML/33_18795_60__3400_120_12_s_q.txt";
+string leftEyeCorner = "../../source/XML/41268_60__340_lefteye_cnr_10.txt";
+string leftEyeBall = "../../source/XML/41268_60__340_lefteye_cn_10.txt";
+string rightEyeCorner = "../../source/XML/41268_60__340_righteye_cnr_10.txt";
+string rightEyeBall = "../../source/XML/41268_60__340_lefteye_cn_10.txt";
 
 
 #  define iabs(x)                     (((x) < 0)   ? -(x) : (x))

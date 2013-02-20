@@ -17,9 +17,9 @@
 #ifndef GLOBAL_H_INCLUDED
 #define GLOBAL_H_INCLUDED
 
-#define NUM_NEAREST_NBOR	5
+#define NUM_NEAREST_NBOR	8
 #define LBP_FACE_FEATURE_LEN	5120
-#define MAX_FACE_ID			20
+#define MAX_FACE_ID			50
 #define USE_LBP
 
 

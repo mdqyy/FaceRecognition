@@ -164,6 +164,12 @@ pip-log.txt
 
 #User Definition by Zhi
 
-image\face.bin
-image\matchOut.txt
 *.jpg
+33_18795_60__3400_120_12_s_q.txt
+41268_60__340_lefteye_cnr_10.txt
+41268_60__340_righteye_cnr_10.txt
+haarcascade_frontalface_alt.xml
+haarcascade_frontalface_alt2.xml
+haarcascade_mcs_lefteye.xml
+haarcascade_mcs_nose.xml
+haarcascade_mcs_righteye.xml
