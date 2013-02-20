@@ -49,7 +49,7 @@
 //#define	STR_INPUT_IMAGE_DIR		"input_align/"
 
 // demo only
-#define MAX_NUM_FACE_ID_TAG			50
+#define MAX_NUM_FACE_ID_TAG			MAX_FACE_ID
 
 using namespace std;
 
@@ -272,6 +272,8 @@ int testVideoData2()
 	
 	}
 
+	gf.numIDtag = numTaggedFaces;
+
 	inputQueryImgResized	= cvCreateImage(cvSize(960, 720), IPL_DEPTH_8U, 3);;
 
 	// Face feature archive.
@@ -406,7 +408,13 @@ int testVideoData2()
 			grayDownsample(tarImg, &gf);
 
 			// feature extraction.
+			gf.featureLength = 0;
+#if USE_GBP
+			extractGBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf);
+#endif
+#if USE_LBP
 			extractLBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf);
+#endif
 
 
 #if 0
@@ -423,7 +431,7 @@ int testVideoData2()
 
 			// write feature to a binary file.
 			bufferSingleFeatureID->id	= ii+1;
-			memcpy( bufferSingleFeatureID->feature, gf.faceFeatures, sizeof(float)*LBP_FACE_FEATURE_LEN );
+			memcpy( bufferSingleFeatureID->feature, gf.faceFeatures, sizeof(float)*TOTAL_FEATURE_LEN );
 
 #if 0
 			//debug only - output histogram
@@ -431,7 +439,7 @@ int testVideoData2()
 			sprintf(tmpHistPath, "../../image/Debug/%s.txt", fileinfo.name);
 			FILE* debugFile = fopen( tmpHistPath, "w+");
 			int tmpPtr = 0;
-			while (tmpPtr < LBP_FACE_FEATURE_LEN )
+			while (tmpPtr < FACE_FEATURE_LEN )
 			{
 				for (int ii = 0; ii < 256; ii++)
 				{
@@ -552,8 +560,8 @@ int testVideoData2()
 #ifdef WRITE_FEATURE_DATUM_2_FILE
 	fclose(fpOutBinaryFile);
 #endif
-
 	return NULL;
+	
 }
 
 

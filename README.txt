@@ -18,3 +18,4 @@ ONLY ALGORITHM CHANGES WILL BE DISPLAYED HERE!
 2/20/2013
 
 - Add distance normalization to histogram comparison [ d = (h1-h2)^2 / (h1+h2) ] ( Performance improved!)
+- Add GBP features( global binary patterns, which is the binary comparison with global mean)

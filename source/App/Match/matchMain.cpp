@@ -397,19 +397,26 @@ int testVideoData2()
 #endif
 			//2013.2.11 face rotation
 			faceRotate(leftEye, rightEye, pFrame, tarImg, faceDet->faceInformation.Width, faceDet->faceInformation.Height);
-
+			
+			//downsampleing twice
 			grayDownsample(tarImg, &gf);
 
 
 			// feature extraction.
+			gf.featureLength = 0;
+#if USE_GBP
+			extractGBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf);
+#endif
+#if USE_LBP
 			extractLBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf);
+#endif
 
 
 #ifdef WRITE_FEATURE_DATUM_2_FILE
 
 			// write feature to a binary file.
 			bufferSingleFeatureID->id	= tmpFaceID;
-			memcpy( bufferSingleFeatureID->feature, gf.faceFeatures, sizeof(float)*LBP_FACE_FEATURE_LEN );
+			memcpy( bufferSingleFeatureID->feature, gf.faceFeatures, sizeof(float)*FACE_FEATURE_LEN );
 
 			fwrite( bufferSingleFeatureID, 1, sizeof(unitFaceFeatClass), fpOutBinaryFile );
 #endif

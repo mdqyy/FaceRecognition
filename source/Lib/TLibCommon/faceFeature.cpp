@@ -554,10 +554,10 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 #endif
 
 				//----------------------------------------------------------
-				featurePtr = 0;
+				featurePtr = gf->featureLength; //2013.2.20 in order to combine different features
 
 				// reset. 2013.01.24
-				memset(faceFeatures, 0, sizeof(float) * LBP_FACE_FEATURE_LEN );
+				memset(faceFeatures, 0, sizeof(float) * FACE_FEATURE_LEN );
 
 				//----------------------------------------------------------
 				//extract Gabor coefficients at fImage0
@@ -724,6 +724,179 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 
 
 
+
+void extractGBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Type * gf)
+{
+	int RX0, RX1, RY0, RY1, i, j, k, r, c;
+	unsigned char * ptrChar;
+	int tWidth, tHeight, vR, vC, W, H, tWidth0, tWidth1, tWidth2;
+	double rStep, cStep, sumF;
+	int *fImage0, *fImage1, *fImage2, *ptr, *LBPHist;
+	int sum, currVal, LBPVal;
+	int colorR, colorG, colorB, lum, gwStep, gr, gc, gaborWSize, nGabors;
+	double * ptrGF;
+	float * faceFeatures;
+	int featurePtr;
+	int LBP_H_Step, LBP_W_Step;
+	int LBPFlag[8];
+
+	RX0 = gf->RX0;
+	RX1 = gf->RX1;
+	RY0 = gf->RY0;
+	RY1 = gf->RY1;
+	tWidth = gf->tWidth;
+	tHeight = gf->tHeight;
+	fImage0 = gf->fImage0;
+	fImage1 = gf->fImage1;
+	fImage2 = gf->fImage2;
+	gaborWSize = gf->gaborWSize;
+	nGabors = gf->nGabors;
+	faceFeatures = gf->faceFeatures;
+	LBP_H_Step = gf->LBP_H_Step;
+	LBP_W_Step = gf->LBP_W_Step;
+	LBPHist = gf->LBPHist;
+
+	//uniform LBP look up table
+
+
+	tWidth0 = tWidth;
+	tWidth1 = tWidth / 2;
+	tWidth2 = tWidth / 4;
+
+
+
+				//----------------------------------------------------------
+				featurePtr = gf->featureLength; //2013.2.20 in order to combine different features
+
+				// reset. 2013.01.24
+				memset(faceFeatures, 0, sizeof(float) * FACE_FEATURE_LEN );
+
+				//----------------------------------------------------------
+				//extract Gabor coefficients at fImage0
+				
+					//----------------------------------------------------------
+					//extract Gabor coefficients at fImage1
+					//----------------------------------------------------------
+
+						//----------------------------------------------------------
+						//extract LBP features at fImage1
+
+						W = tWidth / 2;
+						H = tHeight / 2;
+						currVal = 0;
+						for( i = 0; i < W*H; i++)
+						{
+							currVal += fImage1[i];
+						}
+						currVal /= W*H; //mean value of entire frame.
+
+						for(gr=0; gr<=(H-LBP_H_Step); gr+=LBP_H_Step)
+						{
+							for(gc=0; gc<=(W-LBP_W_Step); gc+=LBP_W_Step)
+							{
+								//reset
+								for(i=0; i<256; i++) LBPHist[i] = 0; 
+
+								for(i=1; i<(LBP_H_Step-1); i++) 
+								{
+									for(j=1; j<(LBP_W_Step-1); j++)
+									{
+										LBPVal = 0;
+
+										ptr = fImage1 + (gr + i) * tWidth1 + ( gc + j);
+										//currVal = *ptr;
+
+
+										if(currVal < (*(ptr - 1)-THRESHOLD)) LBPVal = LBPVal + 1;				//LBPFlag[0] = 1;
+										if(currVal < (*(ptr + 1)-THRESHOLD)) LBPVal = LBPVal + 2;				//LBPFlag[1] = 1;
+										if(currVal < (*(ptr - tWidth1)-THRESHOLD)) LBPVal = LBPVal + 4;		//LBPFlag[2] = 1;
+										if(currVal < (*(ptr + tWidth1)-THRESHOLD)) LBPVal = LBPVal + 8;		//LBPFlag[3] = 1;
+
+										if(currVal < (*(ptr - tWidth1 + 1)-THRESHOLD)) LBPVal = LBPVal + 16;	//LBPFlag[4] = 1;
+										if(currVal < (*(ptr - tWidth1 - 1)-THRESHOLD)) LBPVal = LBPVal + 32;	//LBPFlag[5] = 1;
+										if(currVal < (*(ptr + tWidth1 + 1)-THRESHOLD)) LBPVal = LBPVal + 64;	//LBPFlag[6] = 1;
+										if(currVal < (*(ptr + tWidth1 - 1)-THRESHOLD)) LBPVal = LBPVal + 128;	//LBPFlag[7] = 1;
+#if UNIFORM_LBP
+										LBPHist[lookupTab[LBPVal]] ++;
+#else
+										LBPHist[LBPVal] = LBPHist[LBPVal] + 1;
+#endif
+									}
+								}
+
+									//save to the feature vector
+								
+									for(i=0; i<256; i++)
+									{
+										faceFeatures[featurePtr] = LBPHist[i];
+										featurePtr++;
+									}
+
+
+							}
+						}
+
+							//----------------------------------------------------------
+							//extract LBP features at fImage2
+
+							W = tWidth / 4;
+							H = tHeight / 4;
+
+							currVal = 0;
+							for( i = 0; i < W*H; i++)
+							{
+								currVal += fImage1[i];
+							}
+							currVal /= W*H; //mean value of entire frame.
+
+							for(gr=0; gr<=(H-LBP_H_Step); gr+=LBP_H_Step)
+								for(gc=0; gc<=(W-LBP_W_Step); gc+=LBP_W_Step)
+								{
+									//reset
+									for(i=0; i<256; i++) LBPHist[i] = 0; 
+
+									for(i=1; i<(LBP_H_Step-1); i++)
+									{
+										for(j=1; j<(LBP_W_Step-1); j++)
+										{
+											LBPVal = 0;
+
+											ptr = fImage2 + (gr + i) * tWidth2 + ( gc + j);
+											//currVal = *ptr;
+
+											if(currVal < (*(ptr - 1)-THRESHOLD)) LBPVal = LBPVal + 1;				//LBPFlag[0] = 1;
+											if(currVal < (*(ptr + 1)-THRESHOLD)) LBPVal = LBPVal + 2;				//LBPFlag[1] = 1;
+											if(currVal < (*(ptr - tWidth1)-THRESHOLD)) LBPVal = LBPVal + 4;		//LBPFlag[2] = 1;
+											if(currVal < (*(ptr + tWidth1)-THRESHOLD)) LBPVal = LBPVal + 8;		//LBPFlag[3] = 1;
+
+											if(currVal < (*(ptr - tWidth1 + 1)-THRESHOLD)) LBPVal = LBPVal + 16;	//LBPFlag[4] = 1;
+											if(currVal < (*(ptr - tWidth1 - 1)-THRESHOLD)) LBPVal = LBPVal + 32;	//LBPFlag[5] = 1;
+											if(currVal < (*(ptr + tWidth1 + 1)-THRESHOLD)) LBPVal = LBPVal + 64;	//LBPFlag[6] = 1;
+											if(currVal < (*(ptr + tWidth1 - 1)-THRESHOLD)) LBPVal = LBPVal + 128;	//LBPFlag[7] = 1;
+#if UNIFORM_LBP
+										LBPHist[lookupTab[LBPVal]] ++;
+#else
+											LBPHist[LBPVal] = LBPHist[LBPVal] + 1;
+#endif
+										}
+									}
+
+										//save to the feature vector
+										for(i=0; i<256; i++)
+										{
+											faceFeatures[featurePtr] = LBPHist[i];
+											featurePtr++;
+										}
+
+								}
+
+
+								// record feature length.
+								gf->featureLength	= featurePtr;
+
+}//end: void extractGBPFaceFeatures()
+
+
 void extractColorTag(unsigned char * imageData, int widthStep, FACE3D_Type * gf)
 {
 	int i, j;
@@ -852,7 +1025,7 @@ int	 matchFace( float * queryFeat, FACE3D_Type * gf )
 
 	// init.
 	matchedFaceID	= 0;
-	featEntryLen	= LBP_FACE_FEATURE_LEN;
+	featEntryLen	= FACE_FEATURE_LEN;
 	ptrFeatDistance = gf->featDistance;
 	ptrUsedDistFlag = gf->usedDistFlag;
 	ptrBestDistID	= gf->bestDistID;
@@ -987,3 +1160,90 @@ int	 matchFace( float * queryFeat, FACE3D_Type * gf )
 	return matchedFaceID;
 
 }//end: matchFace( FACE3D_Type * gf )
+
+#if WEIGHTED_MATCH
+void trainWeight( float* weight, FACE3D_Type * gf)
+{
+	int				matchedFaceID;
+	int				featEntryLen;
+	int				i, idxBuf2Fill;
+	int				loadedDataLen;
+	int				unitDataInByte;
+	int				ptrOneLoadedData;
+	int				currTarID;
+	int				idVoted, tmpMostVotedID, tmpMostVote;
+	float			sumDist, tmpDist;
+	float			maxMatchingDistance;
+	float*			tarFeat;
+	float*			ptrFeatDistance;
+	int*			ptrUsedDistFlag;
+	int*			ptrBestDistID;
+	int*			cntIDVote;
+	unsigned char*	ptrLoadedData;
+	long int        inClassDist[MAX_FACE_ID][FACE_FEATURE_LEN];
+
+	unitFaceFeatClass* ptrCurFetchedData;
+
+	// init.
+	matchedFaceID	= 0;
+	featEntryLen	= FACE_FEATURE_LEN;
+	ptrFeatDistance = gf->featDistance;
+	ptrUsedDistFlag = gf->usedDistFlag;
+	ptrBestDistID	= gf->bestDistID;
+	loadedDataLen	= gf->bufFaceDataLen;
+	ptrLoadedData	= gf->bufferFaceData;
+	cntIDVote		= gf->voteCntFaceID;
+	unitDataInByte	= sizeof(unitFaceFeatClass);
+
+	for (i = 0; i< MAX_FACE_ID * FACE_FEATURE_LEN; i++)
+	{
+		inClassDist[i] = 0;
+		weight[i]
+	}
+
+
+	// match.
+
+	for ( ptrOneLoadedData = 0; ptrOneLoadedData < loadedDataLen; ptrOneLoadedData += unitDataInByte )
+	{
+		if (ptrOneLoadedData >= (loadedDataLen-unitDataInByte-1) )	break;
+
+		// load one face data.
+
+		ptrCurFetchedData	= (unitFaceFeatClass*)(ptrLoadedData + ptrOneLoadedData);
+		tarFeat				= ptrCurFetchedData->feature;
+		currTarID			= ptrCurFetchedData->id;
+
+		// distance.
+
+#if KAI_DISTANCE // use normalized distance
+		for (i=0; i<featEntryLen; i++)
+		{
+			tmpDist			= (tarFeat[i])-(queryFeat[i]);
+			if( !(tarFeat[i] == 0 && queryFeat[i] ==0))
+			{
+				inClassDist[currTarID][i] += (tmpDist * tmpDist)/(tarFeat[i] + queryFeat[i]);
+			}
+		}
+#else
+		for (i=0; i<featEntryLen; i++)
+		{
+			tmpDist			= (tarFeat[i])-(queryFeat[i]);
+
+			if (tmpDist >= 0)
+			{	inClassDist[currTarID][i] += tmpDist;
+			} 
+			else
+			{	inClassDist[currTarID][i] -= tmpDist;
+			}
+		}
+#endif
+	} //end loading features
+	
+
+
+
+
+}// end function trainWeight
+
+#endif // weighted match

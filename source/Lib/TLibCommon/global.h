@@ -17,10 +17,17 @@
 #ifndef GLOBAL_H_INCLUDED
 #define GLOBAL_H_INCLUDED
 
+#define USE_LBP				1
+#define USE_GBP				0
 #define NUM_NEAREST_NBOR	10
-#define LBP_FACE_FEATURE_LEN	5120
+
+#define FACE_FEATURE_LEN	5120
+#define TOTAL_FEATURE_LEN   5120
+
+
+
 #define MAX_FACE_ID			50
-#define USE_LBP
+
 
 
 
@@ -55,6 +62,7 @@ typedef struct face3DTag
 
 	float * faceFeatures;
 	int featurePtr;
+	int numIDtag;                   //number of tagged IDs 2013.2.20
 
 	int				featureLength;	// Face matching via Nearest Neighbors Vote. 2013.01.21
 	int				bufFaceDataLen;
@@ -70,7 +78,7 @@ typedef struct face3DTag
 typedef struct unitFaceFeatClass
 {
 	int		id;
-	float	feature[LBP_FACE_FEATURE_LEN];
+	float	feature[TOTAL_FEATURE_LEN];
 
 }unitFaceFeatClass;
 
