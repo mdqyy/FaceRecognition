@@ -30,7 +30,7 @@
 #include "TLibCommon/global.h"
 #include <fstream>
 #include "TLibCommon/ConvNN.h"
-#include "TLibCommon/CvGaborFace.h"
+//#include "TLibCommon/CvGaborFace.h"
 
 #include "TLibCommon/faceFeature.h"
 #include "TLibCommon/affineWarping.h"

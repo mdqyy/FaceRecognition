@@ -1300,6 +1300,21 @@ int	 matchFace( float * queryFeat, FACE3D_Type * gf )
 		}
 	}
 
+	if (tmpMostVote == 1)
+	{
+		float minDistInBin = ptrFeatDistance[0];
+		for(i = 1; i<NUM_NEAREST_NBOR; i++)
+		{
+			if ( ptrFeatDistance[i] < minDistInBin)
+			{
+				minDistInBin = ptrFeatDistance[i];
+				tmpMostVotedID = ptrBestDistID[i];
+			}
+		}
+	}
+
+
+
 	matchedFaceID		= tmpMostVotedID;
 
 	// return.

@@ -30,7 +30,7 @@
 #include "TLibCommon/global.h"
 #include <fstream>
 #include "TLibCommon/ConvNN.h"
-#include "TLibCommon/CvGaborFace.h"
+//#include "TLibCommon/CvGaborFace.h"
 
 #include "TLibCommon/faceFeature.h"
 #include "TLibCommon/affineWarping.h"
@@ -49,7 +49,7 @@
 //#define	STR_INPUT_IMAGE_DIR		"input_align/"
 
 // demo only
-#define MAX_NUM_FACE_ID_TAG			50
+#define MAX_NUM_FACE_ID_TAG			MAX_FACE_ID
 
 using namespace std;
 
@@ -196,7 +196,7 @@ int testVideoData2()
 	double hScale=0.5;
 	double vScale=0.5;
 	int    lineWidth=2;
-	int tmpW = 0, tmpH = 0;
+	int tmpW = 800, tmpH = 600;
 	
 
 	cvInitFont(&font,CV_FONT_HERSHEY_SIMPLEX, hScale,vScale,0,lineWidth);
@@ -479,18 +479,27 @@ int testVideoData2()
 			printf("\nMatched ID: %d \n------------------\n", matchedFaceID);
 			//printf("\nAdjusted angle: %.4f \n-------------------\n", angle);
 			fprintf(fpoutput, "\n\n%s:	:		%d\n\n", fileinfo.name, matchedFaceID);
-			tmpW = 800;
-			tmpW = min(tmpW, pFrame->width);
-			tmpH = (1.0 * pFrame->height / pFrame->width)* tmpW;
+			
 
-			inputQueryImgResized	= cvCreateImage(cvSize(tmpW, tmpH), IPL_DEPTH_8U, 3);
-			cvResize(pFrame, inputQueryImgResized, 1);
-			cvNamedWindow("Input Image");
-			cvShowImage("Input Image", inputQueryImgResized);
+			if (pFrame->width > 800)
+			{
+				tmpW = 800;
+				tmpH = (1.0 * pFrame->height / pFrame->width)* tmpW;
+				inputQueryImgResized	= cvCreateImage(cvSize(tmpW, tmpH), IPL_DEPTH_8U, 3);
+				cvResize(pFrame, inputQueryImgResized, 1);
+				cvNamedWindow("Input Image");
+				cvShowImage("Input Image", inputQueryImgResized);
+				cvReleaseImage(&inputQueryImgResized);
+			}
+			else
+			{
+				cvNamedWindow("Input Image");
+				cvShowImage("Input Image", pFrame);
+			}
 
 			cvNamedWindow("Matched Face");
 			cvShowImage("Matched Face", imgFaceIDTag[matchedFaceID-1]);
-			cvWaitKey(100);
+			cvWaitKey(1000);
 #endif
 
 		}

@@ -19,15 +19,15 @@
 
 #define USE_LBP				1
 #define USE_GBP				0
-#define USE_GABOR			1
-#define NUM_NEAREST_NBOR	10
+#define USE_GABOR			0
+#define NUM_NEAREST_NBOR	6
 
 #define FACE_FEATURE_LEN	5120
 #define TOTAL_FEATURE_LEN   3200
 
 
 
-#define MAX_FACE_ID			50
+#define MAX_FACE_ID			60
 
 
 
