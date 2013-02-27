@@ -4,9 +4,11 @@
 
 #include "faceFeature.h"
 
+#define GABOR_BIN_DIR "../../image/Gabor.bin"
+
 void config(FACE3D_Type * gf)
 {
-	gf->gwStep = 4;
+	gf->gwStep = 10;
 	//gf->tWidth = 256;
 	//gf->tHeight = 192;
 	//gf->LBP_H_Step = 24;
@@ -100,7 +102,7 @@ void initFaceFeature(FACE3D_Type * gf, int width, int height)
 {
 	FILE * fp;
 	int nGabors, gaborWSize;
-	double tmpf;
+	//double tmpf;
 	double * ptr;
 	int k, m;
 	int FRAME_WIDTH, FRAME_HEIGHT, W, H;
@@ -114,10 +116,14 @@ void initFaceFeature(FACE3D_Type * gf, int width, int height)
 	//configure the system
 	config(gf);
 
-#if 0
-	fp = fopen("gabor.dat", "rt");
-	fscanf(fp, "%d", &nGabors);
-	fscanf(fp, "%d", &gaborWSize);
+#if 1
+	fp = fopen(GABOR_BIN_DIR, "rb");
+	if(fp==NULL){
+		printf("open file Gabor.bin failed!\n");fflush(stdout);
+		exit(-1);
+	}
+	fread(&nGabors,sizeof(int),1,fp);
+	fread(&gaborWSize, sizeof(int),1,fp);
 
 	gf->gaborWSize = gaborWSize;
 	gf->nGabors = nGabors;
@@ -132,8 +138,9 @@ void initFaceFeature(FACE3D_Type * gf, int width, int height)
 		ptr = gf->gaborCoefficients[k];
 		for(m=0; m<(gaborWSize * gaborWSize); m++)
 		{
-			fscanf(fp, "%f", &tmpf);
-			ptr[m] = tmpf;
+			fread(&ptr[m], sizeof(double), 1, fp);
+			//fscanf(fp, "%f", &tmpf);
+			//ptr[m] = tmpf;
 		}
 	}
 	fclose(fp);
@@ -151,16 +158,21 @@ void initFaceFeature(FACE3D_Type * gf, int width, int height)
 	W = gf->tWidth;
 	H = gf->tHeight;
 	TN = (W * H) / (gf->gwStep * gf->gwStep);
-	TN = TN * 4;		
+	TN += TN / 4;
+	TN *= nGabors;
 
 	W = gf->tWidth / 2;
 	H = gf->tHeight / 2;
-	TN1 = (W * H) / (gf->LBP_H_Step * gf->LBP_W_Step) * 128 * 2;
+	TN1 = (W * H) / (gf->LBP_H_Step * gf->LBP_W_Step) * NUM_BIN;
+	TN1 += TN1 / 4;
 
 	gf->faceFeatures = (float *)malloc((TN + TN1) * sizeof(float));
 	gf->featurePtr = 0;
 
-	gf->LBPHist = (int *)malloc(256 * sizeof(int));
+	gf->LBPHist = (int *)malloc(NUM_BIN * sizeof(int));
+
+	//reset moved here 2013.2.27
+	memset(gf->faceFeatures, 0, sizeof(float) * (TN + TN1));
 
 }
 
@@ -418,6 +430,137 @@ void extractFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Type *
 
 
 
+//Extract Gabor Features in image0 & image1.
+void extractGaborFeatures(FACE3D_Type* gf)
+{
+	int *fImage0, *fImage1, *ptr;
+	int gwStep, numStep, gaborWSize, nGabors, featurePtr;
+	float* faceFeatures;
+	int tWidth, tHeight, tWidth1;
+	double** gaborCoefficients;
+	double* ptrGaborCoefsReal, *ptrGaborCoefsImg;
+	int ptrImg, ptrFilter;
+	int i, j, k, l, n;
+	float tmpSumReal, tmpSumImg;
+
+	tWidth = gf->tWidth;
+	tHeight = gf->tHeight;
+	assert( tWidth == tHeight);
+
+	tWidth1 = tWidth / 2;
+	fImage0 = gf->fImage0;				//original image
+	fImage1 = gf->fImage1;				//downsampled image
+	gwStep = gf->gwStep;				//gabor window step
+	numStep = tWidth / gwStep;			//gabor window number
+	gaborWSize = gf->gaborWSize;		//gabor kernel size
+	gaborCoefficients = gf->gaborCoefficients;
+	nGabors = gf->nGabors;
+	faceFeatures = gf->faceFeatures;	//faceFeature ptr
+	featurePtr = gf->featureLength;		//reset to current length to combine different features
+
+
+	//extract gabor features in image0
+	for (n = 0; n < nGabors; n++)
+	{
+		ptrGaborCoefsReal = gaborCoefficients[(n*2)];
+		ptrGaborCoefsImg = gaborCoefficients[(n*2+1)];
+
+		for (i = 0; i < numStep; i++)
+		{
+			for (j = 0; j < numStep; j++)
+			{
+				ptrImg = gwStep * (i * tWidth + j);
+				ptrFilter = 0;
+				tmpSumReal = 0;
+				tmpSumImg = 0;
+
+				//adjust pointer since kernel size is a odd number
+				if ( i == (numStep -1) )
+				{
+					ptrImg -= tWidth;
+				}
+				if ( j == (numStep -1))
+				{
+					ptrImg -= 1;
+				}
+				
+				//extract gabor feature in current window
+				for ( k = 0; k < gaborWSize; k++)
+				{
+					for ( l = 0; l < gaborWSize; l++)
+					{
+						tmpSumReal += fImage0[ptrImg] * ptrGaborCoefsReal[ptrFilter];
+						tmpSumImg += fImage0[ptrImg] * ptrGaborCoefsImg[ptrFilter];
+						ptrImg++;
+						ptrFilter++;
+					}
+					ptrImg += tWidth - gaborWSize;
+				}
+
+				faceFeatures[featurePtr] = tmpSumReal * tmpSumReal + tmpSumImg * tmpSumImg;
+				featurePtr++;
+
+			}	//end col steps
+		}	//end row steps
+	} //end different gabor kernels
+
+	//extract features in downsampled image1
+	numStep /= 2;
+
+	for (n = 0; n < nGabors; n++)
+	{
+		ptrGaborCoefsReal = gaborCoefficients[(n*2)];
+		ptrGaborCoefsImg = gaborCoefficients[(n*2+1)];
+
+		for (i = 0; i < numStep; i++)
+		{
+			for (j = 0; j < numStep; j++)
+			{
+				ptrImg = gwStep * (i * tWidth1 + j);
+				ptrFilter = 0;
+				tmpSumReal = 0;
+				tmpSumImg = 0;
+
+				//adjust pointer since kernel size is a odd number
+				if ( i == (numStep -1) )
+				{
+					ptrImg -= tWidth1;
+				}
+				if ( j == (numStep -1))
+				{
+					ptrImg -= 1;
+				}
+				
+				//extract gabor feature in current window
+				for ( k = 0; k < gaborWSize; k++)
+				{
+					for ( l = 0; l < gaborWSize; l++)
+					{
+						tmpSumReal += fImage1[ptrImg] * ptrGaborCoefsReal[ptrFilter];
+						tmpSumImg += fImage0[ptrImg] * ptrGaborCoefsImg[ptrFilter];
+						ptrImg++;
+						ptrFilter++;
+					}
+					ptrImg += tWidth1 - gaborWSize;
+				}
+
+				faceFeatures[featurePtr] = tmpSumReal * tmpSumReal + tmpSumImg * tmpSumImg;
+				featurePtr++;
+
+			}	//end col steps
+		}	//end row steps
+	} //end different gabor kernels
+
+	gf->featureLength = featurePtr;
+	
+}// end function
+
+
+
+
+
+
+
 void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Type * gf)
 {
 	int RX0, RX1, RY0, RY1, i, j, k, r, c;
@@ -557,7 +700,7 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 				featurePtr = gf->featureLength; //2013.2.20 in order to combine different features
 
 				// reset. 2013.01.24
-				memset(faceFeatures, 0, sizeof(float) * FACE_FEATURE_LEN );
+				//memset(faceFeatures, 0, sizeof(float) * FACE_FEATURE_LEN );
 
 				//----------------------------------------------------------
 				//extract Gabor coefficients at fImage0
@@ -725,6 +868,9 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 
 
 
+
+
+//global binary feature
 void extractGBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Type * gf)
 {
 	int RX0, RX1, RY0, RY1, i, j, k, r, c;
@@ -769,7 +915,7 @@ void extractGBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 				featurePtr = gf->featureLength; //2013.2.20 in order to combine different features
 
 				// reset. 2013.01.24
-				memset(faceFeatures, 0, sizeof(float) * FACE_FEATURE_LEN );
+				//memset(faceFeatures, 0, sizeof(float) * FACE_FEATURE_LEN );
 
 				//----------------------------------------------------------
 				//extract Gabor coefficients at fImage0
@@ -1025,7 +1171,7 @@ int	 matchFace( float * queryFeat, FACE3D_Type * gf )
 
 	// init.
 	matchedFaceID	= 0;
-	featEntryLen	= FACE_FEATURE_LEN;
+	featEntryLen	= TOTAL_FEATURE_LEN;
 	ptrFeatDistance = gf->featDistance;
 	ptrUsedDistFlag = gf->usedDistFlag;
 	ptrBestDistID	= gf->bestDistID;

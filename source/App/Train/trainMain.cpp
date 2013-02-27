@@ -415,6 +415,9 @@ int testVideoData2()
 #if USE_LBP
 			extractLBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf);
 #endif
+#if USE_GABOR
+			extractGaborFeatures( &gf );
+#endif
 
 
 #if 0
