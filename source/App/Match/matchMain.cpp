@@ -43,6 +43,7 @@
 #define MATCH_OUTPUT_TXT_FILE	"../../image/matchOut.txt"
 #define BIN_FILE				"../../image/faces.bin"
 #define IMAGE_TAG_DIR			"../../image/ImgTag/"
+#define RESULT_TXT_DIR			"../../image/matchResult.txt"
 
 #define DO_MATCH
 #define	STR_INPUT_IMAGE_DIR		"../../image/match/Query3/"
@@ -197,6 +198,13 @@ int testVideoData2()
 	double vScale=0.5;
 	int    lineWidth=2;
 	int tmpW = 800, tmpH = 600;
+	int resultCnt[MAX_FACE_ID],correctCnt[MAX_FACE_ID]; //Result rate calculation
+
+	for (int i = 0; i<MAX_FACE_ID; i++)
+	{
+		resultCnt[i] = 0;
+		correctCnt[i] = 0;
+	}
 	
 
 	cvInitFont(&font,CV_FONT_HERSHEY_SIMPLEX, hScale,vScale,0,lineWidth);
@@ -288,8 +296,9 @@ int testVideoData2()
 	/************************************************************************/
 	char to_search[500] = "./";
 	// for each face tag
-	
-	sprintf(to_search, "%s*.jpg",MATCH_IMAGE_DIR);
+	for ( int ii = 0; ii < numTaggedFaces; ii++)
+	{
+	sprintf(to_search, "%s%d/*.jpg",MATCH_IMAGE_DIR,ii+1);
 	long handle;                                                //search handle
 	struct _finddata_t fileinfo;                          // file info struct
 	handle=_findfirst(to_search,&fileinfo);         
@@ -327,7 +336,7 @@ int testVideoData2()
 		//sprintf(tmppath,"%s%s",inputdir,tmpname);
 		sprintf(tmppath,"%s",fileinfo.name);
 		puts(tmppath);
-		sprintf(tmppath,"%s%s",MATCH_IMAGE_DIR, fileinfo.name);
+		sprintf(tmppath,"%s%d/%s",MATCH_IMAGE_DIR, ii+1,fileinfo.name);
 		pFrame = cvLoadImage(tmppath,3);
 		if(pFrame == NULL)
 		{
@@ -399,7 +408,7 @@ int testVideoData2()
 			faceRotate(leftEye, rightEye, pFrame, tarImg, faceDet->faceInformation.Width, faceDet->faceInformation.Height);
 			
 			//downsampleing twice
-			grayDownsample(tarImg, &gf);
+			grayDownsample(tarImg, &gf, frameNum);
 
 
 			// feature extraction.
@@ -428,6 +437,14 @@ int testVideoData2()
 
 			matchedFaceID	= matchFace( gf.faceFeatures, &gf );
 #endif
+
+			//Count the result for rate calculation
+			resultCnt[ii] ++;
+			if ( matchedFaceID == (ii+1))
+			{
+				correctCnt[ii]++;
+			}
+
 
 			//system("pause");
 			//sprintf(tmppath,"output_align/warped_%s",tmpname);
@@ -536,8 +553,51 @@ int testVideoData2()
 
 	_findclose(handle); 
 	}
+	} //end folder selection
 	//fclose(fpinput);
 	fclose(fpoutput);
+
+	//Result calculation and output
+	float rate[MAX_FACE_ID];
+	float overallRate = 0;
+	int	  totalCnt = 0, totalCorrect = 0;
+	for ( i =0; i< numTaggedFaces; i++)
+	{
+		if (resultCnt[i] == 0)
+		{
+			rate[i] = -1;
+		}
+		else
+		{
+			rate[i] = correctCnt[i] / resultCnt[i];
+			totalCnt += resultCnt[i];
+			totalCorrect += correctCnt[i];
+		}
+	}
+	overallRate = totalCorrect / totalCnt;
+
+
+	FILE* fResult = fopen(RESULT_TXT_DIR, "w");
+	if (fResult == NULL)
+	{
+		printf("Cannot open result txt file!\n");
+	}
+	fprintf(fResult, "Overall rate: %.2f, %d correct matching in %d test images\n----------------------------------\n", overallRate * 100, totalCorrect, totalCnt);
+	for ( i =0; i< numTaggedFaces; i++)
+	{
+		if (resultCnt[i] !=0)
+		{
+			fprintf(fResult, "ID%d: %.2f, %d correct matching in %d test images\n----------------------------------\n", i+1, rate[i]*100, correctCnt[i], resultCnt[i]);
+	
+		}
+		else
+		{
+			fprintf(fResult, "ID%d: no face found\n----------------------------------\n",i+1);
+		}
+	}
+	fclose(fResult);
+	
+
 	
 #ifdef WRITE_FEATURE_DATUM_2_FILE
 	fclose(fpOutBinaryFile);

@@ -174,6 +174,7 @@ void initFaceFeature(FACE3D_Type * gf, int width, int height)
 	//reset moved here 2013.2.27
 	memset(gf->faceFeatures, 0, sizeof(float) * (TN + TN1));
 
+
 }
 
 
@@ -1300,6 +1301,7 @@ int	 matchFace( float * queryFeat, FACE3D_Type * gf )
 		}
 	}
 
+	//This fixed a bug that if the max vote == 1, the matchedID will always be the first. 2013.2.27
 	if (tmpMostVote == 1)
 	{
 		float minDistInBin = ptrFeatDistance[0];

@@ -19,3 +19,7 @@ ONLY ALGORITHM CHANGES WILL BE DISPLAYED HERE!
 
 - Add distance normalization to histogram comparison [ d = (h1-h2)^2 / (h1+h2) ] ( Performance improved!)
 - Add GBP features( global binary patterns, which is the binary comparison with global mean)
+
+2/27/2013
+
+- Add Gabor Feature extraction module

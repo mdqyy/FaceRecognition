@@ -61,6 +61,7 @@ int    NTESTSAMPLES = 1;
 
 
 
+
 #if 0
 #pragma  comment(lib, "opencv_calib3d242d.lib")
 #pragma  comment(lib, "opencv_contrib242d.lib")
@@ -191,7 +192,6 @@ int testLiveFace()
 
 int testVideoData2()
 {
-	//int count = 0;
 	CvFont font;
 	double hScale=0.5;
 	double vScale=0.5;
@@ -405,7 +405,7 @@ int testVideoData2()
 
 			//convert to gray and downsampling
 			
-			grayDownsample(tarImg, &gf);
+			grayDownsample(tarImg, &gf, frameNum);
 
 			// feature extraction.
 			gf.featureLength = 0;
@@ -547,6 +547,7 @@ int testVideoData2()
 		//system("pause");
 	
 		cvReleaseImage(&pFrame);
+
 
 		frameNum++;
 

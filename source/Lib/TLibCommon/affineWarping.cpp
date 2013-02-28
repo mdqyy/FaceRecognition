@@ -409,7 +409,7 @@ void faceRotate(CvPoint* leftEye, CvPoint* rightEye, IplImage* src, IplImage* ds
 
 
 //Convert to gray and downsampling twice
-void grayDownsample(IplImage* src, FACE3D_Type * gf)
+void grayDownsample(IplImage* src, FACE3D_Type * gf, int frameCnt)
 {
 	int *fImage0, *fImage1, *fImage2, *ptr;
 	int tWidth, tHeight, vR, vC, W, H,tWidth1, tWidth2, tHeight1, tHeight2;
@@ -453,18 +453,18 @@ void grayDownsample(IplImage* src, FACE3D_Type * gf)
 	{
 		fImage2[i] = (int) tmpImg2->imageData[i];
 	}
+#if DEBUG_OUTPUT_ALIGNED
 
-#if 0
 	//Output faces only
-	(*count)++;
 	char tmpPath[500];
-	sprintf(tmpPath, "%s%d_0.jpg", "C:/Users/Zhang/Desktop/Debug/",*count);
+	sprintf(tmpPath, "%s%d_0.jpg", "C:/Users/Zhang/Desktop/Debug/",frameCnt);
 	cvSaveImage(tmpPath, tmpImg0);
-	sprintf(tmpPath, "%s%d_1.jpg", "C:/Users/Zhang/Desktop/Debug/",*count);
+	sprintf(tmpPath, "%s%d_1.jpg", "C:/Users/Zhang/Desktop/Debug/",frameCnt);
 	cvSaveImage(tmpPath, tmpImg1);
-	sprintf(tmpPath, "%s%d_2.jpg", "C:/Users/Zhang/Desktop/Debug/",*count);
+	sprintf(tmpPath, "%s%d_2.jpg", "C:/Users/Zhang/Desktop/Debug/",frameCnt);
 	cvSaveImage(tmpPath, tmpImg2);
 #endif
+
 	cvReleaseImage(&tmpImg0);
 	cvReleaseImage(&tmpImg1);
 	cvReleaseImage(&tmpImg2);

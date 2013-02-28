@@ -23,13 +23,13 @@
 #define NUM_NEAREST_NBOR	6
 
 #define FACE_FEATURE_LEN	5120
-#define TOTAL_FEATURE_LEN   3200
+#define TOTAL_FEATURE_LEN   5120
 
 
 
-#define MAX_FACE_ID			60
+#define MAX_FACE_ID			100
 
-
+#define DEBUG_OUTPUT_ALIGNED 1
 
 
 
