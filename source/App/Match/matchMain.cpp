@@ -59,6 +59,9 @@ int    MAX_ITER = 1;
 int    NTESTSAMPLES = 1;
 
 #define BUFSIZE 20
+#if DEBUG_MODE
+#include <direct.h>
+#endif
 
 
 
@@ -205,6 +208,9 @@ int testVideoData2()
 		resultCnt[i] = 0;
 		correctCnt[i] = 0;
 	}
+#if DEBUG_MODE
+	char debugPath[500], tmpDebugPath[500];
+#endif
 	
 
 	cvInitFont(&font,CV_FONT_HERSHEY_SIMPLEX, hScale,vScale,0,lineWidth);
@@ -438,6 +444,7 @@ int testVideoData2()
 			matchedFaceID	= matchFace( gf.faceFeatures, &gf );
 #endif
 
+
 			//Count the result for rate calculation
 			resultCnt[ii] ++;
 			if ( matchedFaceID == (ii+1))
@@ -452,7 +459,7 @@ int testVideoData2()
 			//cvSaveImage(tmppath,tarImg);
 			//
 
-			cvReleaseImage(&tarImg);
+			
 
 
 			// plot graphic results.
@@ -464,8 +471,8 @@ int testVideoData2()
 			CvPoint rEyeball = cvPoint(rEyeCenterX, rEyeCenterY);
 
 			//modified: only show eyeballs position
-			cvCircle(pFrame, lEyeball,  10, cvScalar(255,0,0), -1);
-			cvCircle(pFrame, rEyeball,  10, cvScalar(255,0,0), -1);
+			cvCircle(pFrame, lEyeball,  5, cvScalar(255,0,0), -1);
+			cvCircle(pFrame, rEyeball,  5, cvScalar(255,0,0), -1);
 
 			//cvCircle(pFrame, leftEye[0],  10, cvScalar(255,0,0), -1);
 			//cvCircle(pFrame, leftEye[1],  10, cvScalar(255,0,0), -1);
@@ -490,6 +497,66 @@ int testVideoData2()
 
 //			cvReleaseImage(&normalizedface);
 //			cvReleaseImage(&grayFace);
+#if DEBUG_MODE
+			if( matchedFaceID != (ii+1))
+			{
+				IplImage * tmpDistImg = NULL;
+				IplImage *tmpTarImg =cvCreateImage( cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, warpedImgChNum );
+				//sprintf(debugPath, "C://Users//Zhang//Desktop//DEBUG_MODE//", fileinfo.name);
+				//if (_mkdir(debugPath) == 0)
+				//{
+					sprintf(tmpDebugPath, "C:/Users/Zhang/Desktop/DEBUG_MODE/00%s",fileinfo.name);
+					cvSaveImage(tmpDebugPath, tarImg ); //original face
+					for (int jj = 0; jj<NUM_NEAREST_NBOR; jj++)
+					{
+						tmpDistImg = cvLoadImage(gf.bestDistImageName[jj], 3);
+
+						faceDet->runFaceDetector(tmpDistImg);
+						IplImage * clonedImg = cvCloneImage(tmpDistImg);
+
+						detectEye->runEyeDetector(clonedImg, gray_face_CNN, faceDet, pointPos);
+
+						cvReleaseImage(&clonedImg);
+
+						UL_x = faceDet->faceInformation.LT.x;
+						UL_y = faceDet->faceInformation.LT.y;
+
+						// face width and height
+						pt1.x =  faceDet->faceInformation.LT.x;
+						pt1.y = faceDet->faceInformation.LT.y;
+						pt2.x = pt1.x + faceDet->faceInformation.Width;
+						pt2.y = pt1.y + faceDet->faceInformation.Height;
+
+						// face warping.
+
+						
+
+						lEyeCenterY = ( leftEye[0].y + leftEye[1].y )/2, lEyeCenterX = ( leftEye[0].x + leftEye[1].x )/2;
+						rEyeCenterY = ( rightEye[0].y + rightEye[1].y )/2, rEyeCenterX = ( rightEye[0].x + rightEye[1].x )/2;
+						lEyeball = cvPoint(lEyeCenterX, lEyeCenterY);
+						rEyeball = cvPoint(rEyeCenterX, rEyeCenterY);
+
+						//modified: only show eyeballs position
+						//cvCircle(tmpDistImg, lEyeball,  5, cvScalar(255,0,0), -1);
+						//cvCircle(tmpDistImg, rEyeball,  5, cvScalar(255,0,0), -1);
+						//cvRectangle(tmpDistImg, pt1, pt2, cvScalar(0,0,255),2, 8, 0);
+						faceRotate(leftEye, rightEye, tmpDistImg, tmpTarImg, faceDet->faceInformation.Width, faceDet->faceInformation.Height);
+						cvCircle(tmpTarImg, cvPoint(FIXED_LEFT_EYE_X,FIXED_LEFT_EYE_Y),  4, cvScalar(255,0,0), -1);
+						cvCircle(tmpTarImg, cvPoint(FIXED_RIGHT_EYE_X,FIXED_LEFT_EYE_Y),  4, cvScalar(255,0,0), -1);
+
+
+						sprintf(tmpDebugPath, "C:/Users/Zhang/Desktop/DEBUG_MODE/00%s_%.2f.jpg",fileinfo.name,gf.featDistance[jj]);
+						cvSaveImage(tmpDebugPath, tmpTarImg);
+						
+					}
+				//}
+				cvReleaseImage( &tmpDistImg);
+				cvReleaseImage( &tmpTarImg);
+			}
+#endif
+
+
+			cvReleaseImage(&tarImg);
 
 #ifdef DO_MATCH
 			// debug:
@@ -516,7 +583,7 @@ int testVideoData2()
 
 			cvNamedWindow("Matched Face");
 			cvShowImage("Matched Face", imgFaceIDTag[matchedFaceID-1]);
-			cvWaitKey(1000);
+			cvWaitKey(100);
 #endif
 
 		}
@@ -569,12 +636,12 @@ int testVideoData2()
 		}
 		else
 		{
-			rate[i] = correctCnt[i] / resultCnt[i];
+			rate[i] = (float) correctCnt[i] / resultCnt[i];
 			totalCnt += resultCnt[i];
 			totalCorrect += correctCnt[i];
 		}
 	}
-	overallRate = totalCorrect / totalCnt;
+	overallRate = (float)totalCorrect / totalCnt;
 
 
 	FILE* fResult = fopen(RESULT_TXT_DIR, "w");

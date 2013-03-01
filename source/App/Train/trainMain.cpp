@@ -435,6 +435,9 @@ int testVideoData2()
 			// write feature to a binary file.
 			bufferSingleFeatureID->id	= ii+1;
 			memcpy( bufferSingleFeatureID->feature, gf.faceFeatures, sizeof(float)*TOTAL_FEATURE_LEN );
+#if DEBUG_MODE
+			sprintf(bufferSingleFeatureID->imagename, "%s%d/%s",TRAIN_IMAGE_DIR, ii+1, fileinfo.name);
+#endif
 
 #if 0
 			//debug only - output histogram

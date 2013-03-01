@@ -175,6 +175,8 @@ void initFaceFeature(FACE3D_Type * gf, int width, int height)
 	memset(gf->faceFeatures, 0, sizeof(float) * (TN + TN1));
 
 
+
+
 }
 
 
@@ -1167,6 +1169,12 @@ int	 matchFace( float * queryFeat, FACE3D_Type * gf )
 	int*			ptrBestDistID;
 	int*			cntIDVote;
 	unsigned char*	ptrLoadedData;
+#if DEBUG_MODE
+	char			curImageName[200];
+	char*			bestDistIDFileName[NUM_NEAREST_NBOR+1];
+	for (int kk = 0; kk<NUM_NEAREST_NBOR+1;kk++)
+		bestDistIDFileName[kk] = gf->bestDistImageName[kk];
+#endif
 
 	unitFaceFeatClass* ptrCurFetchedData;
 
@@ -1200,6 +1208,11 @@ int	 matchFace( float * queryFeat, FACE3D_Type * gf )
 		ptrCurFetchedData	= (unitFaceFeatClass*)(ptrLoadedData + ptrOneLoadedData);
 		tarFeat				= ptrCurFetchedData->feature;
 		currTarID			= ptrCurFetchedData->id;
+#if DEBUG_MODE
+		for (int kk = 0; kk<200; kk++)
+			curImageName[kk]		= ptrCurFetchedData->imagename[kk];
+#endif
+
 
 		// distance.
 
@@ -1257,6 +1270,10 @@ int	 matchFace( float * queryFeat, FACE3D_Type * gf )
 			ptrBestDistID[idxBuf2Fill]		= currTarID;
 			ptrFeatDistance[idxBuf2Fill]	= sumDist;
 			ptrUsedDistFlag[idxBuf2Fill]	= 1;
+#if DEBUG_MODE
+			for (int kk = 0; kk<200; kk++)
+			bestDistIDFileName[idxBuf2Fill][kk] = curImageName[kk];
+#endif
 		}
 		else
 		{
@@ -1266,6 +1283,10 @@ int	 matchFace( float * queryFeat, FACE3D_Type * gf )
 				ptrFeatDistance[idxBuf2Fill]= sumDist;
 				ptrBestDistID[idxBuf2Fill]	= currTarID;
 				ptrUsedDistFlag[i]			= 1;
+#if DEBUG_MODE
+				for (int kk = 0; kk<200; kk++)
+				bestDistIDFileName[idxBuf2Fill][kk] = curImageName[kk];
+#endif
 			}
 			
 		}

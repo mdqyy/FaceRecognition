@@ -1,6 +1,6 @@
 %script: batchRename.m
 %To rename and organize training and testing images
-clear all
+
 trainRoot = 'C:\Users\Zhang\Desktop\FaceRecognition\image\train\';
 matchRoot = 'C:\Users\Zhang\Desktop\FaceRecognition\image\match\';
 
@@ -25,7 +25,7 @@ for ii = 1:curNumTags
         matchfromName = [matchRoot idxDir '\' matchList(jj).name];
         matchtoName = [matchRoot idxDir '\' matchRename];
         %movefile([matchRoot idxDir '\' matchList(jj).name], [matchRoot idxDir '\' matchRename]);
-        if (~strcmp(matchfromName, matchtoName))
+        if (~strcmp(matfromName, matchtoName))
             movefile(matchfromName, matchtoName );
         end
     end

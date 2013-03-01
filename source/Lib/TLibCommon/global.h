@@ -20,7 +20,7 @@
 #define USE_LBP				1
 #define USE_GBP				0
 #define USE_GABOR			0
-#define NUM_NEAREST_NBOR	6
+#define NUM_NEAREST_NBOR	5
 
 #define FACE_FEATURE_LEN	5120
 #define TOTAL_FEATURE_LEN   5120
@@ -30,6 +30,7 @@
 #define MAX_FACE_ID			100
 
 #define DEBUG_OUTPUT_ALIGNED 1
+#define DEBUG_MODE 1
 
 
 
@@ -72,6 +73,10 @@ typedef struct face3DTag
 	int				usedDistFlag[NUM_NEAREST_NBOR];
 	int				bestDistID[NUM_NEAREST_NBOR];
 	int				voteCntFaceID[MAX_FACE_ID];
+
+#if DEBUG_MODE
+	char		bestDistImageName[NUM_NEAREST_NBOR+1][200];
+#endif
 	
 
 }FACE3D_Type;
@@ -80,6 +85,9 @@ typedef struct unitFaceFeatClass
 {
 	int		id;
 	float	feature[TOTAL_FEATURE_LEN];
+#if DEBUG_MODE
+	char	imagename[200];
+#endif
 
 }unitFaceFeatClass;
 

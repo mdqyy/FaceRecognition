@@ -22,7 +22,7 @@
 #define NUM_BIN       256 //number of bins in histogram
 #define UNIFORM_LBP   0  //use 58 uniform LBP patterns to be statistically efficient 
 #define THRESHOLD	  0  //use threshold to reduce local noise, if set to 0 means no threshold
-#define KAI_DISTANCE  1	 //use normalized distance for histogram
+#define KAI_DISTANCE  0	 //use normalized distance for histogram
 #define WEIGHTED_MATCH  0 //weighted matching faces within each class
 
 #include "global.h"
