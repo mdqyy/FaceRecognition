@@ -5,6 +5,7 @@
 #include "faceFeature.h"
 
 #define GABOR_BIN_DIR "../../image/Gabor.bin"
+#define MAX_FLOAT        3.402823466e+38F //< maximum single float number
 
 void config(FACE3D_Type * gf)
 {
@@ -154,6 +155,13 @@ void initFaceFeature(FACE3D_Type * gf, int width, int height)
 	gf->fImage1 = (int *)malloc((W * H)/4 * sizeof(int));
 	gf->fImage2 = (int *)malloc((W * H)/16 * sizeof(int));
 
+#if FLIP_MATCH
+	gf->fImage0flip = (int *)malloc(W * H * sizeof(int));
+	gf->fImage1flip = (int *)malloc((W * H)/4 * sizeof(int));
+	gf->fImage2flip = (int *)malloc((W * H)/16 * sizeof(int));
+	
+#endif
+
 	//feature vector
 	W = gf->tWidth;
 	H = gf->tHeight;
@@ -167,6 +175,9 @@ void initFaceFeature(FACE3D_Type * gf, int width, int height)
 	TN1 += TN1 / 4;
 
 	gf->faceFeatures = (float *)malloc((TN + TN1) * sizeof(float));
+#if FLIP_MATCH
+	gf->faceFeaturesFlip = (float *)malloc((TN + TN1) * sizeof(float));
+#endif
 	gf->featurePtr = 0;
 
 	gf->LBPHist = (int *)malloc(NUM_BIN * sizeof(int));
@@ -564,7 +575,7 @@ void extractGaborFeatures(FACE3D_Type* gf)
 
 
 
-void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Type * gf)
+void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Type * gf, bool isFlip)
 {
 	int RX0, RX1, RY0, RY1, i, j, k, r, c;
 	unsigned char * ptrChar;
@@ -572,7 +583,7 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 	double rStep, cStep, sumF;
 	int *fImage0, *fImage1, *fImage2, *ptr, *LBPHist;
 	int sum, currVal, LBPVal;
-	int colorR, colorG, colorB, lum, gwStep, gr, gc, gaborWSize, nGabors;
+	int colorR, colorG, colorB, lum, gwStep, gr, gc;
 	double * ptrGF;
 	float * faceFeatures;
 	int featurePtr;
@@ -585,12 +596,21 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 	RY1 = gf->RY1;
 	tWidth = gf->tWidth;
 	tHeight = gf->tHeight;
-	fImage0 = gf->fImage0;
-	fImage1 = gf->fImage1;
-	fImage2 = gf->fImage2;
-	gaborWSize = gf->gaborWSize;
-	nGabors = gf->nGabors;
-	faceFeatures = gf->faceFeatures;
+	if (!isFlip)
+	{
+		fImage0 = gf->fImage0;
+		fImage1 = gf->fImage1;
+		fImage2 = gf->fImage2;
+		faceFeatures = gf->faceFeatures;
+	}
+	else
+	{
+		fImage0 = gf->fImage0flip;
+		fImage1 = gf->fImage1flip;
+		fImage2 = gf->fImage2flip;
+		faceFeatures = gf->faceFeaturesFlip;
+	}
+	
 	LBP_H_Step = gf->LBP_H_Step;
 	LBP_W_Step = gf->LBP_W_Step;
 	LBPHist = gf->LBPHist;
@@ -1151,8 +1171,12 @@ void loadFaceData( FACE3D_Type * gf )
 /************************************************************************/
 /* Match face feature among loaded ones.                                */
 /************************************************************************/
-int	 matchFace( float * queryFeat, FACE3D_Type * gf )
+int	 matchFace( FACE3D_Type * gf )
 {
+	float			*queryFeat = gf->faceFeatures;
+#if FLIP_MATCH
+	float			*queryFeatFlip = gf->faceFeaturesFlip;
+#endif
 	int				matchedFaceID;
 	int				featEntryLen;
 	int				i, idxBuf2Fill;
@@ -1189,11 +1213,12 @@ int	 matchFace( float * queryFeat, FACE3D_Type * gf )
 	cntIDVote		= gf->voteCntFaceID;
 	unitDataInByte	= sizeof(unitFaceFeatClass);
 
+
 	for (i=0; i<NUM_NEAREST_NBOR; i++)
 	{
 		ptrBestDistID[i]	= 0;
 		ptrUsedDistFlag[i]	= 0;
-		ptrFeatDistance[i]	= -1;
+		ptrFeatDistance[i]	= MAX_FLOAT;
 
 	}//end:	init. nearest neighbor.
 
@@ -1230,7 +1255,7 @@ int	 matchFace( float * queryFeat, FACE3D_Type * gf )
 #else
 		for (i=0; i<featEntryLen; i++)
 		{
-			tmpDist			= (tarFeat[i])-(queryFeat[i]);
+			tmpDist			= (float)(tarFeat[i])-(queryFeat[i]);
 
 			if (tmpDist >= 0)
 			{	sumDist		= sumDist + tmpDist;
@@ -1240,6 +1265,23 @@ int	 matchFace( float * queryFeat, FACE3D_Type * gf )
 			}
 		}
 #endif
+
+#if FLIP_MATCH
+		float sumDistFlip = 0;
+		for (i=0; i<featEntryLen; i++)
+		{
+			tmpDist			= (float)(tarFeat[i])-(queryFeatFlip[i]);
+
+			if (tmpDist >= 0)
+			{	sumDistFlip		+=tmpDist;
+			} 
+			else
+			{	sumDistFlip		-=tmpDist;
+			}
+		}
+		sumDist = (sumDistFlip < sumDist)? sumDistFlip:sumDist; //take smaller distance of original or flipped image
+#endif
+
 
 		// fill the top nearest neighbor.
 
@@ -1320,9 +1362,26 @@ int	 matchFace( float * queryFeat, FACE3D_Type * gf )
 			tmpMostVotedID	= i;
 			tmpMostVote		= cntIDVote[i];
 		}
+		else if ( cntIDVote[i] == tmpMostVote )  // fixed a bug when equal votes happens which is quite frequently occurs.
+		{
+			float distOld = MAX_FLOAT, distNew = MAX_FLOAT;
+			for ( int jj = 0; jj < NUM_NEAREST_NBOR; jj++)
+			{
+				if ( (tmpMostVotedID == ptrBestDistID[jj]) && ( ptrFeatDistance[jj] < distOld))
+					distOld = ptrFeatDistance[jj];
+				if ( (i == ptrBestDistID[jj]) && ( ptrFeatDistance[jj] < distNew))
+					distNew = ptrFeatDistance[jj];
+			}
+			if (distOld > distNew)
+			{
+				tmpMostVotedID = i;
+			}
+		}
+
 	}
 
 	//This fixed a bug that if the max vote == 1, the matchedID will always be the first. 2013.2.27
+#if 0
 	if (tmpMostVote == 1)
 	{
 		float minDistInBin = ptrFeatDistance[0];
@@ -1335,6 +1394,7 @@ int	 matchFace( float * queryFeat, FACE3D_Type * gf )
 			}
 		}
 	}
+#endif
 
 
 

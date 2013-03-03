@@ -34,11 +34,11 @@ void face3DAnalysis(unsigned char * imageData, int widthStep, FACE3D_Type * gf);
 
 void videoAnalysis(unsigned char * imageData, int widthStep, FACE3D_Type * gf);
 void extractFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Type * gf);
-void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Type * gf);
+void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Type * gf, bool isFlip);
 void extractGBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Type * gf);
 void extractGaborFeatures(FACE3D_Type* gf);
 
 void loadFaceData( FACE3D_Type * gf );
-int	 matchFace( float * queryFeat, FACE3D_Type * gf );
+int	 matchFace(FACE3D_Type * gf );
 
 #endif //DEFINE_H_INCLUDED

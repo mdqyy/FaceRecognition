@@ -409,7 +409,7 @@ void faceRotate(CvPoint* leftEye, CvPoint* rightEye, IplImage* src, IplImage* ds
 
 
 //Convert to gray and downsampling twice
-void grayDownsample(IplImage* src, FACE3D_Type * gf, int frameCnt)
+void grayDownsample(IplImage* src, FACE3D_Type * gf, int frameCnt, bool isMatching)
 {
 	int *fImage0, *fImage1, *fImage2, *ptr;
 	int tWidth, tHeight, vR, vC, W, H,tWidth1, tWidth2, tHeight1, tHeight2;
@@ -423,6 +423,11 @@ void grayDownsample(IplImage* src, FACE3D_Type * gf, int frameCnt)
 	tWidth2 = tWidth / 4;
 	tHeight1 = tHeight/2;
 	tHeight2 = tHeight/4;
+#if FLIP_MATCH
+	int *fImage0flip = gf->fImage0flip;
+	int *fImage1flip = gf->fImage1flip;
+	int *fImage2flip = gf->fImage2flip;
+#endif
 
 	assert( tWidth == src->width);
 	assert( tHeight == src->height);
@@ -453,6 +458,33 @@ void grayDownsample(IplImage* src, FACE3D_Type * gf, int frameCnt)
 	{
 		fImage2[i] = (int) tmpImg2->imageData[i];
 	}
+
+#if FLIP_MATCH
+	if (isMatching)
+	{
+		cvFlip(tmpImg0, NULL, 1);
+		for (i = 0; i < tWidth * tHeight; i++)
+		{
+			fImage0flip[i] = (int) tmpImg0->imageData[i];
+		}
+
+		//downsample by 2
+		cvResize(tmpImg0, tmpImg1, 1);
+
+		for (i = 0; i < tWidth1 * tHeight1; i++)
+		{
+			fImage1flip[i] = (int) tmpImg1->imageData[i];
+		}
+
+		//downsample by 4
+		cvResize(tmpImg0, tmpImg2, 1);
+		for (i = 0; i < tWidth2 * tHeight2; i++)
+		{
+			fImage2flip[i] = (int) tmpImg2->imageData[i];
+		}
+	}
+#endif
+
 #if DEBUG_OUTPUT_ALIGNED
 
 	//Output faces only

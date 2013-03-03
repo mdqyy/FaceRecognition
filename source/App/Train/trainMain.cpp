@@ -405,7 +405,7 @@ int testVideoData2()
 
 			//convert to gray and downsampling
 			
-			grayDownsample(tarImg, &gf, frameNum);
+			grayDownsample(tarImg, &gf, frameNum, FALSE);
 
 			// feature extraction.
 			gf.featureLength = 0;
@@ -413,7 +413,7 @@ int testVideoData2()
 			extractGBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf);
 #endif
 #if USE_LBP
-			extractLBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf);
+			extractLBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf, FALSE);
 #endif
 #if USE_GABOR
 			extractGaborFeatures( &gf );

@@ -74,6 +74,6 @@ void faceWarping(	IplImage * srcImg, IplImage * tarImg,
 					int tarCtlPt03row, int tarCtlPt03col,
 					int tarCtlPt04row, int tarCtlPt04col	);
 void faceRotate(CvPoint* leftEye, CvPoint* rightEye, IplImage* src, IplImage* dst, int faceW, int faceH);
-void grayDownsample(IplImage* src, FACE3D_Type * gf, int frameCnt);
+void grayDownsample(IplImage* src, FACE3D_Type * gf, int frameCnt, bool isMatching);
 
 #endif

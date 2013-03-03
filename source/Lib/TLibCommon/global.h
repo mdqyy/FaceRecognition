@@ -29,8 +29,9 @@
 
 #define MAX_FACE_ID			100
 
-#define DEBUG_OUTPUT_ALIGNED 1
-#define DEBUG_MODE 1
+#define DEBUG_OUTPUT_ALIGNED 0
+#define DEBUG_MODE			1
+#define FLIP_MATCH			1
 
 
 
@@ -61,6 +62,12 @@ typedef struct face3DTag
 	int * fImage0;					//original face ROI		256*192	
 	int * fImage1;					//down-sampled by 2;	128*96
 	int * fImage2;					//down-sampled by 4		64*48
+#if FLIP_MATCH
+	int *fImage0flip;
+	int *fImage1flip;
+	int *fImage2flip;
+	float *faceFeaturesFlip;
+#endif
 
 	float * faceFeatures;
 	int featurePtr;
