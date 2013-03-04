@@ -1,4 +1,4 @@
-Overall rate: 66.82, 145 correct matching in 217 test images
+Overall rate: 100.00, 66 correct matching in 66 test images
 ----------------------------------
 ID1: 100.00, 4 correct matching in 4 test images
 ----------------------------------
@@ -6,7 +6,7 @@ ID2: 100.00, 3 correct matching in 3 test images
 ----------------------------------
 ID3: 100.00, 3 correct matching in 3 test images
 ----------------------------------
-ID4: 100.00, 2 correct matching in 2 test images
+ID4: 100.00, 3 correct matching in 3 test images
 ----------------------------------
 ID5: 100.00, 2 correct matching in 2 test images
 ----------------------------------
@@ -34,89 +34,89 @@ ID16: 100.00, 5 correct matching in 5 test images
 ----------------------------------
 ID17: 100.00, 5 correct matching in 5 test images
 ----------------------------------
-ID18: 100.00, 4 correct matching in 4 test images
+ID18: no face found
 ----------------------------------
-ID19: 62.50, 5 correct matching in 8 test images
+ID19: no face found
 ----------------------------------
-ID20: 75.00, 3 correct matching in 4 test images
+ID20: no face found
 ----------------------------------
-ID21: 83.33, 5 correct matching in 6 test images
+ID21: no face found
 ----------------------------------
-ID22: 100.00, 4 correct matching in 4 test images
+ID22: no face found
 ----------------------------------
-ID23: 80.00, 4 correct matching in 5 test images
+ID23: no face found
 ----------------------------------
-ID24: 25.00, 1 correct matching in 4 test images
+ID24: no face found
 ----------------------------------
-ID25: 0.00, 0 correct matching in 5 test images
+ID25: no face found
 ----------------------------------
-ID26: 50.00, 2 correct matching in 4 test images
+ID26: no face found
 ----------------------------------
-ID27: 75.00, 3 correct matching in 4 test images
+ID27: no face found
 ----------------------------------
-ID28: 100.00, 3 correct matching in 3 test images
+ID28: no face found
 ----------------------------------
-ID29: 50.00, 2 correct matching in 4 test images
+ID29: no face found
 ----------------------------------
-ID30: 66.67, 2 correct matching in 3 test images
+ID30: no face found
 ----------------------------------
-ID31: 0.00, 0 correct matching in 2 test images
+ID31: no face found
 ----------------------------------
-ID32: 75.00, 3 correct matching in 4 test images
+ID32: no face found
 ----------------------------------
-ID33: 0.00, 0 correct matching in 2 test images
+ID33: no face found
 ----------------------------------
-ID34: 25.00, 1 correct matching in 4 test images
+ID34: no face found
 ----------------------------------
-ID35: 75.00, 3 correct matching in 4 test images
+ID35: no face found
 ----------------------------------
-ID36: 25.00, 1 correct matching in 4 test images
+ID36: no face found
 ----------------------------------
-ID37: 25.00, 1 correct matching in 4 test images
+ID37: no face found
 ----------------------------------
-ID38: 100.00, 4 correct matching in 4 test images
+ID38: no face found
 ----------------------------------
-ID39: 0.00, 0 correct matching in 3 test images
+ID39: no face found
 ----------------------------------
-ID40: 100.00, 2 correct matching in 2 test images
+ID40: no face found
 ----------------------------------
-ID41: 0.00, 0 correct matching in 2 test images
+ID41: no face found
 ----------------------------------
-ID42: 25.00, 1 correct matching in 4 test images
+ID42: no face found
 ----------------------------------
-ID43: 50.00, 2 correct matching in 4 test images
+ID43: no face found
 ----------------------------------
-ID44: 100.00, 3 correct matching in 3 test images
+ID44: no face found
 ----------------------------------
-ID45: 100.00, 1 correct matching in 1 test images
+ID45: no face found
 ----------------------------------
-ID46: 33.33, 1 correct matching in 3 test images
+ID46: no face found
 ----------------------------------
-ID47: 16.67, 1 correct matching in 6 test images
+ID47: no face found
 ----------------------------------
-ID48: 100.00, 3 correct matching in 3 test images
+ID48: no face found
 ----------------------------------
-ID49: 50.00, 2 correct matching in 4 test images
+ID49: no face found
 ----------------------------------
-ID50: 0.00, 0 correct matching in 3 test images
+ID50: no face found
 ----------------------------------
-ID51: 50.00, 1 correct matching in 2 test images
+ID51: no face found
 ----------------------------------
-ID52: 0.00, 0 correct matching in 2 test images
+ID52: no face found
 ----------------------------------
-ID53: 66.67, 2 correct matching in 3 test images
+ID53: no face found
 ----------------------------------
-ID54: 33.33, 1 correct matching in 3 test images
+ID54: no face found
 ----------------------------------
-ID55: 33.33, 1 correct matching in 3 test images
+ID55: no face found
 ----------------------------------
-ID56: 66.67, 2 correct matching in 3 test images
+ID56: no face found
 ----------------------------------
-ID57: 0.00, 0 correct matching in 2 test images
+ID57: no face found
 ----------------------------------
-ID58: 100.00, 3 correct matching in 3 test images
+ID58: no face found
 ----------------------------------
-ID59: 66.67, 2 correct matching in 3 test images
+ID59: no face found
 ----------------------------------
-ID60: 25.00, 1 correct matching in 4 test images
+ID60: no face found
 ----------------------------------

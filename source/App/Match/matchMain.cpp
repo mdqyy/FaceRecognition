@@ -669,7 +669,6 @@ int testVideoData2()
 		}
 	}
 	fclose(fResult);
-	free(faceDet);
 	
 
 	
@@ -821,7 +820,7 @@ void testCamera2()
 
           // capture from video device #1
 
-          CvCapture* capture = cvCaptureFromCAM(-1);
+          CvCapture* capture = cvCaptureFromCAM(1);
 
           // create a window to display the images
 
@@ -873,8 +872,8 @@ int main(int argc, char** argv)
 	// data access.
 	//-------------------
 
-	testVideoData2();	// find the face coordinates and eye, mouse position
-	//testCamera2();
+	//testVideoData2();	// find the face coordinates and eye, mouse position
+	testCamera();
 	//videoAnalysis();	// extract feature given the face coordinates
 
 	//-------------------
@@ -915,17 +914,16 @@ void showResults(IplImage * frame, FACE3D_Type * gf)
 
 //-------------------------------------------------------------------
 
+
+
 void testCamera()
 {
       // allocate memory for an image
       // capture from video device #1
-      CvCapture* capture = cvCaptureFromCAM(-1);
-      // create a window to display the images
-      cvNamedWindow("mainWin", CV_WINDOW_AUTOSIZE);
+      CvCapture* capture = cvCaptureFromCAM(1);
       // position the window
       //cvMoveWindow("mainWin", 5, 5);
-      while(1)
-      {
+      
 
                 // retrieve the captured frame
 
@@ -985,7 +983,11 @@ void testCamera()
 	
 	}
 
-	
+			IplImage* pFrame= cvCreateImage( cvSize(640,480),8,3); 
+		IplImage* orgFace = NULL;
+
+		//Count image numbers
+		static int frameNum = 0;
 
 	// Face feature archive.
 	bufferSingleFeatureID	= (unitFaceFeatClass *)malloc( sizeof(unitFaceFeatClass) );
@@ -994,19 +996,19 @@ void testCamera()
 	/* look over face image samples.                                        */
 	/************************************************************************/
 		//fscanf(fpinput, "%s	%d", tmpname, &tmpFaceID);
-
+	while(1)
+      {
 		// Store captured frame
-		IplImage* pFrame = NULL; 
-		IplImage* orgFace = NULL;
 
-		//Count image numbers
-		static int frameNum = 0;
+
 
 		//Image ID
 		//fscanf(fpinput, "%d", &tmpFaceID);
 
 #if 1
 		pFrame = cvQueryFrame( capture );
+		cvNamedWindow("Input Image");
+		cvShowImage("Input Image", pFrame);
 #else
 		char tmppath[500];
 		//sprintf(tmppath,"%s%s",inputdir,tmpname);
@@ -1108,7 +1110,7 @@ void testCamera()
 
 			cvNamedWindow("Matched Face");
 			cvShowImage("Matched Face", imgFaceIDTag[matchedFaceID-1]);
-			cvWaitKey(100);
+			cvWaitKey(1000);
 #endif
 
 		}
@@ -1138,18 +1140,16 @@ void testCamera()
 		
 
                 // show the image in the window
-
-                cvShowImage("mainWin", pFrame );
-				cvReleaseImage(&pFrame);
+				//cvReleaseImage(&pFrame);
 
 				frameNum++;
 
 				if (cvWaitKey(10) == 'q')
 					exit;
 
-			free(faceDet);
+			//free(faceDet);
 
-      }
+	  }
 
 
 }
