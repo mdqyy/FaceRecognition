@@ -872,8 +872,8 @@ int main(int argc, char** argv)
 	// data access.
 	//-------------------
 
-	//testVideoData2();	// find the face coordinates and eye, mouse position
-	testCamera();
+	testVideoData2();	// find the face coordinates and eye, mouse position
+	//testCamera();
 	//videoAnalysis();	// extract feature given the face coordinates
 
 	//-------------------
@@ -983,7 +983,7 @@ void testCamera()
 	
 	}
 
-			IplImage* pFrame= cvCreateImage( cvSize(640,480),8,3); 
+		IplImage* pFrame= NULL; 
 		IplImage* orgFace = NULL;
 
 		//Count image numbers
@@ -1061,10 +1061,17 @@ void testCamera()
 			extractGBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf);
 #endif
 #if USE_LBP
-			extractLBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf, FLIP_MATCH);
+			extractLBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf, FALSE);
 #endif
 #if USE_GABOR
 			extractGaborFeatures( &gf);
+#endif
+
+#if FLIP_MATCH
+			gf.featureLength = 0;
+#if USE_LBP
+			extractLBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf, TRUE);
+#endif
 #endif
 
 
@@ -1110,7 +1117,7 @@ void testCamera()
 
 			cvNamedWindow("Matched Face");
 			cvShowImage("Matched Face", imgFaceIDTag[matchedFaceID-1]);
-			cvWaitKey(1000);
+			cvWaitKey(100);
 #endif
 
 		}
@@ -1147,7 +1154,6 @@ void testCamera()
 				if (cvWaitKey(10) == 'q')
 					exit;
 
-			//free(faceDet);
 
 	  }
 

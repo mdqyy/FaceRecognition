@@ -1,22 +1,22 @@
-Overall rate: 100.00, 66 correct matching in 66 test images
+Overall rate: 100.00, 52 correct matching in 52 test images
 ----------------------------------
-ID1: 100.00, 4 correct matching in 4 test images
+ID1: no face found
 ----------------------------------
-ID2: 100.00, 3 correct matching in 3 test images
+ID2: no face found
 ----------------------------------
-ID3: 100.00, 3 correct matching in 3 test images
+ID3: 100.00, 2 correct matching in 2 test images
 ----------------------------------
-ID4: 100.00, 3 correct matching in 3 test images
+ID4: 100.00, 2 correct matching in 2 test images
 ----------------------------------
-ID5: 100.00, 2 correct matching in 2 test images
+ID5: no face found
 ----------------------------------
 ID6: 100.00, 4 correct matching in 4 test images
 ----------------------------------
 ID7: 100.00, 4 correct matching in 4 test images
 ----------------------------------
-ID8: 100.00, 6 correct matching in 6 test images
+ID8: no face found
 ----------------------------------
-ID9: 100.00, 3 correct matching in 3 test images
+ID9: 100.00, 2 correct matching in 2 test images
 ----------------------------------
 ID10: 100.00, 3 correct matching in 3 test images
 ----------------------------------
@@ -26,7 +26,7 @@ ID12: 100.00, 5 correct matching in 5 test images
 ----------------------------------
 ID13: 100.00, 5 correct matching in 5 test images
 ----------------------------------
-ID14: 100.00, 3 correct matching in 3 test images
+ID14: 100.00, 4 correct matching in 4 test images
 ----------------------------------
 ID15: 100.00, 5 correct matching in 5 test images
 ----------------------------------
@@ -34,7 +34,7 @@ ID16: 100.00, 5 correct matching in 5 test images
 ----------------------------------
 ID17: 100.00, 5 correct matching in 5 test images
 ----------------------------------
-ID18: no face found
+ID18: 100.00, 3 correct matching in 3 test images
 ----------------------------------
 ID19: no face found
 ----------------------------------

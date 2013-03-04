@@ -29,8 +29,8 @@
 
 #define MAX_FACE_ID			100
 
-#define DEBUG_OUTPUT_ALIGNED 0
-#define DEBUG_MODE			1
+#define DEBUG_OUTPUT_ALIGNED 1
+#define DEBUG_MODE			0
 #define FLIP_MATCH			1
 
 
