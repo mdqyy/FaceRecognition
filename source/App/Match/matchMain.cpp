@@ -921,6 +921,9 @@ void testCamera()
       // allocate memory for an image
       // capture from video device #1
       CvCapture* capture = cvCaptureFromCAM(1);
+	  
+		cvNamedWindow("Input Image");
+		cvNamedWindow("Aligned Image");
       // position the window
       //cvMoveWindow("mainWin", 5, 5);
       
@@ -1007,7 +1010,6 @@ void testCamera()
 
 #if 1
 		pFrame = cvQueryFrame( capture );
-		cvNamedWindow("Input Image");
 		cvShowImage("Input Image", pFrame);
 #else
 		char tmppath[500];
@@ -1050,6 +1052,8 @@ void testCamera()
 
 			//2013.2.11 face rotation
 			faceRotate(leftEye, rightEye, pFrame, tarImg, faceDet->faceInformation.Width, faceDet->faceInformation.Height);
+
+			cvShowImage("Aligned Image", tarImg);
 			
 			//downsampleing twice
 			grayDownsample(tarImg, &gf, frameNum, TRUE);

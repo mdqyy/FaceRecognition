@@ -29,10 +29,11 @@
 
 #define MAX_FACE_ID			100
 
-#define DEBUG_OUTPUT_ALIGNED 1
+#define DEBUG_OUTPUT_ALIGNED 0
 #define DEBUG_MODE			0
-#define FLIP_MATCH			1
+#define FLIP_MATCH			0
 
+#define ROTATE_INVARIANT_LBP 1
 
 
 typedef struct face3DTag
@@ -84,6 +85,10 @@ typedef struct face3DTag
 #if DEBUG_MODE
 	char		bestDistImageName[NUM_NEAREST_NBOR+1][200];
 #endif
+
+#if ROTATE_INVARIANT_LBP
+	int		lookupTable[256];
+#endif
 	
 
 }FACE3D_Type;
@@ -95,6 +100,8 @@ typedef struct unitFaceFeatClass
 #if DEBUG_MODE
 	char	imagename[200];
 #endif
+
+
 
 }unitFaceFeatClass;
 

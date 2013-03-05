@@ -27,3 +27,8 @@ ONLY ALGORITHM CHANGES WILL BE DISPLAYED HERE!
 3/3/2013
 
 - Add Flip matching mode
+- Add camera test module
+
+3/5/2013
+
+- Add rotation invariant feature extraction

@@ -9,7 +9,7 @@
 
 void config(FACE3D_Type * gf)
 {
-	gf->gwStep = 10;
+	gf->gwStep = 5;
 	//gf->tWidth = 256;
 	//gf->tHeight = 192;
 	//gf->LBP_H_Step = 24;
@@ -184,6 +184,24 @@ void initFaceFeature(FACE3D_Type * gf, int width, int height)
 
 	//reset moved here 2013.2.27
 	memset(gf->faceFeatures, 0, sizeof(float) * (TN + TN1));
+
+#if ROTATE_INVARIANT_LBP
+	//build look up table for rotation invariant LBP.
+	int x, count;
+	for (int i=0; i<256; i++)
+	{
+		//count num of 0s on the right side of the rightest 1.
+		x = i;
+		for (count = 0; (!( x & 1)); count++)
+		{
+			x  =  x >> 1;
+			if (count == 7) break;
+		}
+		// count is number to be right shifted
+		gf->lookupTable[i] = i >> count;
+	}
+#endif
+			
 
 
 
@@ -603,6 +621,7 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 		fImage2 = gf->fImage2;
 		faceFeatures = gf->faceFeatures;
 	}
+#if FLIP_MATCH
 	else
 	{
 		fImage0 = gf->fImage0flip;
@@ -610,6 +629,7 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 		fImage2 = gf->fImage2flip;
 		faceFeatures = gf->faceFeaturesFlip;
 	}
+#endif
 	
 	LBP_H_Step = gf->LBP_H_Step;
 	LBP_W_Step = gf->LBP_W_Step;
@@ -814,6 +834,9 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 										if(currVal < (*(ptr + tWidth1 - 1)-THRESHOLD)) LBPVal = LBPVal + 128;	//LBPFlag[7] = 1;
 #if UNIFORM_LBP
 										LBPHist[lookupTab[LBPVal]] ++;
+#elif ROTATE_INVARIANT_LBP
+
+										LBPHist[gf->lookupTable[LBPVal]] ++;
 #else
 										LBPHist[LBPVal] = LBPHist[LBPVal] + 1;
 #endif
@@ -861,10 +884,14 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 											if(currVal < (*(ptr - tWidth1 - 1)-THRESHOLD)) LBPVal = LBPVal + 32;	//LBPFlag[5] = 1;
 											if(currVal < (*(ptr + tWidth1 + 1)-THRESHOLD)) LBPVal = LBPVal + 64;	//LBPFlag[6] = 1;
 											if(currVal < (*(ptr + tWidth1 - 1)-THRESHOLD)) LBPVal = LBPVal + 128;	//LBPFlag[7] = 1;
+
 #if UNIFORM_LBP
 										LBPHist[lookupTab[LBPVal]] ++;
+#elif ROTATE_INVARIANT_LBP
+
+										LBPHist[gf->lookupTable[LBPVal]] ++;
 #else
-											LBPHist[LBPVal] = LBPHist[LBPVal] + 1;
+										LBPHist[LBPVal] = LBPHist[LBPVal] + 1;
 #endif
 										}
 									}
