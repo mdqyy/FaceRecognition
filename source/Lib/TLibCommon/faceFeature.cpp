@@ -18,8 +18,10 @@ void config(FACE3D_Type * gf)
 	// York
 	gf->tWidth			= 80;
 	gf->tHeight			= 80;
-	gf->LBP_H_Step		= 10;    
-	gf->LBP_W_Step		= 10;
+	gf->LBP_H_Step		= LBP_STEP;    
+	gf->LBP_W_Step		= LBP_STEP;
+	gf->LBP_H_Window    = LBP_WINDOW;
+	gf->LBP_W_Window	= LBP_WINDOW;
 
 	gf->RX0				= 0;
 	gf->RY0				= 0;
@@ -107,7 +109,7 @@ void initFaceFeature(FACE3D_Type * gf, int width, int height)
 	double * ptr;
 	int k, m;
 	int FRAME_WIDTH, FRAME_HEIGHT, W, H;
-	int TN, TN1;
+	int TN = 0, TN1 = 0;
 
 	FRAME_HEIGHT = gf->FRAME_HEIGHT = height;
 	FRAME_WIDTH = gf->FRAME_WIDTH = width;
@@ -165,15 +167,20 @@ void initFaceFeature(FACE3D_Type * gf, int width, int height)
 	//feature vector
 	W = gf->tWidth;
 	H = gf->tHeight;
+#if USE_GABOR
 	TN = (W * H) / (gf->gwStep * gf->gwStep);
 	TN += TN / 4;
 	TN *= nGabors;
+#endif
 
+#if USE_LBP
 	W = gf->tWidth / 2;
 	H = gf->tHeight / 2;
-	TN1 = (W * H) / (gf->LBP_H_Step * gf->LBP_W_Step) * NUM_BIN;
-	TN1 += TN1 / 4;
-
+	TN1 = ( (W - gf->LBP_W_Window) / gf->LBP_W_Step + 1) * ((H - gf->LBP_H_Window) / gf->LBP_H_Step + 1)  * NUM_BIN;
+	W = W/2;
+	H = H/2;
+	TN1 += ( (W - gf->LBP_W_Window/2) / gf->LBP_W_Step + 1) * ((H - gf->LBP_H_Window/2) / gf->LBP_H_Step + 1)  * NUM_BIN;
+#endif
 	gf->faceFeatures = (float *)malloc((TN + TN1) * sizeof(float));
 #if FLIP_MATCH
 	gf->faceFeaturesFlip = (float *)malloc((TN + TN1) * sizeof(float));
@@ -187,18 +194,59 @@ void initFaceFeature(FACE3D_Type * gf, int width, int height)
 
 #if ROTATE_INVARIANT_LBP
 	//build look up table for rotation invariant LBP.
-	int x, count;
-	for (int i=0; i<256; i++)
+	unsigned int x, count, tmpCount, pos, numLeftShift, tmp;
+	bool bitVal;
+	gf->lookupTable[0] = 0;
+	gf->lookupTable[255] = 255;
+	for (unsigned int i=1; i<255; i++)
 	{
-		//count num of 0s on the right side of the rightest 1.
+		//count num of most continuous 0s and it's heading position
 		x = i;
-		for (count = 0; (!( x & 1)); count++)
+		int j;
+		// make the 1st bit 1
+		for ( j = 0; j < 8; j++)
 		{
-			x  =  x >> 1;
-			if (count == 7) break;
+			if ( x & 1)
+				break;
+			x = x >> 1;
 		}
+		count = 0;
+		tmpCount = 0;
+		pos = 0;
+		for (j = 0; j < 8; j++)
+		{
+			bitVal = ( x >> j) & 1;
+			if (!bitVal)
+			{
+				tmpCount++;
+				if (tmpCount > count)
+				{
+					count = tmpCount;
+					pos = j;
+				}
+			}
+			else
+			{
+				tmpCount = 0;
+			}
+		}
+		numLeftShift = 7 - pos;
+		while (numLeftShift > 0)
+		{
+			//do left shift
+			x <<= 1;
+			tmp = x & 0x100; //take the left shifted bit;
+			x = x & 0xFF; //keep 8 bit;
+			if ( tmp != 0)
+			{
+				x +=1; // put the left shifted bit back to the 1st bit;
+			}
+			numLeftShift--;
+		}
+			
+
 		// count is number to be right shifted
-		gf->lookupTable[i] = i >> count;
+		gf->lookupTable[i] = x;
 	}
 #endif
 			
@@ -605,7 +653,7 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 	double * ptrGF;
 	float * faceFeatures;
 	int featurePtr;
-	int LBP_H_Step, LBP_W_Step;
+	int LBP_H_Step, LBP_W_Step, LBP_H_Window, LBP_W_Window;
 	int LBPFlag[8];
 
 	RX0 = gf->RX0;
@@ -633,6 +681,8 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 	
 	LBP_H_Step = gf->LBP_H_Step;
 	LBP_W_Step = gf->LBP_W_Step;
+	LBP_H_Window = gf->LBP_H_Window;
+	LBP_W_Window = gf->LBP_W_Window;
 	LBPHist = gf->LBPHist;
 
 	//uniform LBP look up table
@@ -806,16 +856,16 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 
 						W = tWidth / 2;
 						H = tHeight / 2;
-						for(gr=0; gr<=(H-LBP_H_Step); gr+=LBP_H_Step)
+						for(gr=0; gr<=(H-LBP_H_Window); gr+=LBP_H_Step)
 						{
-							for(gc=0; gc<=(W-LBP_W_Step); gc+=LBP_W_Step)
+							for(gc=0; gc<=(W-LBP_W_Window); gc+=LBP_W_Step)
 							{
 								//reset
 								for(i=0; i<256; i++) LBPHist[i] = 0; 
 
-								for(i=1; i<(LBP_H_Step-1); i++) 
+								for(i=1; i<(LBP_H_Window-1); i++) 
 								{
-									for(j=1; j<(LBP_W_Step-1); j++)
+									for(j=1; j<(LBP_W_Window-1); j++)
 									{
 										LBPVal = 0;
 
@@ -860,15 +910,17 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 
 							W = tWidth / 4;
 							H = tHeight / 4;
-							for(gr=0; gr<=(H-LBP_H_Step); gr+=LBP_H_Step)
-								for(gc=0; gc<=(W-LBP_W_Step); gc+=LBP_W_Step)
+							LBP_H_Window /= 2;
+							LBP_W_Window /= 2;
+							for(gr=0; gr<=(H-LBP_H_Window); gr+=LBP_H_Step)
+								for(gc=0; gc<=(W-LBP_W_Window); gc+=LBP_W_Step)
 								{
 									//reset
 									for(i=0; i<256; i++) LBPHist[i] = 0; 
 
-									for(i=1; i<(LBP_H_Step-1); i++)
+									for(i=1; i<(LBP_H_Window-1); i++)
 									{
-										for(j=1; j<(LBP_W_Step-1); j++)
+										for(j=1; j<(LBP_W_Window-1); j++)
 										{
 											LBPVal = 0;
 

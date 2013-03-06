@@ -438,6 +438,9 @@ void grayDownsample(IplImage* src, FACE3D_Type * gf, int frameCnt, bool isMatchi
 
 	//convert to gray
 	cvCvtColor(src,tmpImg0,CV_RGB2GRAY);
+#if HISTOGRAM_EQUALIZATION
+	cvEqualizeHist(tmpImg0, tmpImg0);
+#endif
 
 	for (i = 0; i < tWidth * tHeight; i++)
 	{

@@ -1,4 +1,4 @@
-Overall rate: 65.44, 142 correct matching in 217 test images
+Overall rate: 54.84, 119 correct matching in 217 test images
 ----------------------------------
 ID1: 100.00, 4 correct matching in 4 test images
 ----------------------------------
@@ -38,29 +38,29 @@ ID18: 100.00, 4 correct matching in 4 test images
 ----------------------------------
 ID19: 25.00, 2 correct matching in 8 test images
 ----------------------------------
-ID20: 75.00, 3 correct matching in 4 test images
+ID20: 0.00, 0 correct matching in 4 test images
 ----------------------------------
-ID21: 100.00, 6 correct matching in 6 test images
+ID21: 83.33, 5 correct matching in 6 test images
 ----------------------------------
-ID22: 75.00, 3 correct matching in 4 test images
+ID22: 25.00, 1 correct matching in 4 test images
 ----------------------------------
-ID23: 60.00, 3 correct matching in 5 test images
+ID23: 20.00, 1 correct matching in 5 test images
 ----------------------------------
-ID24: 25.00, 1 correct matching in 4 test images
+ID24: 0.00, 0 correct matching in 4 test images
 ----------------------------------
-ID25: 60.00, 3 correct matching in 5 test images
+ID25: 40.00, 2 correct matching in 5 test images
 ----------------------------------
-ID26: 25.00, 1 correct matching in 4 test images
+ID26: 0.00, 0 correct matching in 4 test images
 ----------------------------------
-ID27: 75.00, 3 correct matching in 4 test images
+ID27: 50.00, 2 correct matching in 4 test images
 ----------------------------------
-ID28: 33.33, 1 correct matching in 3 test images
+ID28: 66.67, 2 correct matching in 3 test images
 ----------------------------------
 ID29: 25.00, 1 correct matching in 4 test images
 ----------------------------------
 ID30: 33.33, 1 correct matching in 3 test images
 ----------------------------------
-ID31: 50.00, 1 correct matching in 2 test images
+ID31: 0.00, 0 correct matching in 2 test images
 ----------------------------------
 ID32: 100.00, 4 correct matching in 4 test images
 ----------------------------------
@@ -68,33 +68,33 @@ ID33: 0.00, 0 correct matching in 2 test images
 ----------------------------------
 ID34: 0.00, 0 correct matching in 4 test images
 ----------------------------------
-ID35: 25.00, 1 correct matching in 4 test images
+ID35: 50.00, 2 correct matching in 4 test images
 ----------------------------------
-ID36: 25.00, 1 correct matching in 4 test images
+ID36: 0.00, 0 correct matching in 4 test images
 ----------------------------------
-ID37: 25.00, 1 correct matching in 4 test images
+ID37: 75.00, 3 correct matching in 4 test images
 ----------------------------------
-ID38: 100.00, 4 correct matching in 4 test images
+ID38: 75.00, 3 correct matching in 4 test images
 ----------------------------------
-ID39: 0.00, 0 correct matching in 3 test images
+ID39: 33.33, 1 correct matching in 3 test images
 ----------------------------------
-ID40: 100.00, 2 correct matching in 2 test images
+ID40: 50.00, 1 correct matching in 2 test images
 ----------------------------------
-ID41: 50.00, 1 correct matching in 2 test images
+ID41: 0.00, 0 correct matching in 2 test images
 ----------------------------------
-ID42: 50.00, 2 correct matching in 4 test images
+ID42: 25.00, 1 correct matching in 4 test images
 ----------------------------------
-ID43: 50.00, 2 correct matching in 4 test images
+ID43: 75.00, 3 correct matching in 4 test images
 ----------------------------------
-ID44: 100.00, 3 correct matching in 3 test images
+ID44: 66.67, 2 correct matching in 3 test images
 ----------------------------------
 ID45: 100.00, 1 correct matching in 1 test images
 ----------------------------------
-ID46: 66.67, 2 correct matching in 3 test images
+ID46: 0.00, 0 correct matching in 3 test images
 ----------------------------------
-ID47: 33.33, 2 correct matching in 6 test images
+ID47: 0.00, 0 correct matching in 6 test images
 ----------------------------------
-ID48: 66.67, 2 correct matching in 3 test images
+ID48: 33.33, 1 correct matching in 3 test images
 ----------------------------------
 ID49: 50.00, 2 correct matching in 4 test images
 ----------------------------------
@@ -106,17 +106,17 @@ ID52: 0.00, 0 correct matching in 2 test images
 ----------------------------------
 ID53: 33.33, 1 correct matching in 3 test images
 ----------------------------------
-ID54: 100.00, 3 correct matching in 3 test images
+ID54: 0.00, 0 correct matching in 3 test images
 ----------------------------------
-ID55: 66.67, 2 correct matching in 3 test images
+ID55: 100.00, 3 correct matching in 3 test images
 ----------------------------------
 ID56: 0.00, 0 correct matching in 3 test images
 ----------------------------------
-ID57: 50.00, 1 correct matching in 2 test images
+ID57: 0.00, 0 correct matching in 2 test images
 ----------------------------------
-ID58: 100.00, 3 correct matching in 3 test images
+ID58: 66.67, 2 correct matching in 3 test images
 ----------------------------------
-ID59: 66.67, 2 correct matching in 3 test images
+ID59: 33.33, 1 correct matching in 3 test images
 ----------------------------------
 ID60: 25.00, 1 correct matching in 4 test images
 ----------------------------------

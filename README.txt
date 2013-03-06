@@ -32,3 +32,8 @@ ONLY ALGORITHM CHANGES WILL BE DISPLAYED HERE!
 3/5/2013
 
 - Add rotation invariant feature extraction
+- Add LBP window size controll
+
+3/6/2013
+
+- Add Historgram Equalization

@@ -1,0 +1,21 @@
+%script file: LBPhist.m
+clear all
+clc
+
+NUM = 20;
+NUM_BIN = 5120;
+id = zeros(NUM,1);
+hist = zeros(NUM,NUM_BIN);
+
+fid = fopen('../image/faces.bin', 'rb');
+
+for ii = 1:NUM
+    id(ii) = fread(fid, 1, 'int32');
+    for jj = 1: NUM_BIN
+        hist(ii, jj) = fread(fid, 1, 'float32=>uint8');
+    end
+end
+    
+
+
+fclose(fid);
