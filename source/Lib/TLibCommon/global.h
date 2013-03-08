@@ -34,9 +34,9 @@
 
 #define DEBUG_OUTPUT_ALIGNED 0
 #define DEBUG_MODE			0
-#define FLIP_MATCH			1
+#define FLIP_MATCH			0
 #define HISTOGRAM_EQUALIZATION 1
-#define ROTATE_INVARIANT_LBP 1
+#define ROTATE_INVARIANT_LBP 0
 
 
 typedef struct face3DTag
