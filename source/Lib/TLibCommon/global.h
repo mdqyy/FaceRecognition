@@ -27,10 +27,11 @@
 
 #define LBP_STEP	10
 #define LBP_WINDOW	10
-
+#define MAX_NUM_GABOR	40
 
 
 #define MAX_FACE_ID			100
+#define MAX_INPUT_IMAGES	1500   // Max input training or matchin images
 
 #define DEBUG_OUTPUT_ALIGNED 0
 #define DEBUG_MODE			0
@@ -38,9 +39,16 @@
 #define HISTOGRAM_EQUALIZATION 1
 #define ROTATE_INVARIANT_LBP 0
 
+typedef struct imageList
+{
+	char fileName[MAX_INPUT_IMAGES][260];
+	int	 fileID[MAX_INPUT_IMAGES];
+	int  listLength;
+}imageListClass;
 
 typedef struct face3DTag
 {
+	imageListClass		fileList;
 	int FRAME_WIDTH;
 	int FRAME_HEIGHT;
 

@@ -414,6 +414,7 @@ void grayDownsample(IplImage* src, FACE3D_Type * gf, int frameCnt, bool isMatchi
 	int *fImage0, *fImage1, *fImage2, *ptr;
 	int tWidth, tHeight, vR, vC, W, H,tWidth1, tWidth2, tHeight1, tHeight2;
 	int i;
+	unsigned char tmp;
 	fImage0 = gf->fImage0;
 	fImage1 = gf->fImage1;
 	fImage2 = gf->fImage2;
@@ -444,7 +445,9 @@ void grayDownsample(IplImage* src, FACE3D_Type * gf, int frameCnt, bool isMatchi
 
 	for (i = 0; i < tWidth * tHeight; i++)
 	{
-		fImage0[i] = (int) tmpImg0->imageData[i];
+		
+		memcpy(&tmp, &(tmpImg0->imageData[i]), sizeof(char));
+		fImage0[i] = tmp;
 	}
 
 	//downsample by 2
@@ -452,14 +455,16 @@ void grayDownsample(IplImage* src, FACE3D_Type * gf, int frameCnt, bool isMatchi
 
 	for (i = 0; i < tWidth1 * tHeight1; i++)
 	{
-		fImage1[i] = (int) tmpImg1->imageData[i];
+		memcpy(&tmp, &(tmpImg1->imageData[i]), sizeof(char));
+		fImage1[i] = tmp;
 	}
 
 	//downsample by 4
 	cvResize(tmpImg0, tmpImg2, 1);
 	for (i = 0; i < tWidth2 * tHeight2; i++)
 	{
-		fImage2[i] = (int) tmpImg2->imageData[i];
+		memcpy(&tmp, &(tmpImg2->imageData[i]), sizeof(char));
+		fImage2[i] = tmp;
 	}
 
 #if FLIP_MATCH
