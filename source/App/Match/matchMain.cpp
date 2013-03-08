@@ -411,6 +411,22 @@ int testVideoData2()
 			cvReleaseImage(&faceFrame);
 #endif
 			//2013.2.11 face rotation
+#if 0
+			int tr;
+			int tdd = (rightEye->x - leftEye->x) / 40 * 9;
+				
+			tr = (int)(((rand() % 100-50) * 0.02) * tdd);
+			leftEye->x = leftEye->x + tr;
+			tr = (int)(((rand() % 100-50) * 0.02) * tdd);
+			leftEye->y = leftEye->y + tr;
+
+			tr = (int)(((rand() % 100-50) * 0.02) * tdd);
+			rightEye->x = rightEye->x + tr;
+			tr = (int)(((rand() % 100-50) * 0.02) * tdd);
+			rightEye->y = rightEye->y + tr;
+#endif
+
+
 			faceRotate(leftEye, rightEye, pFrame, tarImg, faceDet->faceInformation.Width, faceDet->faceInformation.Height);
 			
 			//downsampleing twice

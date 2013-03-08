@@ -25,14 +25,17 @@
 #define FACE_FEATURE_LEN	5120
 #define TOTAL_FEATURE_LEN   5120
 
+#define LBP_STEP	10
+#define LBP_WINDOW	10
+
 
 
 #define MAX_FACE_ID			100
 
 #define DEBUG_OUTPUT_ALIGNED 0
 #define DEBUG_MODE			0
-#define FLIP_MATCH			0
-
+#define FLIP_MATCH			1
+#define HISTOGRAM_EQUALIZATION 1
 #define ROTATE_INVARIANT_LBP 1
 
 
@@ -50,6 +53,8 @@ typedef struct face3DTag
 	int gwStep;						//stepSize of the shifting Gabor windows
 	int LBP_H_Step;
 	int LBP_W_Step;
+	int LBP_H_Window;
+	int LBP_W_Window;
 	int * LBPHist;
 
 	int RX0;						//the region of interest for face
