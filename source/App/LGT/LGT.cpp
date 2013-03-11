@@ -64,6 +64,7 @@ int    NTESTSAMPLES = 1;
 FACE3D_Type			gf;
 LGTClass			gLGT;
 void getGaborResponse(LGTStruct *gLGT, FACE3D_Type * gf);
+void convolution2D(unsigned char *src, float *dst, double *kernel, int size, int height, int width);
 
 
 
@@ -179,28 +180,30 @@ void getGaborResponse(LGTStruct *gLGT, FACE3D_Type * gf)
 	int		i,j,m,n;
 	char	*tmpPath;
 	int		gaborWSize = gf->gaborWSize;
-	CvMat	gaborKernel[MAX_NUM_GABOR];
+	//CvMat	gaborKernel[MAX_NUM_GABOR];
 	float	*gaborResponse = gLGT->gaborResponse;
+	float	*tmpGaborResponse;
+	unsigned char *tmpImageData;
 	int		ptr;
 	int		stepImage = gLGT->stepImage;
 	int		stepPixel = gLGT->stepPixel;
 	int		stepWidth = gLGT->stepWidth;
 
 	//init
-	IplImage *pFrame;
+	
 	IplImage *tarFrame = cvCreateImage( cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, warpedImgChNum );
 	IplImage *grayFrame = cvCreateImage(cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, 1 );
-	CvMat *grFrame = cvCreateMat( gf->tHeight, gf->tWidth, CV_32FC1);
-	//IplImage *grFrame = cvCreateImage( cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, warpedImgChNum );
+	tmpGaborResponse = (float*)malloc( gf->tHeight * gf->tWidth * sizeof(float));
+	tmpImageData = (unsigned char*)malloc(gf->tHeight * gf->tWidth * sizeof(unsigned char));
 	eyesDetector * detectEye = new eyesDetector;
 	faceDetector * faceDet =  new faceDetector();
 	IplImage*  gray_face_CNN = cvCreateImage(cvSize(CNNFACECLIPHEIGHT,CNNFACECLIPWIDTH), 8, 1);
 
 	//Establish gabor kernels from coefficients
-	for ( i = 0; i < gf->nGabors * 2; i++)
-	{
-		gaborKernel[i] = cvMat(gaborWSize, gaborWSize, CV_32FC1, gf->gaborCoefficients[i]);
-	}
+	//for ( i = 0; i < gf->nGabors * 2; i++)
+	//{
+	//	gaborKernel[i] = cvMat(gaborWSize, gaborWSize, CV_32FC1, gf->gaborCoefficients[i]);
+	//}
 
 
 	// Feature points array for eyes detection
@@ -214,6 +217,7 @@ void getGaborResponse(LGTStruct *gLGT, FACE3D_Type * gf)
 	{
 		tmpPath = &gf->fileList.fileName[i][0];
 		puts(tmpPath);
+		IplImage *pFrame;
 		pFrame = cvLoadImage(tmpPath, 3);
 		if(pFrame == NULL)
 		{
@@ -237,11 +241,21 @@ void getGaborResponse(LGTStruct *gLGT, FACE3D_Type * gf)
 			//align face
 			faceRotate(leftEye, rightEye, pFrame, tarFrame, faceDet->faceInformation.Width, faceDet->faceInformation.Height);
 			cvCvtColor(tarFrame, grayFrame, CV_RGB2GRAY);
+			//get unsigned char image data from IplImage
+			for ( m = 0; m < gf->tHeight; m++)
+			{
+				for ( n =0; n < gf->tWidth; n++)
+					{
+						tmpImageData[ m * gf->tWidth + n] = CV_IMAGE_ELEM( grayFrame, unsigned char, m, n );
+				}
+			}
+
 
 			for ( j = 0; j < gf->nGabors *2; j++)
 			{
 				//Apply gabor kernels
-				cvFilter2D(grayFrame,grFrame, &(gaborKernel[j]), cvPoint(-1,-1));
+				//cvFilter2D(tmpFrame,grFrame, &gaborKernel[j], cvPoint(-1,-1));
+				convolution2D( tmpImageData, tmpGaborResponse, gf->gaborCoefficients[j], gaborWSize, gf->tHeight, gf->tWidth);
 				
 				//store response
 				for ( m = 0; m < gf->tHeight; m++)
@@ -249,12 +263,13 @@ void getGaborResponse(LGTStruct *gLGT, FACE3D_Type * gf)
 					for ( n =0; n < gf->tWidth; n++)
 					{
 						ptr = validFaces * stepImage + m * stepWidth + n * stepPixel + j;
-						gaborResponse[ptr] = (float)cvmGet(grFrame, m, n);
+						gaborResponse[ptr] = tmpGaborResponse[ gf->tWidth * m + n];
 					}
 				}
 			}
 			validFaces ++; 
 		}
+		cvReleaseImage(&pFrame);
 	}
 	gLGT->validFaces = validFaces;
 
@@ -264,10 +279,70 @@ void getGaborResponse(LGTStruct *gLGT, FACE3D_Type * gf)
 
 
 }
-//void convolution2D(char *src, float *dst, float *kernel, int pad)
-//{
+
+/* 2D convolution for gray 8-bit image*/
+// src : input image
+// dst : output
+// kernel: filter kernel
+// size : kernel size n(should be odd number)
+// height: image height
+// width: image width
+void convolution2D(unsigned char *src, float *dst, double *kernel, int size, int height, int width)
+{
+	assert((size % 2 == 1) && (size >= 3)); // kernel size should be odd number
+	int cRow, cCol; //center row and column
+	int kRow, kCol; //kernel row and column
+	int posRow, posCol; //current accessing position
+	int pad = (size - 1)/2;
+	int twoHeight = 2 * (height-1);
+	int twoWidth = 2 * (width-1);
+	float sum;
+
+	
+	
+	//scan image
+	for (cRow = 0; cRow < height; cRow++ )
+	{
+		for (cCol = 0; cCol < width; cCol++)
+		{
+			sum = 0;
+			//scan kernel
+			for ( kRow = -pad; kRow < pad; kRow++ )
+			{
+				for ( kCol = -pad; kCol < pad; kCol++)
+				{
+					posRow = cRow + kRow;
+					posCol = cCol + kCol;
+					//out of border pixels
+					if (posRow < 0) 
+					{
+						posRow = 0 - posRow;
+					}
+					else if (posRow >= height) 
+					{
+						posRow = twoHeight - posRow;
+					}
+					if (posCol < 0) 
+					{
+						posCol = 0 - posCol;
+					}
+					else if (posCol >= width) 
+					{
+						posCol = twoWidth - posCol;
+					}
+
+					sum += (float)src[width * posRow + posCol] * (float)kernel[ size * (kRow + pad) + kCol + pad];
+				}
+			}
+			dst[width * cRow + cCol] = sum;
+		}
+	}
+
+}//end function convulution2D
 
 
 
 
-//}
+
+
+
