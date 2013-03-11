@@ -3,10 +3,10 @@
 
 //KMean
 
-#define MAX_NUM_CLUSTERS	6
-#define MAX_VECTOR_SIZE		10
+#define MAX_NUM_CLUSTERS	80
+#define MAX_VECTOR_SIZE		40
 #define AVG_ERROR_THRESHOLD	1
-#define MAX_KMEAN_DATA_SIZE 500
+#define MAX_KMEAN_DATA_SIZE 1200
 
 typedef struct KMeanTag
 {

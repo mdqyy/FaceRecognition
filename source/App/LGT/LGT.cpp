@@ -12,6 +12,7 @@
 #include <highgui.h>
 #include <cv.h>
 #include <cxcore.h>
+#include <time.h>
 
 #include "TLibCommon/EyesDetector.h"
 #include "TLibCommon/Detector.h"
@@ -63,8 +64,10 @@ int    NTESTSAMPLES = 1;
 
 FACE3D_Type			gf;
 LGTClass			gLGT;
+KMeanType			gKm;
 void getGaborResponse(LGTStruct *gLGT, FACE3D_Type * gf);
 void convolution2D(unsigned char *src, float *dst, double *kernel, int size, int height, int width);
+void kMeanCenters(LGTStruct *gLGT, FACE3D_Type * gf);
 
 
 
@@ -155,6 +158,7 @@ int main(int argc, char** argv)
 	initFaceFeature( &gf, 80, 80);
 	processFileList();
 	initLGT(&gLGT, &gf);
+	kMeanInit(&gKm);
 
 	//-------------------
 	// data access.
@@ -273,7 +277,16 @@ void getGaborResponse(LGTStruct *gLGT, FACE3D_Type * gf)
 	}
 	gLGT->validFaces = validFaces;
 
-
+	
+	// release
+	cvReleaseImage(&tarFrame);
+	cvReleaseImage(&grayFrame);
+	free(tmpGaborResponse); tmpGaborResponse = NULL;
+	free(tmpImageData); tmpImageData = NULL;
+	delete detectEye;
+	delete faceDet;
+	cvReleaseImage(&gray_face_CNN);
+	
 
 
 
@@ -338,11 +351,42 @@ void convolution2D(unsigned char *src, float *dst, double *kernel, int size, int
 		}
 	}
 
+
 }//end function convulution2D
 
 
 
 
 
+/* Train k-means centers in each region */
+void kMeanCenters(LGTStruct *gLGT, FACE3D_Type * gf)
+{
+	int regionH = gLGT->LGTRegionH;
+	int regionW = gLGT->LGTRegionW;
+	int numInLastGroup = gLGT->validFaces % gLGT->numInGroup + 10;  // the last group contains the remainders
+	int numGroups = (gLGT->validFaces - numInLastGroup)/ gLGT->numInGroup + 1; //Actual number of groups
+	float **firstKmeanCenters, **secondKmeanCenters, **finalKmeanCenters;
 
 
+}
+
+
+// shuffle array to randomly select group members
+void shuffle(int *list, int n) 
+{    
+    srand((unsigned) time(NULL)); 
+	int t, j;
+
+
+    if (n > 1) 
+	{
+        int i;
+        for (i = n - 1; i > 0; i--) 
+		{
+            j = i + rand() / (RAND_MAX / (n - i) + 1);
+            t = list[j];
+            list[j] = list[i];
+            list[i] = t;
+        }
+    }
+}
