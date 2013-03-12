@@ -21,7 +21,11 @@
 #include "TLibCommon/ConvNN.h"
 #include "TLibCommon/faceFeature.h"
 #include "TLibCommon/affineWarping.h"
+//extern "C"
+//{
 #include "kmean.h"
+//}
+
 
 
 #define WRITE_FEATURE_DATUM_2_FILE
@@ -31,6 +35,7 @@
 #define TRAIN_OUTPUT_TXT_FILE	"../../image/trainOut.txt"
 #define BIN_FILE				"../../image/faces.bin"
 #define IMAGE_TAG_DIR			"../../image/ImgTag/"
+#define LGT_CENTERS_FILE		"../../image/centers.bin"
 
 typedef struct LGTStruct
 {
@@ -62,12 +67,19 @@ int    NTESTSAMPLES = 1;
 
 #define BUFSIZE 20
 
-FACE3D_Type			gf;
-LGTClass			gLGT;
-KMeanType			gKm;
+void initLGT( LGTStruct *gLGT, FACE3D_Type * gf);
+void processFileList();
 void getGaborResponse(LGTStruct *gLGT, FACE3D_Type * gf);
 void convolution2D(unsigned char *src, float *dst, double *kernel, int size, int height, int width);
-void kMeanCenters(LGTStruct *gLGT, FACE3D_Type * gf);
+void kMeanCenters(LGTStruct *gLGT, FACE3D_Type * gf, KMeanLGT *gk);
+void shuffle(int *list, int n);
+
+FACE3D_Type			gf;
+LGTClass			gLGT;
+KMeanLGT			gk;
+
+
+
 
 
 
@@ -89,6 +101,7 @@ void initLGT( LGTStruct *gLGT, FACE3D_Type * gf)
 	//allocate gabor response storage
 	gLGT->gaborResponse = (float *)malloc( gLGT->stepImage * gLGT->numImages * sizeof(float));
 	gLGT->validFaces	= 0;
+
 }
 
 void processFileList()
@@ -158,11 +171,13 @@ int main(int argc, char** argv)
 	initFaceFeature( &gf, 80, 80);
 	processFileList();
 	initLGT(&gLGT, &gf);
-	kMeanInit(&gKm);
+	
 
 	//-------------------
 	// data access.
 	getGaborResponse(&gLGT, &gf);
+	kMeanCenters(&gLGT, &gf, &gk);
+	
 	//-------------------
 
 
@@ -171,6 +186,7 @@ int main(int argc, char** argv)
 	//-------------------
 	//closeFaceWarping();
 	system("pause");
+	return 0;
 	
 }
 
@@ -359,16 +375,148 @@ void convolution2D(unsigned char *src, float *dst, double *kernel, int size, int
 
 
 /* Train k-means centers in each region */
-void kMeanCenters(LGTStruct *gLGT, FACE3D_Type * gf)
+void kMeanCenters(LGTStruct *gLGT, FACE3D_Type * gf, KMeanLGT *gk)
 {
+	int i, j, k, m, n, h, w, tmpCnt;
+	int nPoints, nDim;
+	int curRow, curCol, ptr;
+	int imageIdx;
 	int regionH = gLGT->LGTRegionH;
 	int regionW = gLGT->LGTRegionW;
 	int numInLastGroup = gLGT->validFaces % gLGT->numInGroup + 10;  // the last group contains the remainders
 	int numGroups = (gLGT->validFaces - numInLastGroup)/ gLGT->numInGroup + 1; //Actual number of groups
-	float **firstKmeanCenters, **secondKmeanCenters, **finalKmeanCenters;
+	float *gaborResponse = gLGT->gaborResponse;
 
+	FILE *fb = fopen(LGT_CENTERS_FILE, "w+b");
+	if(fb==NULL){
+		printf("open file centers.bin failed!\n");fflush(stdout);
+		exit(-1);
+	}
+	fwrite(&gLGT->numLGTRegionH, sizeof(int), 1, fb);	//region number in row
+	fwrite(&gLGT->numLGTRegionW, sizeof(int), 1, fb);	//region number in colum
+	fwrite(&gLGT->k2, sizeof(int), 1, fb);				//number of centers
+	
+	//random index list for first k-mean
+	int *list = (int *)malloc(gLGT->validFaces * sizeof(int));
+	for ( i = 0; i < gLGT->validFaces; i++)
+	{
+		list[i] = i;
+	}
+	//initialize
+	nDim = 2 * gf->nGabors;
+	initKMeanLGT( gk, gLGT->k1, gLGT->k2, gLGT->numInGroup*regionH*regionW, numGroups, numInLastGroup*regionH*regionW, nDim, gLGT->validFaces * regionH * regionW);
+	
+	//for each region
+	for ( m = 0; m < gLGT->numLGTRegionH; m++)
+	{
+		for (n = 0; n < gLGT->numLGTRegionW; n++)
+		{
+			//shuffle list to generate psudo-random sequence
+			shuffle(list, gLGT->validFaces);
+			for ( i = 0; i < numGroups; i++)
+			{
+				if ( i < (numGroups - 1)) 
+				{
+					// not the last group
+					for ( j = 0; j < gLGT->numInGroup; j++)
+					{
+						//each image in group
+						imageIdx = list[i * gLGT->numInGroup + j];
+						
+						for ( h = 0; h < regionH; h++)
+						{
+							for ( w = 0; w <regionW; w++)
+							{
+								curRow = m * regionH + h;
+								curCol = n * regionW + w;
+								ptr = imageIdx * gLGT->stepImage + curRow * gLGT->stepWidth + curCol * gLGT->stepPixel;
+								//memcpy( &gk->firstInput[j * regionW * regionH + h * regionW + w][0], &gaborResponse[ptr], nDim * sizeof(float));
+								gk->firstInput[j * regionW * regionH + h * regionW + w] = &gaborResponse[ptr];
+							}
+						}
+					}
+					//apply kmean for the first time
+					nPoints = gLGT->numInGroup * regionH * regionW;
+					kMeanClustering(gk->firstInput, nPoints, nDim, gLGT->k1, &gk->km1[i], FALSE);
+				}
+				else
+				{
+					// the last group
+					for ( j = 0; j < numInLastGroup; j++)
+					{
+						//each image in group
+						imageIdx = list[i * gLGT->numInGroup + j];
+						
+						for ( h = 0; h < regionH; h++)
+						{
+							for ( w = 0; w <regionW; w++)
+							{
+								curRow = m * regionH + h;
+								curCol = n * regionW + w;
+								ptr = imageIdx * gLGT->stepImage + curRow * gLGT->stepWidth + curCol * gLGT->stepPixel;
+								//memcpy( &gk->firstInputLastGroup[j * regionW * regionH + h * regionW + w][0], &gaborResponse[ptr], nDim * sizeof(float));
+								gk->firstInputLastGroup[j * regionW * regionH + h * regionW + w] = &gaborResponse[ptr];
+							}
+						}
+					}
+					//apply kmean for the first time
+					nPoints = numInLastGroup * regionH * regionW;
+					kMeanClustering(gk->firstInputLastGroup, nPoints, nDim, gLGT->k1, &gk->km1[i], FALSE);
+				}
 
-}
+			} // end group kmean
+
+			//second kmean: put all groups*k1 centers to train new k2 centers
+			for ( i = 0; i < numGroups; i++)
+			{
+				for ( j = 0; j < gLGT->k1; j++)
+				{
+
+					gk->secondInput[i * gLGT->k1 + j] = gk->km1[i].kMeanClusterCenters[j];
+				}
+			}
+			//apply second kmean
+			nPoints = numGroups * gLGT->k1;
+			kMeanClustering(gk->secondInput, nPoints, nDim, gLGT->k2, &gk->km2, FALSE);
+
+			//final kmean
+			nPoints = gLGT->validFaces * regionH * regionW;
+			//init with previous trained centers
+			gk->km3.kMeanClusterCenters = gk->km2.kMeanClusterCenters;
+			tmpCnt = 0;
+			for (i = 0; i < gLGT->validFaces; i++)
+			{
+				for ( h = 0; h < regionH; h++)
+				{
+					for ( w = 0; w <regionW; w++)
+					{
+						curRow = m * regionH + h;
+						curCol = n * regionW + w;
+						ptr = i * gLGT->stepImage + curRow * gLGT->stepWidth + curCol * gLGT->stepPixel;
+						gk->finalInput[tmpCnt] = &gaborResponse[ptr];
+						tmpCnt++;
+					}
+				}
+			}
+			kMeanClustering(gk->finalInput, nPoints, nDim, gLGT->k2, &gk->km3, TRUE);
+
+			//write centers to binary file
+			for ( i = 0; i < gLGT->k2; i++)
+			{
+				for ( j = 0; j < nDim; j++)
+				{
+					fwrite(&gk->km3.kMeanClusterCenters[i][j], sizeof(float), 1, fb);
+				}
+			}
+
+			
+		}
+	}
+	
+	fclose(fb);
+	free(list);
+	list = NULL;
+}// end kMeanCenters
 
 
 // shuffle array to randomly select group members

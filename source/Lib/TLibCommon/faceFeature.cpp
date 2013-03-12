@@ -5,6 +5,7 @@
 #include "faceFeature.h"
 
 #define GABOR_BIN_DIR "../../image/Gabor.bin"
+#define LGT_BIN		  "../../image/centers.bin"
 #define MAX_FLOAT        3.402823466e+38F //< maximum single float number
 
 void config(FACE3D_Type * gf)
@@ -248,6 +249,19 @@ void initFaceFeature(FACE3D_Type * gf, int width, int height)
 		// count is number to be right shifted
 		gf->lookupTable[i] = x;
 	}
+#endif
+
+#if USE_LGT
+	FILE *fb = fopen(LGT_BIN, "rb");
+	if(fb==NULL){
+		printf("open file Gabor.bin failed!\n");fflush(stdout);
+		exit(-1);
+	}
+	fread(&gf->LGTCenters.numRegionH, sizeof(int), 1, fb); // rows
+	fread(&gf->LGTCenters.numRegionW, sizeof(int), 1, fb); //	cols
+	fread(&gf->LGTCenters.numCenters, sizeof(int), 1, fb);	//k
+	//gf->LGTCenters.centers = (float ***)malloc( 
+	fclose(fb);
 #endif
 			
 
@@ -1570,3 +1584,6 @@ void trainWeight( float* weight, FACE3D_Type * gf)
 }// end function trainWeight
 
 #endif // weighted match
+
+
+//void loadKMeanCenters(

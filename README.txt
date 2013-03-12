@@ -37,3 +37,7 @@ ONLY ALGORITHM CHANGES WILL BE DISPLAYED HERE!
 3/6/2013
 
 - Add Historgram Equalization
+
+3/12/2013
+
+- Add Local Gabor Texton vocabularies training module

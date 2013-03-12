@@ -18,6 +18,7 @@
 #define GLOBAL_H_INCLUDED
 
 #define USE_LBP				1
+#define USE_LGT				1	//Local Gabor Textons
 #define USE_GBP				0
 #define USE_GABOR			0
 #define NUM_NEAREST_NBOR	5
@@ -46,9 +47,18 @@ typedef struct imageList
 	int  listLength;
 }imageListClass;
 
+typedef struct CentersTag
+{
+	int numRegionH, numRegionW;
+	int numCenters;				// k
+	float ***centers;			//kmean centers
+	int vecterSize;				
+}LGTCentersClass;
+
 typedef struct face3DTag
 {
 	imageListClass		fileList;
+	LGTCentersClass		LGTCenters;
 	int FRAME_WIDTH;
 	int FRAME_HEIGHT;
 
@@ -117,6 +127,9 @@ typedef struct unitFaceFeatClass
 
 
 }unitFaceFeatClass;
+
+
+	
 
 #endif //DEFINE_H_INCLUDED
 

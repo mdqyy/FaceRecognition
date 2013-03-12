@@ -1,4 +1,5 @@
 #include "kmean.h"
+#include <string>
 //KMean
 
 void kMeanInit(KMeanType * KM)
@@ -26,9 +27,91 @@ void kMeanInit(KMeanType * KM)
 
 }
 
+void initKMeanWithParameters(KMeanType *KM, int dataSize, int vectorSize, int numClusters)
+{
+	int n;
+	KM->kMeanDataBuf = (float **)malloc(dataSize * sizeof(float *));
+	for(n=0;n<dataSize; n++)
+		KM->kMeanDataBuf[n] = (float *)malloc(vectorSize * sizeof(float));
+
+	KM->kMeanClusterCenters = (float **)malloc(numClusters * sizeof(float *));
+	for(n=0; n<numClusters; n++)
+		KM->kMeanClusterCenters[n] = (float *)malloc(vectorSize * sizeof(float));
+
+	KM->kMeanClusterCentersBuf = (float **)malloc(numClusters * sizeof(float *));
+	for(n=0; n<numClusters; n++)
+		KM->kMeanClusterCentersBuf[n] = (float *)malloc(vectorSize * sizeof(float));
+
+	KM->kMeanClusterRatios = (float *)malloc(numClusters * sizeof(float));
+
+	KM->dataLabel = (unsigned char *)malloc(dataSize);
+
+	KM->nKMeanClusters = numClusters;
+}
+
+void releaseKMean( KMeanType *KM, int dataSize, int vectorSize, int numClusters)
+{
+	int n;
+	for(n=0;n<dataSize; n++)
+		free(KM->kMeanDataBuf[n]);
+	free(KM->kMeanDataBuf);
+	for(n=0; n<numClusters; n++)
+		free(KM->kMeanClusterCenters[n]);
+	free(KM->kMeanClusterCenters);
+	for(n=0; n<numClusters; n++)
+		free(KM->kMeanClusterCentersBuf[n]);
+	free(KM->kMeanClusterCentersBuf);
+	free(KM->kMeanClusterRatios);
+	free(KM->dataLabel);
+}
 
 
-int kMeanClustering(float ** data, int nPoints, int nDim, int nClusters, KMeanType * KM)
+void initKMeanLGT( KMeanLGT *KMLGT, int k1, int k2, int numFirstInput, int numGroups, int numInLastGroup, int nDim, int totalNum)
+{
+	int i;
+
+	KMLGT->km1 = (KMeanType *)malloc(numGroups * sizeof(KMeanType));
+	for ( i = 0; i < numGroups; i++)
+	{
+		initKMeanWithParameters(&KMLGT->km1[i], numInLastGroup, nDim, k1);
+	}
+
+	initKMeanWithParameters(&KMLGT->km2, k1 * numGroups, nDim, k2);
+	initKMeanWithParameters(&KMLGT->km3, totalNum, nDim, k2);
+
+
+	KMLGT->firstInput = (float **)malloc( numFirstInput * sizeof(float*));
+	//for ( i = 0; i < numFirstInput; i++)
+	//{
+	//	KMLGT->firstInput[i] = (float *)malloc( nDim * sizeof(float));
+	//}
+	//initialize first input for the last group
+	KMLGT->firstInputLastGroup = (float **)malloc( numInLastGroup * sizeof(float*));
+	//for ( i = 0; i < numInLastGroup; i++)
+	//{
+	//	KMLGT->firstInputLastGroup[i] = (float *)malloc( nDim * sizeof(float));
+	//}
+
+	//second input
+	KMLGT->secondInput = (float **)malloc( numGroups * k1 * sizeof(float*));
+	//for ( i = 0; i < numGroups * k1; i++)
+	//{
+	//	KMLGT->secondInput[i] = (float *)malloc( nDim * sizeof(float));
+	//}
+
+	//final input
+	KMLGT->finalInput = (float **)malloc( totalNum * sizeof(float*));
+	//for ( i = 0; i < totalNum; i++)
+	//{
+	//	KMLGT->finalInput[i] = (float *)malloc( nDim * sizeof(float));
+	//}
+
+}
+
+
+
+
+int kMeanClustering(float ** data, int nPoints, int nDim, int nClusters, KMeanType * KM, bool initWithCenters)
 {
 	int stepLen, threshold;
 	int n, N0, N1, k, i, nIterations;
@@ -51,23 +134,26 @@ int kMeanClustering(float ** data, int nPoints, int nDim, int nClusters, KMeanTy
 	//initial clusters;
 	stepLen = nPoints / nClusters;
 
-	for(n=0; n<nClusters; n++)
+	if (!initWithCenters)
 	{
-		N0 = n * stepLen;
-		N1 = (n+1) * stepLen;
+		for(n=0; n<nClusters; n++)
+		{
+			N0 = n * stepLen;
+			N1 = (n+1) * stepLen;
 
-		if(n == (nClusters-1))	N1 = nPoints;
+			if(n == (nClusters-1))	N1 = nPoints;
 
-		if((N1 - N0) < 1) N1 = N0 + 1;
+			if((N1 - N0) < 1) N1 = N0 + 1;
 
-		for(i=0; i<nDim; i++)
-		{	
-			avg = 0;
-			for(k=N0; k<N1; k++)
-				avg = avg + data[k][i];
+			for(i=0; i<nDim; i++)
+			{	
+				avg = 0;
+				for(k=N0; k<N1; k++)
+					avg = avg + data[k][i];
 
-			avg = avg / (N1 - N0);
-			kMeanClusterCenters[n][i] = avg;
+				avg = avg / (N1 - N0);
+				kMeanClusterCenters[n][i] = avg;
+			}
 		}
 	}
 
@@ -85,8 +171,16 @@ int kMeanClustering(float ** data, int nPoints, int nDim, int nClusters, KMeanTy
 
 		for(n=0; n<nPoints; n++)
 		{
-			minDist = 1000000000;
-			for(k=0; k<nClusters; k++)
+			//minDist = 1000000000;     //This is not sufficient
+			tmp = 0;
+			for(i=0; i<nDim; i++)
+			{
+				diff = data[n][i] - kMeanClusterCenters[0][i];
+				tmp = tmp + diff * diff;
+			}
+			minDist = tmp;
+			minPtr = 0;
+			for(k=1; k<nClusters; k++)
 			{
 				//find the distance to each cluster center
 				tmp = 0;
