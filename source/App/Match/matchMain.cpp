@@ -44,6 +44,7 @@
 #define BIN_FILE				"../../image/faces.bin"
 #define IMAGE_TAG_DIR			"../../image/ImgTag/"
 #define RESULT_TXT_DIR			"../../image/matchResult.txt"
+#define LGT_BIN_FILE			"../../image/LGT.bin"
 
 #define DO_MATCH
 #define	STR_INPUT_IMAGE_DIR		"../../image/match/Query3/"
@@ -93,6 +94,8 @@ FACE3D_Type			gf;
 unitFaceFeatClass	*bufferSingleFeatureID;
 
 void showResults(IplImage * frame, FACE3D_Type * gf);
+void processFileList();
+//void matchLGT(FACE3D_Type *gf);
 
 
 int testLiveFace()
@@ -195,7 +198,7 @@ int testLiveFace()
 
 int testVideoData2()
 {
-
+	int m,n;
 	CvFont font;
 	double hScale=0.5;
 	double vScale=0.5;
@@ -234,6 +237,8 @@ int testVideoData2()
 //	CvMat*  face_data = cvCreateMat( 1, CNNFACECLIPHEIGHT*CNNFACECLIPWIDTH, CV_32FC1 );
 //	CvMat*  face_data_int = cvCreateMat( 1, CNNFACECLIPHEIGHT*CNNFACECLIPWIDTH, CV_8UC1 );
 	IplImage*  gray_face_CNN = cvCreateImage(cvSize(CNNFACECLIPHEIGHT,CNNFACECLIPWIDTH), 8, 1);
+	IplImage *grayFrame = cvCreateImage(cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, 1 );
+	unsigned char *tmpImageData = gf.tmpImageData;
 
 	// Feature points array
 	CvPoint pointPos[6];
@@ -435,6 +440,21 @@ int testVideoData2()
 
 			// feature extraction.
 			gf.featureLength = 0;
+#if USE_LGT
+
+			cvCvtColor(tarImg, grayFrame, CV_RGB2GRAY);
+			//get unsigned char image data from IplImage
+			for ( m = 0; m < gf.tHeight; m++)
+			{
+				for ( n =0; n < gf.tWidth; n++)
+					{
+						tmpImageData[ m * gf.tWidth + n] = CV_IMAGE_ELEM( grayFrame, unsigned char, m, n );
+				}
+			}
+
+			extractLGTFeatures(&gf);
+#endif
+
 #if USE_GBP
 			extractGBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf);
 #endif
@@ -886,8 +906,9 @@ int main(int argc, char** argv)
 
 	//-------------------
 	// data access.
+	processFileList();
 	//-------------------
-
+	//matchLGT(&gf);
 	testVideoData2();	// find the face coordinates and eye, mouse position
 	//testCamera();
 	//videoAnalysis();	// extract feature given the face coordinates
@@ -1179,3 +1200,243 @@ void testCamera()
 
 
 }
+
+
+void processFileList()
+{
+	char inputdir[100]= STR_INPUT_IMAGE_DIR;
+
+	char tagImgdir[100]= IMAGE_TAG_DIR;
+	char tagImgName[500];
+	int	i;
+	
+
+	// count how many face IDs in training list
+
+	IplImage *	imgFaceIDTag[MAX_NUM_FACE_ID_TAG];
+	int			numTaggedFaces = 0;
+
+	for (i=0; i<MAX_NUM_FACE_ID_TAG; i++)
+	{
+		sprintf( tagImgName, "%s%d.JPG",tagImgdir, i+1);
+		imgFaceIDTag[i]		= cvLoadImage(tagImgName,3);
+
+		if (imgFaceIDTag[i] == NULL)
+		{
+			printf("\nNum of tagged faces: %d\n", i);fflush(stdout);
+			numTaggedFaces = i;
+			break;
+		}
+	
+	}
+	gf.numIDtag = numTaggedFaces;
+
+	//process image list
+	char to_search[260];
+	int  numImgs = 0;
+	// for each face tag
+	for ( int ii = 0; ii < numTaggedFaces; ii++)
+	{
+		sprintf(to_search, "%s%d/*.jpg",MATCH_IMAGE_DIR, ii+1);
+		long handle;                                                //search handle
+		struct _finddata_t fileinfo;                          // file info struct
+		handle=_findfirst(to_search,&fileinfo);         
+		if(handle != -1) 
+		{
+			do
+			{
+				char *tmpPath = &gf.fileList.fileName[numImgs][0];
+				sprintf(tmpPath,"%s%d/%s",MATCH_IMAGE_DIR, ii+1, fileinfo.name);
+				gf.fileList.fileID[numImgs] = ii+1;
+				numImgs ++;
+			}while(_findnext(handle,&fileinfo) == 0);               
+	
+			_findclose(handle);
+		}
+	}
+	assert(numImgs < MAX_INPUT_IMAGES);
+	gf.fileList.listLength = numImgs; // store list length
+				
+}
+
+
+
+
+/* train LGT features */
+#if 0
+void matchLGT(FACE3D_Type *gf)
+{
+	int		numImagesInList = gf->fileList.listLength;
+	int		regionH = gf->tHeight / gf->LGTCenters.numRegionH;
+	int		regionW = gf->tWidth / gf->LGTCenters.numRegionW;
+	int		i,j,m,n,k,l;
+	char	*tmpPath;
+	int		gaborWSize = gf->gaborWSize;
+	float	*gaborResponse = gf->gaborResponse;
+	//float	*tmpGaborResponse;
+	unsigned char *tmpImageData;
+	int		ptr,centersPtr,idx;
+	int		stepPixel = gf->gaborStepPixel; 
+	int		stepWidth = gf->gaborStepWidth;
+	int		fl[warpedImgH][warpedImgW];	
+	float	dist,tmpDist,minDist;
+	int		rRegion, cRegion;
+	int		matchedFaceID;
+
+	//init
+	IplImage *tarFrame = cvCreateImage( cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, warpedImgChNum );
+	IplImage *grayFrame = cvCreateImage(cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, 1 );
+	//tmpGaborResponse = gf->tmpGaborResponse;
+	tmpImageData = gf->tmpImageData;
+	eyesDetector * detectEye = new eyesDetector;
+	faceDetector * faceDet =  new faceDetector();
+	IplImage*  gray_face_CNN = cvCreateImage(cvSize(CNNFACECLIPHEIGHT,CNNFACECLIPWIDTH), 8, 1);
+	// Feature points array for eyes detection
+	CvPoint pointPos[6];
+	CvPoint *leftEye    = &pointPos[0];
+	CvPoint *rightEye   = &pointPos[2];
+	CvPoint *leftMouth  = &pointPos[4];
+	CvPoint *rightMouth = &pointPos[5];
+
+	int tmpW = 800, tmpH = 600;
+	int resultCnt[MAX_FACE_ID],correctCnt[MAX_FACE_ID]; //Result rate calculation
+
+	for (int i = 0; i<MAX_FACE_ID; i++)
+	{
+		resultCnt[i] = 0;
+		correctCnt[i] = 0;
+	}
+
+	FILE *fpoutput = fopen(MATCH_OUTPUT_TXT_FILE,"w");
+	if(fpoutput==NULL){
+		printf("open file testoutput.txt failed!\n");fflush(stdout);
+		exit(-1);
+	}
+
+	
+
+	for ( i = 0; i < numImagesInList; i++)
+	{
+		tmpPath = &gf->fileList.fileName[i][0];
+		puts(tmpPath);
+		IplImage *pFrame;
+		pFrame = cvLoadImage(tmpPath, 3);
+		if(pFrame == NULL)
+		{
+			printf("read image file error!\n");fflush(stdout);
+			exit(-1);
+		}
+		if( faceDet->runFaceDetector(pFrame))
+		{	
+			/* there was a face detected by OpenCV. */
+			
+			IplImage * clonedImg = cvCloneImage(pFrame);
+
+			detectEye->runEyeDetector(clonedImg, gray_face_CNN, faceDet, pointPos);
+
+			cvReleaseImage(&clonedImg);
+
+			int UL_x = faceDet->faceInformation.LT.x;
+			int UL_y = faceDet->faceInformation.LT.y;
+
+			
+			//align face
+			faceRotate(leftEye, rightEye, pFrame, tarFrame, faceDet->faceInformation.Width, faceDet->faceInformation.Height);
+			cvCvtColor(tarFrame, grayFrame, CV_RGB2GRAY);
+			//get unsigned char image data from IplImage
+			for ( m = 0; m < gf->tHeight; m++)
+			{
+				for ( n =0; n < gf->tWidth; n++)
+					{
+						tmpImageData[ m * gf->tWidth + n] = CV_IMAGE_ELEM( grayFrame, unsigned char, m, n );
+				}
+			}
+
+			extractLGTFeatures(gf);
+
+			matchedFaceID	= matchFace(gf );
+
+			//Count the result for rate calculation
+			resultCnt[gf->fileList.fileID[i]] ++;
+			if ( matchedFaceID == gf->fileList.fileID[i])
+			{
+				correctCnt[gf->fileList.fileID[i]]++;
+			}
+
+
+			printf("\nMatched ID: %d \n------------------\n", matchedFaceID);
+			//printf("\nAdjusted angle: %.4f \n-------------------\n", angle);
+			fprintf(fpoutput, "\n\n%s:	:		%d\n\n", gf->fileList.fileName, matchedFaceID);
+			
+
+			if (pFrame->width > 800)
+			{
+				tmpW = 800;
+				tmpH = (1.0 * pFrame->height / pFrame->width)* tmpW;
+				IplImage *inputQueryImgResized	= cvCreateImage(cvSize(tmpW, tmpH), IPL_DEPTH_8U, 3);
+				cvResize(pFrame, inputQueryImgResized, 1);
+				cvNamedWindow("Input Image");
+				cvShowImage("Input Image", inputQueryImgResized);
+				cvReleaseImage(&inputQueryImgResized);
+			}
+			else
+			{
+				cvNamedWindow("Input Image");
+				cvShowImage("Input Image", pFrame);
+			}
+
+			cvNamedWindow("Matched Face");
+			cvShowImage("Matched Face", imgFaceIDTag[matchedFaceID-1]);
+			cvWaitKey(100);
+			
+		}
+	}
+
+	//Result calculation and output
+	float rate[MAX_FACE_ID];
+	float overallRate = 0;
+	int	  totalCnt = 0, totalCorrect = 0;
+	for ( i =0; i< numTaggedFaces; i++)
+	{
+		if (resultCnt[i] == 0)
+		{
+			rate[i] = -1;
+		}
+		else
+		{
+			rate[i] = (float) correctCnt[i] / resultCnt[i];
+			totalCnt += resultCnt[i];
+			totalCorrect += correctCnt[i];
+		}
+	}
+	overallRate = (float)totalCorrect / totalCnt;
+
+
+	FILE* fResult = fopen(RESULT_TXT_DIR, "w");
+	if (fResult == NULL)
+	{
+		printf("Cannot open result txt file!\n");
+	}
+	fprintf(fResult, "Overall rate: %.2f, %d correct matching in %d test images\n----------------------------------\n", overallRate * 100, totalCorrect, totalCnt);
+	for ( i =0; i< numTaggedFaces; i++)
+	{
+		if (resultCnt[i] !=0)
+		{
+			fprintf(fResult, "ID%d: %.2f, %d correct matching in %d test images\n----------------------------------\n", i+1, rate[i]*100, correctCnt[i], resultCnt[i]);
+	
+		}
+		else
+		{
+			fprintf(fResult, "ID%d: no face found\n----------------------------------\n",i+1);
+		}
+	}
+	fclose(fResult);
+
+					
+
+
+
+
+
+}
+#endif

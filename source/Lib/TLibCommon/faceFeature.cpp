@@ -260,7 +260,15 @@ void initFaceFeature(FACE3D_Type * gf, int width, int height)
 	fread(&gf->LGTCenters.numRegionH, sizeof(int), 1, fb); // rows
 	fread(&gf->LGTCenters.numRegionW, sizeof(int), 1, fb); //	cols
 	fread(&gf->LGTCenters.numCenters, sizeof(int), 1, fb);	//k
-	//gf->LGTCenters.centers = (float ***)malloc( 
+	gf->LGTCenters.centers = (float *)malloc( gf->nGabors * 2 * gf->LGTCenters.numCenters * gf->LGTCenters.numRegionH * gf->LGTCenters.numRegionW * sizeof(float));
+	fread(gf->LGTCenters.centers, sizeof(float), gf->nGabors * 2 * gf->LGTCenters.numCenters * gf->LGTCenters.numRegionH * gf->LGTCenters.numRegionW , fb);
+	gf->gaborStepPixel = gf->nGabors * 2;
+	gf->gaborStepWidth = gf->gaborStepPixel * gf->tWidth;
+	
+	gf->gaborResponse = (float *)malloc( gf->gaborStepWidth * gf->tHeight * sizeof(float));
+	gf->histLGT = (int *)malloc(gf->LGTCenters.numCenters * sizeof(int));
+	gf->tmpGaborResponse = (float*)malloc( gf->tHeight * gf->tWidth * sizeof(float));
+	gf->tmpImageData = (unsigned char*)malloc(gf->tHeight * gf->tWidth * sizeof(unsigned char));
 	fclose(fb);
 #endif
 			
@@ -981,7 +989,99 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 
 
 
+void extractLGTFeatures(FACE3D_Type *gf)
+{
+	int				j, k, m, n, l;
+	unsigned char	*tmpImageData = gf->tmpImageData;
+	float			*tmpGaborResponse = gf->tmpGaborResponse;
+	int				gaborWSize = gf->gaborWSize;
+	int				regionH = gf->tHeight / gf->LGTCenters.numRegionH;
+	int				regionW = gf->tWidth / gf->LGTCenters.numRegionW;
+	int				rRegion, cRegion;
+	int				ptr,centersPtr,idx;
+	int				stepPixel = gf->gaborStepPixel; 
+	int				stepWidth = gf->gaborStepWidth;
+	int				fl[warpedImgH][warpedImgW];	
+	float			dist,tmpDist,minDist;
+	float			*gaborResponse = gf->gaborResponse;
 
+	for ( j = 0; j < gf->nGabors *2; j++)
+	{
+		//Apply gabor kernels
+		//cvFilter2D(tmpFrame,grFrame, &gaborKernel[j], cvPoint(-1,-1));
+		convolution2D( tmpImageData, tmpGaborResponse, gf->gaborCoefficients[j], gaborWSize, gf->tHeight, gf->tWidth);
+
+		//store response
+		for ( m = 0; m < gf->tHeight; m++)
+		{
+			for ( n =0; n < gf->tWidth; n++)
+			{
+				ptr = m * stepWidth + n * stepPixel + j;
+				gaborResponse[ptr] = tmpGaborResponse[ gf->tWidth * m + n];
+			}
+		}
+	}
+
+	for ( m = 0; m < gf->tHeight; m++)
+	{
+		for ( n = 0; n < gf->tWidth; n++)
+		{
+			rRegion = (int)(m / regionH);
+			cRegion = (int)(n / regionW);
+			//calculate the nearest center
+			dist = 0;
+			centersPtr = (rRegion * gf->LGTCenters.numRegionW + cRegion) * gf->LGTCenters.numCenters * stepPixel;
+			for ( j = 0; j < gf->nGabors * 2; j++)
+			{
+				tmpDist = gaborResponse[m * stepWidth + n * stepPixel + j] - gf->LGTCenters.centers[centersPtr + j];
+				dist += tmpDist * tmpDist;
+			}
+			minDist = dist;
+			fl[m][n] = 0;
+			for ( k = 1; k < gf->LGTCenters.numCenters; k++)
+			{
+				dist = 0;
+				centersPtr = ((rRegion * gf->LGTCenters.numRegionW + cRegion) * gf->LGTCenters.numCenters + k) * stepPixel;
+				for ( j = 0; j < gf->nGabors * 2; j++)
+				{
+					tmpDist = gaborResponse[m * stepWidth + n * stepPixel + j] - gf->LGTCenters.centers[centersPtr + j];
+					dist += tmpDist * tmpDist;
+				}
+				if (dist < minDist)
+				{
+					minDist = dist;
+					fl[m][n] = k;
+				}
+			}
+		}
+	}
+
+	//compute histogram for each region
+	//reset
+	for ( m = 0; m < gf->LGTCenters.numCenters; m++)
+	{
+		gf->histLGT[m] = 0;
+	}
+	for ( m = 0; m < gf->LGTCenters.numRegionH; m++)
+	{
+		for ( n = 0; n < gf->LGTCenters.numRegionW; n++)
+		{
+			for ( j = 0; j < regionH; j++)
+			{
+				for ( k = 0; k < regionW; k++)
+				{
+					idx = fl[m * regionH + j][ n * regionW + k];
+					gf->histLGT[idx] ++;
+				}
+			}
+
+			for ( l = 0; l < gf->LGTCenters.numCenters; l++)
+			{
+				gf->faceFeatures[ ( m * gf->LGTCenters.numRegionW + n) * gf->LGTCenters.numCenters + l] = gf->histLGT[l];
+			}
+		}
+	}
+}
 
 
 
@@ -1498,92 +1598,71 @@ int	 matchFace( FACE3D_Type * gf )
 
 }//end: matchFace( FACE3D_Type * gf )
 
-#if WEIGHTED_MATCH
-void trainWeight( float* weight, FACE3D_Type * gf)
+
+
+
+
+
+
+
+
+/* 2D convolution for gray 8-bit image*/
+// src : input image
+// dst : output
+// kernel: filter kernel
+// size : kernel size n(should be odd number)
+// height: image height
+// width: image width
+void convolution2D(unsigned char *src, float *dst, double *kernel, int size, int height, int width)
 {
-	int				matchedFaceID;
-	int				featEntryLen;
-	int				i, idxBuf2Fill;
-	int				loadedDataLen;
-	int				unitDataInByte;
-	int				ptrOneLoadedData;
-	int				currTarID;
-	int				idVoted, tmpMostVotedID, tmpMostVote;
-	float			sumDist, tmpDist;
-	float			maxMatchingDistance;
-	float*			tarFeat;
-	float*			ptrFeatDistance;
-	int*			ptrUsedDistFlag;
-	int*			ptrBestDistID;
-	int*			cntIDVote;
-	unsigned char*	ptrLoadedData;
-	long int        inClassDist[MAX_FACE_ID][FACE_FEATURE_LEN];
+	assert((size % 2 == 1) && (size >= 3)); // kernel size should be odd number
+	int cRow, cCol; //center row and column
+	int kRow, kCol; //kernel row and column
+	int posRow, posCol; //current accessing position
+	int pad = (size - 1)/2;
+	int twoHeight = 2 * (height-1);
+	int twoWidth = 2 * (width-1);
+	float sum;
 
-	unitFaceFeatClass* ptrCurFetchedData;
-
-	// init.
-	matchedFaceID	= 0;
-	featEntryLen	= FACE_FEATURE_LEN;
-	ptrFeatDistance = gf->featDistance;
-	ptrUsedDistFlag = gf->usedDistFlag;
-	ptrBestDistID	= gf->bestDistID;
-	loadedDataLen	= gf->bufFaceDataLen;
-	ptrLoadedData	= gf->bufferFaceData;
-	cntIDVote		= gf->voteCntFaceID;
-	unitDataInByte	= sizeof(unitFaceFeatClass);
-
-	for (i = 0; i< MAX_FACE_ID * FACE_FEATURE_LEN; i++)
+	
+	
+	//scan image
+	for (cRow = 0; cRow < height; cRow++ )
 	{
-		inClassDist[i] = 0;
-		weight[i]
+		for (cCol = 0; cCol < width; cCol++)
+		{
+			sum = 0;
+			//scan kernel
+			for ( kRow = -pad; kRow < pad; kRow++ )
+			{
+				for ( kCol = -pad; kCol < pad; kCol++)
+				{
+					posRow = cRow + kRow;
+					posCol = cCol + kCol;
+					//out of border pixels
+					if (posRow < 0) 
+					{
+						posRow = 0 - posRow;
+					}
+					else if (posRow >= height) 
+					{
+						posRow = twoHeight - posRow;
+					}
+					if (posCol < 0) 
+					{
+						posCol = 0 - posCol;
+					}
+					else if (posCol >= width) 
+					{
+						posCol = twoWidth - posCol;
+					}
+
+					sum += (float)src[width * posRow + posCol] * (float)kernel[ size * (kRow + pad) + kCol + pad];
+				}
+			}
+			dst[width * cRow + cCol] = sum;
+		}
 	}
 
 
-	// match.
-
-	for ( ptrOneLoadedData = 0; ptrOneLoadedData < loadedDataLen; ptrOneLoadedData += unitDataInByte )
-	{
-		if (ptrOneLoadedData >= (loadedDataLen-unitDataInByte-1) )	break;
-
-		// load one face data.
-
-		ptrCurFetchedData	= (unitFaceFeatClass*)(ptrLoadedData + ptrOneLoadedData);
-		tarFeat				= ptrCurFetchedData->feature;
-		currTarID			= ptrCurFetchedData->id;
-
-		// distance.
-
-#if KAI_DISTANCE // use normalized distance
-		for (i=0; i<featEntryLen; i++)
-		{
-			tmpDist			= (tarFeat[i])-(queryFeat[i]);
-			if( !(tarFeat[i] == 0 && queryFeat[i] ==0))
-			{
-				inClassDist[currTarID][i] += (tmpDist * tmpDist)/(tarFeat[i] + queryFeat[i]);
-			}
-		}
-#else
-		for (i=0; i<featEntryLen; i++)
-		{
-			tmpDist			= (tarFeat[i])-(queryFeat[i]);
-
-			if (tmpDist >= 0)
-			{	inClassDist[currTarID][i] += tmpDist;
-			} 
-			else
-			{	inClassDist[currTarID][i] -= tmpDist;
-			}
-		}
-#endif
-	} //end loading features
-	
-
-
-
-
-}// end function trainWeight
-
-#endif // weighted match
-
-
-//void loadKMeanCenters(
+}//end function convulution2D

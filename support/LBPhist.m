@@ -7,8 +7,8 @@ fseek(fid, 0, 'eof');
 fsize = ftell(fid);
 fclose(fid);
 fid = fopen('../image/faces.bin', 'rb');
-NUM = fsize/5121/4;  % 4byte - 32bit, id + 5120 features;
-NUM_BIN = 5120;
+NUM = fsize/4097/4;  % 4byte - 32bit, id + 5120 features;
+NUM_BIN = 4096;
 id = zeros(NUM,1);
 histLBP = zeros(NUM,NUM_BIN);
 

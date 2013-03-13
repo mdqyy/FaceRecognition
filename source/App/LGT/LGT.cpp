@@ -70,7 +70,7 @@ int    NTESTSAMPLES = 1;
 void initLGT( LGTStruct *gLGT, FACE3D_Type * gf);
 void processFileList();
 void getGaborResponse(LGTStruct *gLGT, FACE3D_Type * gf);
-void convolution2D(unsigned char *src, float *dst, double *kernel, int size, int height, int width);
+//void convolution2D(unsigned char *src, float *dst, double *kernel, int size, int height, int width);
 void kMeanCenters(LGTStruct *gLGT, FACE3D_Type * gf, KMeanLGT *gk);
 void shuffle(int *list, int n);
 
@@ -206,7 +206,7 @@ void getGaborResponse(LGTStruct *gLGT, FACE3D_Type * gf)
 	unsigned char *tmpImageData;
 	int		ptr;
 	int		stepImage = gLGT->stepImage;
-	int		stepPixel = gLGT->stepPixel;
+	int		stepPixel = gLGT->stepPixel; 
 	int		stepWidth = gLGT->stepWidth;
 
 	//init
@@ -309,66 +309,7 @@ void getGaborResponse(LGTStruct *gLGT, FACE3D_Type * gf)
 
 }
 
-/* 2D convolution for gray 8-bit image*/
-// src : input image
-// dst : output
-// kernel: filter kernel
-// size : kernel size n(should be odd number)
-// height: image height
-// width: image width
-void convolution2D(unsigned char *src, float *dst, double *kernel, int size, int height, int width)
-{
-	assert((size % 2 == 1) && (size >= 3)); // kernel size should be odd number
-	int cRow, cCol; //center row and column
-	int kRow, kCol; //kernel row and column
-	int posRow, posCol; //current accessing position
-	int pad = (size - 1)/2;
-	int twoHeight = 2 * (height-1);
-	int twoWidth = 2 * (width-1);
-	float sum;
 
-	
-	
-	//scan image
-	for (cRow = 0; cRow < height; cRow++ )
-	{
-		for (cCol = 0; cCol < width; cCol++)
-		{
-			sum = 0;
-			//scan kernel
-			for ( kRow = -pad; kRow < pad; kRow++ )
-			{
-				for ( kCol = -pad; kCol < pad; kCol++)
-				{
-					posRow = cRow + kRow;
-					posCol = cCol + kCol;
-					//out of border pixels
-					if (posRow < 0) 
-					{
-						posRow = 0 - posRow;
-					}
-					else if (posRow >= height) 
-					{
-						posRow = twoHeight - posRow;
-					}
-					if (posCol < 0) 
-					{
-						posCol = 0 - posCol;
-					}
-					else if (posCol >= width) 
-					{
-						posCol = twoWidth - posCol;
-					}
-
-					sum += (float)src[width * posRow + posCol] * (float)kernel[ size * (kRow + pad) + kCol + pad];
-				}
-			}
-			dst[width * cRow + cCol] = sum;
-		}
-	}
-
-
-}//end function convulution2D
 
 
 

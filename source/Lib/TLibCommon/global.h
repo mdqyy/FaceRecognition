@@ -17,14 +17,14 @@
 #ifndef GLOBAL_H_INCLUDED
 #define GLOBAL_H_INCLUDED
 
-#define USE_LBP				1
+#define USE_LBP				0
 #define USE_LGT				1	//Local Gabor Textons
 #define USE_GBP				0
 #define USE_GABOR			0
 #define NUM_NEAREST_NBOR	5
 
-#define FACE_FEATURE_LEN	5120
-#define TOTAL_FEATURE_LEN   5120
+#define FACE_FEATURE_LEN	4096
+#define TOTAL_FEATURE_LEN   4096
 
 #define LBP_STEP	10
 #define LBP_WINDOW	10
@@ -39,6 +39,7 @@
 #define FLIP_MATCH			0
 #define HISTOGRAM_EQUALIZATION 1
 #define ROTATE_INVARIANT_LBP 0
+#define LGT_FEATURE_LEN    4096
 
 typedef struct imageList
 {
@@ -51,7 +52,7 @@ typedef struct CentersTag
 {
 	int numRegionH, numRegionW;
 	int numCenters;				// k
-	float ***centers;			//kmean centers
+	float *centers;			//kmean centers
 	int vecterSize;				
 }LGTCentersClass;
 
@@ -59,6 +60,12 @@ typedef struct face3DTag
 {
 	imageListClass		fileList;
 	LGTCentersClass		LGTCenters;
+	float *gaborResponse;
+	float *tmpGaborResponse;
+	unsigned char *tmpImageData;
+	int	gaborStepWidth;
+	int gaborStepPixel;
+	int *histLGT;
 	int FRAME_WIDTH;
 	int FRAME_HEIGHT;
 
@@ -127,6 +134,8 @@ typedef struct unitFaceFeatClass
 
 
 }unitFaceFeatClass;
+
+
 
 
 	
