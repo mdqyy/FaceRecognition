@@ -41,3 +41,7 @@ ONLY ALGORITHM CHANGES WILL BE DISPLAYED HERE!
 3/12/2013
 
 - Add Local Gabor Texton vocabularies training module
+
+3/14/2013
+
+- Local Gabor Texton without weighted match finished( memory problem existed).

@@ -7,7 +7,6 @@
 #define GABOR_BIN_DIR "../../image/Gabor.bin"
 #define LGT_BIN		  "../../image/centers.bin"
 #define MAX_FLOAT        3.402823466e+38F //< maximum single float number
-
 void config(FACE3D_Type * gf)
 {
 	gf->gwStep = 5;
@@ -182,7 +181,8 @@ void initFaceFeature(FACE3D_Type * gf, int width, int height)
 	H = H/2;
 	TN1 += ( (W - gf->LBP_W_Window/2) / gf->LBP_W_Step + 1) * ((H - gf->LBP_H_Window/2) / gf->LBP_H_Step + 1)  * NUM_BIN;
 #endif
-	gf->faceFeatures = (float *)malloc((TN + TN1) * sizeof(float));
+	//gf->faceFeatures = (float *)malloc((TN + TN1) * sizeof(float));
+	gf->faceFeatures = (float *)malloc(TOTAL_FEATURE_LEN * sizeof(float));
 #if FLIP_MATCH
 	gf->faceFeaturesFlip = (float *)malloc((TN + TN1) * sizeof(float));
 #endif
@@ -1004,6 +1004,7 @@ void extractLGTFeatures(FACE3D_Type *gf)
 	int				fl[warpedImgH][warpedImgW];	
 	float			dist,tmpDist,minDist;
 	float			*gaborResponse = gf->gaborResponse;
+	
 
 	for ( j = 0; j < gf->nGabors *2; j++)
 	{
@@ -1012,6 +1013,9 @@ void extractLGTFeatures(FACE3D_Type *gf)
 		convolution2D( tmpImageData, tmpGaborResponse, gf->gaborCoefficients[j], gaborWSize, gf->tHeight, gf->tWidth);
 
 		//store response
+		
+		
+
 		for ( m = 0; m < gf->tHeight; m++)
 		{
 			for ( n =0; n < gf->tWidth; n++)
@@ -1021,6 +1025,7 @@ void extractLGTFeatures(FACE3D_Type *gf)
 			}
 		}
 	}
+	
 
 	for ( m = 0; m < gf->tHeight; m++)
 	{
@@ -1055,17 +1060,19 @@ void extractLGTFeatures(FACE3D_Type *gf)
 			}
 		}
 	}
-
+	
 	//compute histogram for each region
-	//reset
-	for ( m = 0; m < gf->LGTCenters.numCenters; m++)
-	{
-		gf->histLGT[m] = 0;
-	}
+	
+	
 	for ( m = 0; m < gf->LGTCenters.numRegionH; m++)
 	{
 		for ( n = 0; n < gf->LGTCenters.numRegionW; n++)
 		{
+			//reset
+			for ( l = 0; l < gf->LGTCenters.numCenters; l++)
+			{
+				gf->histLGT[l] = 0;
+			}
 			for ( j = 0; j < regionH; j++)
 			{
 				for ( k = 0; k < regionW; k++)
@@ -1081,6 +1088,9 @@ void extractLGTFeatures(FACE3D_Type *gf)
 			}
 		}
 	}
+	
+		
+		
 }
 
 

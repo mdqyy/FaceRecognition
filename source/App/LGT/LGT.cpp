@@ -73,6 +73,7 @@ void getGaborResponse(LGTStruct *gLGT, FACE3D_Type * gf);
 //void convolution2D(unsigned char *src, float *dst, double *kernel, int size, int height, int width);
 void kMeanCenters(LGTStruct *gLGT, FACE3D_Type * gf, KMeanLGT *gk);
 void shuffle(int *list, int n);
+void freeLGT(LGTStruct *gLGT);
 
 FACE3D_Type			gf;
 LGTClass			gLGT;
@@ -85,6 +86,8 @@ KMeanLGT			gk;
 
 void initLGT( LGTStruct *gLGT, FACE3D_Type * gf)
 {
+	//
+
 	gLGT->numInGroup	= 10;
 	gLGT->k1			= 10;				//num of centers in first k-means
 	gLGT->k2			= 64;				//num of final centers
@@ -99,9 +102,16 @@ void initLGT( LGTStruct *gLGT, FACE3D_Type * gf)
 	gLGT->stepWidth		= gLGT->stepPixel * gf->tWidth;
 	gLGT->stepImage		= gLGT->stepWidth * gf->tHeight;
 	//allocate gabor response storage
-	gLGT->gaborResponse = (float *)malloc( gLGT->stepImage * gLGT->numImages * sizeof(float));
+	gLGT->gaborResponse = (float *)malloc(sizeof(float)*gLGT->stepImage * gLGT->numImages);
+	//gLGT->gaborResponse = 
 	gLGT->validFaces	= 0;
 
+}
+
+void freeLGT(LGTStruct *gLGT)
+{
+	free(gLGT->gaborResponse);
+	gLGT->gaborResponse = NULL;
 }
 
 void processFileList()
@@ -167,6 +177,7 @@ int main(int argc, char** argv)
 	// initializations.
 	//-------------------
 
+	//float *fp = new float[256000 * 1029];
 	initFaceWarping();	
 	initFaceFeature( &gf, 80, 80);
 	processFileList();
@@ -185,6 +196,7 @@ int main(int argc, char** argv)
 	// closing.
 	//-------------------
 	//closeFaceWarping();
+	freeLGT(&gLGT);
 	system("pause");
 	return 0;
 	

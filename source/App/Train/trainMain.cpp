@@ -849,6 +849,7 @@ void trainLGT(FACE3D_Type *gf)
 	unitFaceFeatClass	*bufferSingleFeatureID;
 
 	//init
+	IplImage *pFrame;
 	bufferSingleFeatureID	= (unitFaceFeatClass *)malloc( sizeof(unitFaceFeatClass) );
 	IplImage *tarFrame = cvCreateImage( cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, warpedImgChNum );
 	IplImage *grayFrame = cvCreateImage(cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, 1 );
@@ -875,7 +876,6 @@ void trainLGT(FACE3D_Type *gf)
 	{
 		tmpPath = &gf->fileList.fileName[i][0];
 		puts(tmpPath);
-		IplImage *pFrame;
 		pFrame = cvLoadImage(tmpPath, 3);
 		if(pFrame == NULL)
 		{
@@ -907,7 +907,7 @@ void trainLGT(FACE3D_Type *gf)
 						tmpImageData[ m * gf->tWidth + n] = CV_IMAGE_ELEM( grayFrame, unsigned char, m, n );
 				}
 			}
-
+			
 			extractLGTFeatures(gf);
 			
 			bufferSingleFeatureID->id	= gf->fileList.fileID[i];
