@@ -191,7 +191,7 @@ void initFaceFeature(FACE3D_Type * gf, int width, int height)
 	gf->LBPHist = (int *)malloc(NUM_BIN * sizeof(int));
 
 	//reset moved here 2013.2.27
-	memset(gf->faceFeatures, 0, sizeof(float) * (TN + TN1));
+	memset(gf->faceFeatures, 0, sizeof(float) * TOTAL_FEATURE_LEN);
 
 #if ROTATE_INVARIANT_LBP
 	//build look up table for rotation invariant LBP.
@@ -271,10 +271,122 @@ void initFaceFeature(FACE3D_Type * gf, int width, int height)
 	gf->tmpImageData = (unsigned char*)malloc(gf->tHeight * gf->tWidth * sizeof(unsigned char));
 	fclose(fb);
 #endif
+
+#if USE_WEIGHT
+	gf->bufferFaceFeatures = (unitFaceFeatClass *)malloc( sizeof(unitFaceFeatClass) * MAX_INPUT_IMAGES);
+	gf->histWeight = (float *)malloc(sizeof(float) * TOTAL_FEATURE_LEN);
+#endif
 			
+}
+
+void freeFaceFeature(FACE3D_Type *gf)
+{
+	int k;
+	if (gf->mask != NULL)
+	{
+		free(gf->mask);
+		gf->mask = NULL;
+	}
+	for ( k = 0; k < gf->nGabors * 2; k++)
+	{
+		if (gf->gaborCoefficients[k] != NULL)
+		{
+			free(gf->gaborCoefficients[k]);
+			gf->gaborCoefficients[k] = NULL;
+		}
+	}
+	if (gf->gaborCoefficients != NULL)
+	{
+		free(gf->gaborCoefficients);
+		gf->gaborCoefficients = NULL;
+	}
+
+	if (gf->fImage0 !=NULL)
+	{
+		free(gf->fImage0);
+		gf->fImage0 = NULL;
+	}
+	if (gf->fImage1 !=NULL)
+	{
+		free(gf->fImage1);
+		gf->fImage1 = NULL;
+	}
+	if (gf->fImage2 !=NULL)
+	{
+		free(gf->fImage2);
+		gf->fImage2 = NULL;
+	}
+#if FLIP_MATCH
+	if (gf->fImage0flip !=NULL)
+	{
+		free(gf->fImage0flip);
+		gf->fImage0flip = NULL;
+	}
+	if (gf->fImage1flip !=NULL)
+	{
+		free(gf->fImage1flip);
+		gf->fImage1flip = NULL;
+	}
+	if (gf->fImage2flip !=NULL)
+	{
+		free(gf->fImage2flip);
+		gf->fImage2flip = NULL;
+	}
+#endif
+	if (gf->faceFeatures != NULL)
+	{
+		free(gf->faceFeatures);
+		gf->faceFeatures = NULL;
+	}
+	if (gf->LBPHist !=NULL)
+	{
+		free(gf->LBPHist);
+		gf->LBPHist = NULL;
+	}
+
+#if USE_LGT
+	if (gf->LGTCenters.centers != NULL)
+	{
+		free(gf->LGTCenters.centers);
+		gf->LGTCenters.centers = NULL;
+	}
+
+	if (gf->gaborResponse != NULL)
+	{
+		free(gf->gaborResponse);
+		gf->gaborResponse = NULL;
+	}
+	if (gf->histLGT != NULL)
+	{
+		free(gf->histLGT);
+		gf->histLGT = NULL;
+	}
+	if (gf->tmpGaborResponse != NULL)
+	{
+		free(gf->tmpGaborResponse);
+		gf->tmpGaborResponse = NULL;
+	}
+	if (gf->tmpImageData != NULL)
+	{
+		free(gf->tmpImageData);
+		gf->tmpImageData = NULL;
+	}
 
 
 
+#endif
+#if USE_WEIGHT
+	if (gf->bufferFaceFeatures != NULL)
+	{
+		free(gf->bufferFaceFeatures);
+		gf->bufferFaceFeatures = NULL;
+	}
+	if(gf->histWeight != NULL)
+	{
+		free(gf->histWeight);
+		gf->histWeight = NULL;
+	}
+#endif
 
 }
 
@@ -1368,6 +1480,16 @@ void loadFaceData( FACE3D_Type * gf )
 	//
 	fclose(fpFaceDataFile);
 
+#if USE_WEIGHT
+	FILE *fpWeight = fopen( WEIGHTS_BIN, "rb");
+	if(fpWeight==NULL){
+		printf("open file %s failed!\n", WEIGHTS_BIN);fflush(stdout);
+		exit(-1);
+	}
+	fread(gf->histWeight, sizeof(float), TOTAL_FEATURE_LEN, fpWeight);
+#endif
+
+
 }//end: loadFaceData( FACE3D_Type * gf )
 
 
@@ -1446,13 +1568,17 @@ int	 matchFace( FACE3D_Type * gf )
 
 		sumDist				= 0;
 
-#if KAI_DISTANCE // use normalized distance
+#if CHI_DISTANCE // use normalized distance
 		for (i=0; i<featEntryLen; i++)
 		{
 			tmpDist			= (tarFeat[i])-(queryFeat[i]);
 			if( !(tarFeat[i] == 0 && queryFeat[i] ==0))
 			{
+#if USE_WEIGHT
+				sumDist += gf->histWeight[i]*(tmpDist * tmpDist)/(tarFeat[i] + queryFeat[i]);
+#else
 				sumDist += (tmpDist * tmpDist)/(tarFeat[i] + queryFeat[i]);
+#endif
 			}
 		}
 #else

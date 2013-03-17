@@ -110,8 +110,11 @@ void initLGT( LGTStruct *gLGT, FACE3D_Type * gf)
 
 void freeLGT(LGTStruct *gLGT)
 {
-	free(gLGT->gaborResponse);
-	gLGT->gaborResponse = NULL;
+	if (gLGT->gaborResponse !=NULL)
+	{
+		free(gLGT->gaborResponse);
+		gLGT->gaborResponse = NULL;
+	}
 }
 
 void processFileList()

@@ -45,6 +45,7 @@
 #define IMAGE_TAG_DIR			"../../image/ImgTag/"
 #define RESULT_TXT_DIR			"../../image/matchResult.txt"
 #define LGT_BIN_FILE			"../../image/LGT.bin"
+#define WEIGHTS_BIN				"../../image/weight.bin"
 
 #define DO_MATCH
 #define	STR_INPUT_IMAGE_DIR		"../../image/match/Query3/"
@@ -917,6 +918,7 @@ int main(int argc, char** argv)
 	// closing.
 	//-------------------
 	//closeFaceWarping();
+	freeFaceFeature(&gf);
 	system("pause");
 	
 }

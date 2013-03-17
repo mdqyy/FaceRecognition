@@ -40,6 +40,7 @@
 #define HISTOGRAM_EQUALIZATION 1
 #define ROTATE_INVARIANT_LBP 0
 #define LGT_FEATURE_LEN    4096
+#define USE_WEIGHT			0
 
 typedef struct imageList
 {
@@ -56,10 +57,23 @@ typedef struct CentersTag
 	int vecterSize;				
 }LGTCentersClass;
 
+typedef struct unitFaceFeatClass
+{
+	int		id;
+	float	feature[TOTAL_FEATURE_LEN];
+#if DEBUG_MODE
+	char	imagename[200];
+#endif
+
+
+
+}unitFaceFeatClass;
+
 typedef struct face3DTag
 {
 	imageListClass		fileList;
 	LGTCentersClass		LGTCenters;
+	int	  validFaces;
 	float *gaborResponse;
 	float *tmpGaborResponse;
 	unsigned char *tmpImageData;
@@ -101,6 +115,8 @@ typedef struct face3DTag
 #endif
 
 	float * faceFeatures;
+	unitFaceFeatClass *bufferFaceFeatures;	//store face features and id for weight training
+	float *histWeight;
 	int featurePtr;
 	int numIDtag;                   //number of tagged IDs 2013.2.20
 
@@ -123,17 +139,7 @@ typedef struct face3DTag
 
 }FACE3D_Type;
 
-typedef struct unitFaceFeatClass
-{
-	int		id;
-	float	feature[TOTAL_FEATURE_LEN];
-#if DEBUG_MODE
-	char	imagename[200];
-#endif
 
-
-
-}unitFaceFeatClass;
 
 
 
