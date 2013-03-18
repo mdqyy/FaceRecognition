@@ -45,3 +45,7 @@ ONLY ALGORITHM CHANGES WILL BE DISPLAYED HERE!
 3/14/2013
 
 - Local Gabor Texton without weighted match finished( memory problem existed).
+
+3/17/2013
+
+- Local Gabor Texton with weighted match

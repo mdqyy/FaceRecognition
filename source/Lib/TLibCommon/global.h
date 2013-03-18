@@ -40,7 +40,7 @@
 #define HISTOGRAM_EQUALIZATION 1
 #define ROTATE_INVARIANT_LBP 0
 #define LGT_FEATURE_LEN    4096
-#define USE_WEIGHT			0
+#define USE_WEIGHT			1
 
 typedef struct imageList
 {

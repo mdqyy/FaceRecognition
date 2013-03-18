@@ -955,8 +955,12 @@ void trainWeight(FACE3D_Type *gf)
 	{
 		//for each region
 		//Calculate means
-		numIntra = numExtra = 0;
-		sumIntra = sumExtra = 0;
+		numIntra = 0;
+		numExtra = 0;
+		sumIntra = 0;
+		sumExtra = 0;
+		sumIntraVar = 0;
+		sumExtraVar = 0;
 		for ( m = 0; m < numFaces; m++)
 		{
 			for ( n = m + 1; n < numFaces; n++)

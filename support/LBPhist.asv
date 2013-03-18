@@ -37,8 +37,17 @@ end
 distTab = distTab + distTab.';
 
 
+%train weight
+meanIntra = zeros(64,1);
+meanExtra = meanIntra;
+varIntra = meanIntra;
+varExtra = meanIntra;
 
-        
-                
+for ii = 1:NUM
+    for jj = ii:NUM
+        dist = (histLBP(ii,:) - histLBP(jj,:)).^2 ./ (histLBP(ii,:) + (histLBP(jj,:)));
+        dist(dist == Inf) = 0;
+        if ( id(ii) == id(jj)) %intra
+            
         
         
