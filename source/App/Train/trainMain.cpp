@@ -729,9 +729,9 @@ int main(int argc, char** argv)
 	processFileList();
 	//-------------------
 
-	trainLGT(&gf);
-	trainWeight(&gf);	// train weight for histogram
-	//testVideoData2();	// find the face coordinates and eye, mouse position
+	//trainLGT(&gf);
+	//trainWeight(&gf);	// train weight for histogram
+	testVideoData2();	// find the face coordinates and eye, mouse position
 	//videoAnalysis();	// extract feature given the face coordinates
 
 	//-------------------

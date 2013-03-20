@@ -45,6 +45,7 @@ void extractGaborFeatures(FACE3D_Type* gf);
 
 void loadFaceData( FACE3D_Type * gf );
 int	 matchFace(FACE3D_Type * gf );
+int	 matchFaceAverage( FACE3D_Type * gf );
 void convolution2D(unsigned char *src, float *dst, double *kernel, int size, int height, int width);
 
 #endif //DEFINE_H_INCLUDED

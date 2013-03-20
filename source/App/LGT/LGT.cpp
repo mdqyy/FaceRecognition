@@ -89,8 +89,8 @@ void initLGT( LGTStruct *gLGT, FACE3D_Type * gf)
 	//
 
 	gLGT->numInGroup	= 10;
-	gLGT->k1			= 20;				//num of centers in first k-means
-	gLGT->k2			= 64;				//num of final centers
+	gLGT->k1			= 10;				//num of centers in first k-means
+	gLGT->k2			= 32;				//num of final centers
 	gLGT->LGTRegionH	= 10;
 	gLGT->LGTRegionW	= 10;
 	gLGT->numLGTRegionH	= 8;

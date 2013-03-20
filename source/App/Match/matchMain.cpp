@@ -484,7 +484,8 @@ int testVideoData2()
 
 #ifdef DO_MATCH
 
-			matchedFaceID	= matchFace(&gf );
+			//matchedFaceID	= matchFace(&gf );
+			matchedFaceID	= matchFaceAverage(&gf );
 #endif
 
 
@@ -1067,6 +1068,12 @@ void testCamera()
 		if( faceDet->runFaceDetector(pFrame))
 		{	
 			/* there was a face detected by OpenCV. */
+			//char tmpName[260];
+			//if (frameNum % 5 ==0)
+			//{
+			//sprintf(tmpName, "%d.jpg", frameNum);
+			//cvSaveImage(tmpName, pFrame);
+			//}
 			
 			IplImage * clonedImg = cvCloneImage(pFrame);
 

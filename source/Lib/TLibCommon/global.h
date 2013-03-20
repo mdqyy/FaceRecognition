@@ -17,21 +17,21 @@
 #ifndef GLOBAL_H_INCLUDED
 #define GLOBAL_H_INCLUDED
 
-#define USE_LBP				0
-#define USE_LGT				1	//Local Gabor Textons
+#define USE_LBP				1
+#define USE_LGT				0	//Local Gabor Textons
 #define USE_GBP				0
 #define USE_GABOR			0
-#define NUM_NEAREST_NBOR	5
+#define NUM_NEAREST_NBOR	1
 
-#define FACE_FEATURE_LEN	4096
-#define TOTAL_FEATURE_LEN   4096
+#define FACE_FEATURE_LEN	5120
+#define TOTAL_FEATURE_LEN   5120
 
 #define LBP_STEP	10
 #define LBP_WINDOW	10
 #define MAX_NUM_GABOR	40
 
 
-#define MAX_FACE_ID			100
+#define MAX_FACE_ID			300
 #define MAX_INPUT_IMAGES	1500   // Max input training or matchin images
 
 #define DEBUG_OUTPUT_ALIGNED 0
@@ -39,7 +39,7 @@
 #define FLIP_MATCH			0
 #define HISTOGRAM_EQUALIZATION 1
 #define ROTATE_INVARIANT_LBP 0
-#define LGT_FEATURE_LEN    4096
+#define LGT_FEATURE_LEN    2048
 #define USE_WEIGHT			1
 
 typedef struct imageList
