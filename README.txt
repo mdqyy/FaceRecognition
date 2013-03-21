@@ -49,3 +49,7 @@ ONLY ALGORITHM CHANGES WILL BE DISPLAYED HERE!
 3/17/2013
 
 - Local Gabor Texton with weighted match
+
+3/21/2013
+
+- LBP with Weighted Matching

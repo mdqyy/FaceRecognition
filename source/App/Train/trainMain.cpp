@@ -95,6 +95,7 @@ void showResults(IplImage * frame, FACE3D_Type * gf);
 void processFileList();
 void trainLGT(FACE3D_Type *gf);
 void trainWeight(FACE3D_Type *gf);
+void trainWeightForLBP(FACE3D_Type *gf);
 
 
 
@@ -257,6 +258,9 @@ int testVideoData2()
 	int matchedFaceID;
 	int	i;
 
+	//Count image numbers
+	static int frameNum = 0;
+
 	// demo display.
 
 	IplImage *	imgFaceIDTag[MAX_NUM_FACE_ID_TAG];
@@ -325,8 +329,7 @@ int testVideoData2()
 		IplImage* pFrame = NULL; 
 		IplImage* orgFace = NULL;
 
-		//Count image numbers
-		static int frameNum = 0;
+		
 
 		//Image ID
 		//fscanf(fpinput, "%d", &tmpFaceID);
@@ -466,6 +469,10 @@ int testVideoData2()
 			fwrite( bufferSingleFeatureID, 1, sizeof(unitFaceFeatClass), fpOutBinaryFile );
 #endif
 
+#if USE_WEIGHT
+			gf.bufferFaceFeatures[frameNum] = *bufferSingleFeatureID;
+#endif
+
 #ifdef DO_MATCH
 
 			matchedFaceID	= matchFace( gf.faceFeatures, &gf );
@@ -573,6 +580,9 @@ int testVideoData2()
 #ifdef WRITE_FEATURE_DATUM_2_FILE
 	fclose(fpOutBinaryFile);
 #endif
+
+	//record valid faces
+	gf.validFaces = frameNum;
 	return NULL;
 	
 }
@@ -732,6 +742,7 @@ int main(int argc, char** argv)
 	//trainLGT(&gf);
 	//trainWeight(&gf);	// train weight for histogram
 	testVideoData2();	// find the face coordinates and eye, mouse position
+	trainWeightForLBP(&gf);
 	//videoAnalysis();	// extract feature given the face coordinates
 
 	//-------------------
@@ -1048,3 +1059,119 @@ void trainWeight(FACE3D_Type *gf)
 }//end function trainWeight
 
 
+
+
+void trainWeightForLBP(FACE3D_Type *gf)
+{
+	int numIntra, numExtra;
+	float *weight = gf->histWeight;
+	float tmpWeight;
+	float sumIntra, sumExtra;
+	float sumIntraVar, sumExtraVar;
+	float meanIntra, meanExtra;
+	float varIntra, varExtra;
+	int i, j, m, n;
+	//int numRegionH = gf->LGTCenters.numRegionH;
+	//int numRegionW = gf->LGTCenters.numRegionW;
+	int numRegions = TOTAL_FEATURE_LEN / NUM_BIN;	//num of regions
+	int histLength = NUM_BIN;	//histogram length in each region
+	int numFaces = gf->validFaces;
+	float	dist,tmpDist, h1, h2;
+
+	//float *tmpWeight = (float *)malloc(sizeof(float) * numRegions);
+
+	for ( i = 0; i < numRegions; i++)
+	{
+		//for each region
+		//Calculate means
+		numIntra = 0;
+		numExtra = 0;
+		sumIntra = 0;
+		sumExtra = 0;
+		sumIntraVar = 0;
+		sumExtraVar = 0;
+		for ( m = 0; m < numFaces; m++)
+		{
+			for ( n = m + 1; n < numFaces; n++)
+			{
+				dist = 0;
+				for ( j = 0; j < histLength; j++)
+				{
+					//compute chi-square distance
+					h1 = gf->bufferFaceFeatures[m].feature[ histLength * i + j];
+					h2 = gf->bufferFaceFeatures[n].feature[ histLength * i + j];
+					if ( h1 != 0 || h2 !=0)
+					{
+						tmpDist = h1 - h2;
+						dist += tmpDist * tmpDist / ( h1 + h2);
+					}
+				}
+				if (gf->bufferFaceFeatures[m].id == gf->bufferFaceFeatures[n].id)
+				{
+					//intra class
+					sumIntra += dist;
+					numIntra++;
+				}
+				else
+				{
+					//extra class
+					sumExtra += dist;
+					numExtra++;
+				}
+			}
+		}
+		meanIntra = sumIntra / numIntra;
+		meanExtra = sumExtra / numExtra;
+
+		//Calculate variances
+		for ( m = 0; m < numFaces; m++)
+		{
+			for ( n = m + 1; n < numFaces; n++)
+			{
+				dist = 0;
+				for ( j = 0; j < histLength; j++)
+				{
+					//compute chi-square distance
+					h1 = gf->bufferFaceFeatures[m].feature[ histLength * i + j];
+					h2 = gf->bufferFaceFeatures[n].feature[ histLength * i + j];
+					if ( h1 != 0 || h2 !=0)
+					{
+						tmpDist = h1 - h2;
+						dist += tmpDist * tmpDist / ( h1 + h2);
+					}
+				}
+				if (gf->bufferFaceFeatures[m].id == gf->bufferFaceFeatures[n].id)
+				{
+					//intra class
+					sumIntraVar += (dist - meanIntra)*(dist - meanIntra);
+				}
+				else
+				{
+					//extra class
+					sumExtraVar += (dist - meanExtra)*(dist - meanExtra);
+				}
+			}
+		}
+		varIntra = sumIntraVar / numIntra;
+		varExtra = sumExtraVar / numExtra;
+
+		//weight
+		tmpWeight = (meanIntra - meanExtra) * (meanIntra - meanExtra) / ( varIntra + varExtra);
+		for ( j = 0; j < histLength; j++)
+		{
+			weight[ i * histLength + j] = tmpWeight;
+		}
+
+	}//end region scan
+
+	//write weights to file
+	FILE * fp = fopen( WEIGHTS_BIN, "w+b");
+	if(fp==NULL){
+		printf("open file faces.bin failed!\n");fflush(stdout);
+		exit(-1);
+	}
+	fwrite( weight, sizeof(float), histLength * numRegions, fp);
+	fclose(fp);
+		
+	
+}//end function trainWeight

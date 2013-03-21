@@ -497,11 +497,11 @@ void grayDownsample(IplImage* src, FACE3D_Type * gf, int frameCnt, bool isMatchi
 
 	//Output faces only
 	char tmpPath[500];
-	sprintf(tmpPath, "%s%d_0.jpg", "C:/Users/Zhang/Desktop/Debug/",frameCnt);
+	sprintf(tmpPath, "%s%d_0.jpg", "C:/Users/Zhi/Desktop/Debug/",frameCnt);
 	cvSaveImage(tmpPath, tmpImg0);
-	sprintf(tmpPath, "%s%d_1.jpg", "C:/Users/Zhang/Desktop/Debug/",frameCnt);
+	sprintf(tmpPath, "%s%d_1.jpg", "C:/Users/Zhi/Desktop/Debug/",frameCnt);
 	cvSaveImage(tmpPath, tmpImg1);
-	sprintf(tmpPath, "%s%d_2.jpg", "C:/Users/Zhang/Desktop/Debug/",frameCnt);
+	sprintf(tmpPath, "%s%d_2.jpg", "C:/Users/Zhi/Desktop/Debug/",frameCnt);
 	cvSaveImage(tmpPath, tmpImg2);
 #endif
 
