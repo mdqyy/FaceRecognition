@@ -485,7 +485,8 @@ int testVideoData2()
 #ifdef DO_MATCH
 
 			//matchedFaceID	= matchFace(&gf );
-			matchedFaceID	= matchFaceAverage(&gf );
+			//matchedFaceID	= matchFaceAverage(&gf );
+			matchedFaceID	= matchFaceLimitedAverage(&gf );
 #endif
 
 

@@ -44,8 +44,9 @@ void extractGBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 void extractGaborFeatures(FACE3D_Type* gf);
 
 void loadFaceData( FACE3D_Type * gf );
-int	 matchFace(FACE3D_Type * gf );
-int	 matchFaceAverage( FACE3D_Type * gf );
+int	 matchFace(FACE3D_Type * gf );					//vote matching
+int	 matchFaceAverage( FACE3D_Type * gf );			//average matching
+int	 matchFaceLimitedAverage( FACE3D_Type * gf );	//limited number average matching
 void convolution2D(unsigned char *src, float *dst, double *kernel, int size, int height, int width);
 
 #endif //DEFINE_H_INCLUDED

@@ -1897,7 +1897,212 @@ int	 matchFaceAverage( FACE3D_Type * gf )
 	// return.
 	return matchedFaceID;
 
-}//end: matchFace( FACE3D_Type * gf )
+}//end: matchFaceAverage( FACE3D_Type * gf )
+
+
+
+int	 matchFaceLimitedAverage( FACE3D_Type * gf )
+{
+	float			*queryFeat = gf->faceFeatures;
+#if FLIP_MATCH
+	float			*queryFeatFlip = gf->faceFeaturesFlip;
+#endif
+	int				matchedFaceID;
+	int				featEntryLen;
+	int				i, j, idxBuf2Fill;
+	int				loadedDataLen;
+	int				unitDataInByte;
+	int				ptrOneLoadedData;
+	int				currTarID;
+	int				idVoted, tmpMostVotedID, tmpMostVote;
+	float			sumDist, tmpDist;
+	float			maxMatchingDistance;
+	float*			tarFeat;
+	float*			ptrFeatDistance;
+	int*			ptrUsedDistFlag;
+	int*			ptrBestDistID;
+	int*			cntIDVote;
+	unsigned char*	ptrLoadedData;
+#if DEBUG_MODE
+	char			curImageName[200];
+	char*			bestDistIDFileName[NUM_NEAREST_NBOR+1];
+	for (int kk = 0; kk<NUM_NEAREST_NBOR+1;kk++)
+		bestDistIDFileName[kk] = gf->bestDistImageName[kk];
+#endif
+
+	unitFaceFeatClass* ptrCurFetchedData;
+
+	// init.
+	matchedFaceID	= 0;
+	featEntryLen	= TOTAL_FEATURE_LEN;
+	ptrFeatDistance = gf->featDistance;
+	ptrUsedDistFlag = gf->usedDistFlag;
+	ptrBestDistID	= gf->bestDistID;
+	loadedDataLen	= gf->bufFaceDataLen;
+	ptrLoadedData	= gf->bufferFaceData;
+	cntIDVote		= gf->voteCntFaceID;
+	unitDataInByte	= sizeof(unitFaceFeatClass);
+
+	//sorted distance table
+	float sortedDist[MAX_FACE_ID][MAX_FACES_EACH_CLASS];
+	for ( i = 0; i < MAX_FACE_ID; i++)
+	{
+		for ( j = 0; j < MAX_FACES_EACH_CLASS; j++)
+		{
+			sortedDist[i][j] = MAX_FLOAT;
+		}
+	}
+
+	//average counting
+	float sumDistForEachID[MAX_FACE_ID];
+	int   numDistForEachID[MAX_FACE_ID];
+	float meanDist[MAX_FACE_ID];
+	for ( j = 0; j < MAX_FACE_ID; j++)
+	{
+		sumDistForEachID[j] = 0;
+		numDistForEachID[j] = 0;
+	}
+
+
+	for (i=0; i<NUM_NEAREST_NBOR; i++)
+	{
+		ptrBestDistID[i]	= 0;
+		ptrUsedDistFlag[i]	= 0;
+		ptrFeatDistance[i]	= MAX_FLOAT;
+
+	}//end:	init. nearest neighbor.
+
+	// match.
+
+	for ( ptrOneLoadedData = 0; ptrOneLoadedData < loadedDataLen; ptrOneLoadedData += unitDataInByte )
+	{
+		if (ptrOneLoadedData >= (loadedDataLen-unitDataInByte-1) )	break;
+
+		// load one face data.
+
+		ptrCurFetchedData	= (unitFaceFeatClass*)(ptrLoadedData + ptrOneLoadedData);
+		tarFeat				= ptrCurFetchedData->feature;
+		currTarID			= ptrCurFetchedData->id;
+#if DEBUG_MODE
+		for (int kk = 0; kk<200; kk++)
+			curImageName[kk]		= ptrCurFetchedData->imagename[kk];
+#endif
+
+
+		// distance.
+
+		sumDist				= 0;
+
+#if CHI_DISTANCE // use normalized distance
+		for (i=0; i<featEntryLen; i++)
+		{
+			tmpDist			= (tarFeat[i])-(queryFeat[i]);
+			if( !(tarFeat[i] == 0 && queryFeat[i] ==0))
+			{
+#if USE_WEIGHT
+				sumDist += gf->histWeight[i]*(tmpDist * tmpDist)/(tarFeat[i] + queryFeat[i]);
+#else
+				sumDist += (tmpDist * tmpDist)/(tarFeat[i] + queryFeat[i]);
+#endif
+			}
+		}
+#else
+		for (i=0; i<featEntryLen; i++)
+		{
+			tmpDist			= (float)(tarFeat[i])-(queryFeat[i]);
+
+			if (tmpDist >= 0)
+			{	sumDist		= sumDist + tmpDist;
+			} 
+			else
+			{	sumDist		= sumDist - tmpDist;
+			}
+		}
+#endif
+
+#if FLIP_MATCH
+		float sumDistFlip = 0;
+		for (i=0; i<featEntryLen; i++)
+		{
+			tmpDist			= (float)(tarFeat[i])-(queryFeatFlip[i]);
+
+			if (tmpDist >= 0)
+			{	sumDistFlip		+=tmpDist;
+			} 
+			else
+			{	sumDistFlip		-=tmpDist;
+			}
+		}
+		sumDist = (sumDistFlip < sumDist)? sumDistFlip:sumDist; //take smaller distance of original or flipped image
+#endif
+
+
+		
+
+		//put distance into sorted table
+		for ( j = 0; j < MAX_FACES_EACH_CLASS; j++)
+		{
+			if ( sortedDist[currTarID-1][j] > sumDist)
+			{
+				for ( i = MAX_FACES_EACH_CLASS; i > j; i--)
+				{
+					sortedDist[currTarID-1][i] = sortedDist[currTarID-1][i-1];
+				}
+				sortedDist[currTarID-1][j] = sumDist;
+				numDistForEachID[currTarID-1] ++;
+				break;
+			}
+		}
+	}
+	
+	for ( j = 0; j < MAX_FACE_ID; j++)
+	{
+		if (numDistForEachID[j] < NUM_NEAREST_NBOR)
+		{
+			for ( i = 0; i < numDistForEachID[j]; i++)
+			{
+				sumDistForEachID[j] += sortedDist[j][i];
+			}
+		}
+		else
+		{
+			for ( i = 0; i < NUM_NEAREST_NBOR; i++)
+			{
+				sumDistForEachID[j] += sortedDist[j][i];
+			}
+			numDistForEachID[j] = NUM_NEAREST_NBOR;
+		}
+	}
+
+	for ( j = 0; j < MAX_FACE_ID; j++)
+	{
+		if (numDistForEachID[j] > 0)
+		{
+			meanDist[j] = sumDistForEachID[j] / numDistForEachID[j];
+		}
+		else
+		{
+			meanDist[j] = MAX_FLOAT;
+		}
+	}
+
+	float minDist = MAX_FLOAT;
+	matchedFaceID = 0;
+	for (j = 0; j < MAX_FACE_ID; j++)
+	{
+		if (meanDist[j] < minDist)
+		{
+			minDist = meanDist[j];
+			matchedFaceID = j+1;
+		}
+	}
+
+
+
+	// return.
+	return matchedFaceID;
+
+}//end: matchFaceLimitedAverage( FACE3D_Type * gf )
 
 
 

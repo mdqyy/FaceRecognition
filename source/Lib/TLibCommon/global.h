@@ -21,7 +21,7 @@
 #define USE_LGT				0	//Local Gabor Textons
 #define USE_GBP				0
 #define USE_GABOR			0
-#define NUM_NEAREST_NBOR	1
+#define NUM_NEAREST_NBOR	2
 
 #define FACE_FEATURE_LEN	5120
 #define TOTAL_FEATURE_LEN   5120
@@ -32,6 +32,7 @@
 
 
 #define MAX_FACE_ID			300
+#define MAX_FACES_EACH_CLASS	50	//max images in each class
 #define MAX_INPUT_IMAGES	1500   // Max input training or matchin images
 
 #define DEBUG_OUTPUT_ALIGNED 0
