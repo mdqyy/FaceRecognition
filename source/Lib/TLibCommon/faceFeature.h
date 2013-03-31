@@ -47,6 +47,8 @@ void loadFaceData( FACE3D_Type * gf );
 int	 matchFace(FACE3D_Type * gf );					//vote matching
 int	 matchFaceAverage( FACE3D_Type * gf );			//average matching
 int	 matchFaceLimitedAverage( FACE3D_Type * gf );	//limited number average matching
+int	 matchFaceLimitedAverageDebug( FACE3D_Type * gf, int selfID, int* bestID, float* dist1, float* dist2, float* dist3 );//Debug
 void convolution2D(unsigned char *src, float *dst, double *kernel, int size, int height, int width);
+void extractCAFeature(FACE3D_Type * gf); //correlation angle feature
 
 #endif //DEFINE_H_INCLUDED

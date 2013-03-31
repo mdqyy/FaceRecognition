@@ -2106,6 +2106,243 @@ int	 matchFaceLimitedAverage( FACE3D_Type * gf )
 
 
 
+int	 matchFaceLimitedAverageDebug( FACE3D_Type * gf, int selfID, int* bestID, float* dist1, float* dist2, float* dist3 )
+{
+	//int				selfID = 18;//debug setting
+	float			*queryFeat = gf->faceFeatures;
+#if FLIP_MATCH
+	float			*queryFeatFlip = gf->faceFeaturesFlip;
+#endif
+	int				matchedFaceID;
+	int				featEntryLen;
+	int				i, j, idxBuf2Fill;
+	int				loadedDataLen;
+	int				unitDataInByte;
+	int				ptrOneLoadedData;
+	int				currTarID;
+	int				idVoted, tmpMostVotedID, tmpMostVote;
+	float			sumDist, tmpDist;
+	float			maxMatchingDistance;
+	float*			tarFeat;
+	float*			ptrFeatDistance;
+	int*			ptrUsedDistFlag;
+	int*			ptrBestDistID;
+	int*			cntIDVote;
+	unsigned char*	ptrLoadedData;
+#if DEBUG_MODE
+	char			curImageName[200];
+	char*			bestDistIDFileName[NUM_NEAREST_NBOR+1];
+	for (int kk = 0; kk<NUM_NEAREST_NBOR+1;kk++)
+		bestDistIDFileName[kk] = gf->bestDistImageName[kk];
+#endif
+
+	unitFaceFeatClass* ptrCurFetchedData;
+
+	// init.
+	matchedFaceID	= 0;
+	featEntryLen	= TOTAL_FEATURE_LEN;
+	ptrFeatDistance = gf->featDistance;
+	ptrUsedDistFlag = gf->usedDistFlag;
+	ptrBestDistID	= gf->bestDistID;
+	loadedDataLen	= gf->bufFaceDataLen;
+	ptrLoadedData	= gf->bufferFaceData;
+	cntIDVote		= gf->voteCntFaceID;
+	unitDataInByte	= sizeof(unitFaceFeatClass);
+
+	//sorted distance table
+	float sortedDist[MAX_FACE_ID][MAX_FACES_EACH_CLASS];
+	int	  sortedIdx[MAX_FACE_ID][MAX_FACES_EACH_CLASS];
+	for ( i = 0; i < MAX_FACE_ID; i++)
+	{
+		for ( j = 0; j < MAX_FACES_EACH_CLASS; j++)
+		{
+			sortedDist[i][j] = MAX_FLOAT;
+			sortedIdx[i][j] = 0;
+		}
+	}
+
+	//average counting
+	float sumDistForEachID[MAX_FACE_ID];
+	int   numDistForEachID[MAX_FACE_ID];
+	float meanDist[MAX_FACE_ID];
+	for ( j = 0; j < MAX_FACE_ID; j++)
+	{
+		sumDistForEachID[j] = 0;
+		numDistForEachID[j] = 0;
+	}
+
+
+	for (i=0; i<NUM_NEAREST_NBOR; i++)
+	{
+		ptrBestDistID[i]	= 0;
+		ptrUsedDistFlag[i]	= 0;
+		ptrFeatDistance[i]	= MAX_FLOAT;
+
+	}//end:	init. nearest neighbor.
+
+	// match.
+
+	for ( ptrOneLoadedData = 0; ptrOneLoadedData < loadedDataLen; ptrOneLoadedData += unitDataInByte )
+	{
+		if (ptrOneLoadedData >= (loadedDataLen-unitDataInByte-1) )	break;
+
+		// load one face data.
+
+		ptrCurFetchedData	= (unitFaceFeatClass*)(ptrLoadedData + ptrOneLoadedData);
+		tarFeat				= ptrCurFetchedData->feature;
+		currTarID			= ptrCurFetchedData->id;
+#if DEBUG_MODE
+		for (int kk = 0; kk<200; kk++)
+			curImageName[kk]		= ptrCurFetchedData->imagename[kk];
+#endif
+
+
+		// distance.
+
+		sumDist				= 0;
+
+#if CHI_DISTANCE // use normalized distance
+		for (i=0; i<featEntryLen; i++)
+		{
+			tmpDist			= (tarFeat[i])-(queryFeat[i]);
+			if( !(tarFeat[i] == 0 && queryFeat[i] ==0))
+			{
+#if USE_WEIGHT
+				sumDist += gf->histWeight[i]*(tmpDist * tmpDist)/(tarFeat[i] + queryFeat[i]);
+#else
+				sumDist += (tmpDist * tmpDist)/(tarFeat[i] + queryFeat[i]);
+#endif
+			}
+		}
+#else
+		for (i=0; i<featEntryLen; i++)
+		{
+			tmpDist			= (float)(tarFeat[i])-(queryFeat[i]);
+
+			if (tmpDist >= 0)
+			{	sumDist		= sumDist + tmpDist;
+			} 
+			else
+			{	sumDist		= sumDist - tmpDist;
+			}
+		}
+#endif
+
+#if FLIP_MATCH
+		float sumDistFlip = 0;
+		for (i=0; i<featEntryLen; i++)
+		{
+			tmpDist			= (float)(tarFeat[i])-(queryFeatFlip[i]);
+
+			if (tmpDist >= 0)
+			{	sumDistFlip		+=tmpDist;
+			} 
+			else
+			{	sumDistFlip		-=tmpDist;
+			}
+		}
+		sumDist = (sumDistFlip < sumDist)? sumDistFlip:sumDist; //take smaller distance of original or flipped image
+#endif
+
+
+		
+
+		//put distance into sorted table
+		for ( j = 0; j < MAX_FACES_EACH_CLASS; j++)
+		{
+			if ( sortedDist[currTarID-1][j] > sumDist)
+			{
+				for ( i = MAX_FACES_EACH_CLASS; i > j; i--)
+				{
+					sortedDist[currTarID-1][i] = sortedDist[currTarID-1][i-1];
+					sortedIdx[currTarID-1][i] = sortedIdx[currTarID-1][i-1];
+				}
+				sortedDist[currTarID-1][j] = sumDist;
+				numDistForEachID[currTarID-1] ++;
+				sortedIdx[currTarID-1][j] = numDistForEachID[currTarID-1];
+				break;
+			}
+		}
+	}
+
+	*dist1 = sortedDist[selfID-1][0];
+	*dist2 = sortedDist[selfID-1][numDistForEachID[selfID-1]-1];
+	
+	for ( j = 0; j < MAX_FACE_ID; j++)
+	{
+		if (numDistForEachID[j] < NUM_NEAREST_NBOR)
+		{
+			for ( i = 0; i < numDistForEachID[j]; i++)
+			{
+				sumDistForEachID[j] += sortedDist[j][i];
+			}
+		}
+		else
+		{
+			for ( i = 0; i < NUM_NEAREST_NBOR; i++)
+			{
+				sumDistForEachID[j] += sortedDist[j][i];
+			}
+			numDistForEachID[j] = NUM_NEAREST_NBOR;
+		}
+	}
+
+	for ( j = 0; j < MAX_FACE_ID; j++)
+	{
+		if (numDistForEachID[j] > 0)
+		{
+			meanDist[j] = sumDistForEachID[j] / numDistForEachID[j];
+		}
+		else
+		{
+			meanDist[j] = MAX_FLOAT;
+		}
+	}
+
+	float minDist = MAX_FLOAT;
+	matchedFaceID = 0;
+	for (j = 0; j < MAX_FACE_ID; j++)
+	{
+		if (meanDist[j] < minDist)
+		{
+			minDist = meanDist[j];
+			matchedFaceID = j+1;
+		}
+	}
+
+	
+
+	
+	*bestID = 0;
+	if (matchedFaceID != selfID)
+	{
+		*bestID = matchedFaceID;
+		*dist3 = sortedDist[matchedFaceID-1][0];
+		return matchedFaceID;
+	}
+	else
+	{
+		minDist = MAX_FLOAT;
+		for (j = 0; j < MAX_FACE_ID; j++)
+		{
+			if ( j != (selfID -1))
+			{
+				if (meanDist[j] < minDist)
+				{
+					minDist = meanDist[j];
+					*bestID = j+1;
+				}
+			}
+		}
+		*dist3 = minDist;
+
+		return 0;
+	}
+
+}//end: matchFaceLimitedAverageDebug( FACE3D_Type * gf )
+
+
+
 
 /* 2D convolution for gray 8-bit image*/
 // src : input image
@@ -2167,3 +2404,67 @@ void convolution2D(unsigned char *src, float *dst, double *kernel, int size, int
 
 
 }//end function convulution2D
+
+#if 0
+void extractCAFeature(FACE3D_Type * gf)
+{
+	int*	pImg = gf->fImage0;
+	int		lBound, uBound;
+	float	inteval;
+	int		W = gf->tWidth;
+	int		H = gf->tHeight;
+	int		i,j,k;
+	int		ix,iy,jx,jy,kx,ky;
+	int		caImg[warpedImgH][warpedImgW];
+	int		histCA[NUM_CLASS_CA*NUM_CLASS_CA*NUM_CLASS_CA*NUM_ANGLES];
+	int		posHist;
+	double  angle;
+	double	slopeAB, slopeBC;
+	
+	//get min and max of image
+	lBound = 255;
+	uBound = 0;
+	for (i = 0; i < W*H; i++)
+	{
+		if ( pImg[i] < lBound)
+		{
+			lBound = pImg[i];
+		}
+		if( pImg[i] > uBound)
+		{
+			uBound = pImg[i];
+		}
+	}
+	//
+	assert(lBound <= uBound);
+
+	inteval = ((float)(uBound - lBound))/ NUM_CLASS_CA;
+	
+	//translate intensity to class rank, like 0,1,2...
+	for ( i = 0; i < H; i++)
+	{
+		for ( j = 0; j < W; j++)
+		{
+			caImg[i][j] = (int)(( pImg[ i * W + j] - lBound) / inteval);
+		}
+	}
+
+	//compute histogram
+	for ( iy = 0; iy < H; iy++)
+		for ( ix = 0; ix < W; ix++)
+			for ( jy = 0; jy < H; jy++)
+				for ( jx = 0; jx < W; jx++)
+					for (ky = 0; ky < H; ky++)
+						for (kx = 0; kx < W; kx++)
+						{
+							if ( ix == jx)
+							{
+								slopeAB = 
+							}
+							slopeAB = ( jy - iy) / (jx - ix);
+							slopeBC = ( ky - jy) / (kx - jx);
+							angle = atan( (slopeAB - slopeBC) / ( 1 + slopeAB*slopeBC))
+							
+}
+
+#endif

@@ -43,6 +43,11 @@
 #define LGT_FEATURE_LEN    2048
 #define USE_WEIGHT			1
 
+//-----correlation angle------//
+#define NUM_CLASS_CA        5
+#define NUM_ANGLES			36
+
+
 typedef struct imageList
 {
 	char fileName[MAX_INPUT_IMAGES][260];

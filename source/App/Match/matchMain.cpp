@@ -39,6 +39,7 @@
 //#define WRITE_FEATURE_DATUM_2_FILE
 //#define	STR_INPUT_IMAGE_DIR		"../../image/train/input_align_2/"
 #define MATCH_IMAGE_DIR			"../../image/match/"
+#define TRAIN_IMAGE_DIR			"../../image/train/"
 #define MATCH_INPUT_TXT_FILE    "../../image/matchIn.txt"
 #define MATCH_OUTPUT_TXT_FILE	"../../image/matchOut.txt"
 #define BIN_FILE				"../../image/faces.bin"
@@ -66,6 +67,7 @@ int    NTESTSAMPLES = 1;
 #endif
 
 void testCamera();
+void cameraDebug();
 
 #if 0
 #pragma  comment(lib, "opencv_calib3d242d.lib")
@@ -719,6 +721,542 @@ int testVideoData2()
 }
 
 
+int testVideoData2Debug()
+{
+	FILE* pDist = fopen("C:/Users/Zhi/Desktop/dist.txt", "w+");
+	int m,n;
+	CvFont font;
+	double hScale=0.5;
+	double vScale=0.5;
+	int    lineWidth=2;
+	int tmpW = 800, tmpH = 600;
+	int resultCnt[MAX_FACE_ID],correctCnt[MAX_FACE_ID]; //Result rate calculation
+
+	for (int i = 0; i<MAX_FACE_ID; i++)
+	{
+		resultCnt[i] = 0;
+		correctCnt[i] = 0;
+	}
+#if DEBUG_MODE
+	char debugPath[500], tmpDebugPath[500];
+#endif
+	
+
+	cvInitFont(&font,CV_FONT_HERSHEY_SIMPLEX, hScale,vScale,0,lineWidth);
+
+//	string faceData = "yalebfaceFileList.txt";//"lwifaceFileList.txt";
+//	CvGaborFace * gFace = new CvGaborFace;
+//	gFace->loadTrnList(faceData);
+
+
+	eyesDetector * detectEye = new eyesDetector;
+#if 0
+	CvCapture* capture = cvCaptureFromCAM( 0 );
+#elif 0
+	CvCapture* capture = cvCaptureFromAVI("D:\\out_york1.avi");
+#endif
+	//cvNamedWindow("show");
+
+	printf("Write out face images with feature points marked\n=============\n");
+
+	faceDetector * faceDet =  new faceDetector();
+//	CvMat*  face_data = cvCreateMat( 1, CNNFACECLIPHEIGHT*CNNFACECLIPWIDTH, CV_32FC1 );
+//	CvMat*  face_data_int = cvCreateMat( 1, CNNFACECLIPHEIGHT*CNNFACECLIPWIDTH, CV_8UC1 );
+	IplImage*  gray_face_CNN = cvCreateImage(cvSize(CNNFACECLIPHEIGHT,CNNFACECLIPWIDTH), 8, 1);
+	IplImage *grayFrame = cvCreateImage(cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, 1 );
+	unsigned char *tmpImageData = gf.tmpImageData;
+
+	// Feature points array
+	CvPoint pointPos[6];
+	CvPoint *leftEye    = &pointPos[0];
+	CvPoint *rightEye   = &pointPos[2];
+	CvPoint *leftMouth  = &pointPos[4];
+	CvPoint *rightMouth = &pointPos[5];
+
+#if 0
+	// Image list.
+	FILE *fpinput = fopen(MATCH_INPUT_TXT_FILE,"r");
+	if(fpinput==NULL){
+		printf("open file testinput.txt failed!\n");fflush(stdout);
+		exit(-1);
+	}
+#endif
+	FILE *fpoutput = fopen(MATCH_OUTPUT_TXT_FILE,"w");
+	if(fpoutput==NULL){
+		printf("open file testoutput.txt failed!\n");fflush(stdout);
+		exit(-1);
+	}
+
+
+	//char inputdir[100]="input_align_2/";
+	char inputdir[100]= STR_INPUT_IMAGE_DIR;
+	char tmpname[500];
+
+	char tagImgdir[100]= IMAGE_TAG_DIR;
+	char tagImgName[500];
+	int tmpFaceID;
+	int matchedFaceID;
+	int	i;
+
+	// demo display.
+
+	IplImage *	imgFaceIDTag[MAX_NUM_FACE_ID_TAG];
+	IplImage *	inputQueryImgResized;
+	int			numTaggedFaces = 0;
+
+	for (i=0; i<MAX_NUM_FACE_ID_TAG; i++)
+	{
+		sprintf( tagImgName, "%s%d.JPG",tagImgdir, i+1);
+		imgFaceIDTag[i]		= cvLoadImage(tagImgName,3);
+
+		if (imgFaceIDTag[i] == NULL)
+		{
+			printf("\nNum of tagged faces: %d\n", i);fflush(stdout);
+			//exit(-1);
+			numTaggedFaces = i;
+			break;
+		}
+	
+	}
+
+	
+
+	// Face feature archive.
+	bufferSingleFeatureID	= (unitFaceFeatClass *)malloc( sizeof(unitFaceFeatClass) );
+
+#ifdef WRITE_FEATURE_DATUM_2_FILE
+	FILE *fpOutBinaryFile = fopen( BIN_FILE, "w+b");  // 2013.2.11 a+b to w+b
+#endif
+
+	/************************************************************************/
+	/* look over face image samples.                                        */
+	/************************************************************************/
+	char to_search[500] = "./";
+	// for each face tag
+	for ( int ii = 0; ii < numTaggedFaces; ii++)
+	{
+	sprintf(to_search, "%s%d/*.jpg",MATCH_IMAGE_DIR,ii+1);
+	long handle;                                                //search handle
+	struct _finddata_t fileinfo;                          // file info struct
+	handle=_findfirst(to_search,&fileinfo);         
+	if(handle != -1) 
+	{
+		do
+		{
+	//while(!feof(fpinput)){
+
+#if 0
+		strcpy(tmpname,"");
+		fgets(tmpname,500,fpinput);
+		//printf(" %d ", strlen(tmpname)); 
+		if(strlen(tmpname)==0)
+			break;
+		tmpname[strlen(tmpname)-1]='\0';
+		puts(tmpname);
+#endif
+		//fscanf(fpinput, "%s	%d", tmpname, &tmpFaceID);
+
+		// Store captured frame
+		IplImage* pFrame = NULL; 
+		IplImage* orgFace = NULL;
+
+		//Count image numbers
+		static int frameNum = 0;
+
+		//Image ID
+		//fscanf(fpinput, "%d", &tmpFaceID);
+
+#if 0
+		pFrame = cvQueryFrame( capture );
+#else
+		char tmppath[500];
+		//sprintf(tmppath,"%s%s",inputdir,tmpname);
+		sprintf(tmppath,"%s",fileinfo.name);
+		puts(tmppath);
+		sprintf(tmppath,"%s%d/%s",MATCH_IMAGE_DIR, ii+1,fileinfo.name);
+		pFrame = cvLoadImage(tmppath,3);
+		if(pFrame == NULL)
+		{
+			printf("read image file error!\n");fflush(stdout);
+			exit(-1);
+		}
+#endif
+
+		if( faceDet->runFaceDetector(pFrame))
+		{	
+			/* there was a face detected by OpenCV. */
+			
+			IplImage * clonedImg = cvCloneImage(pFrame);
+
+			detectEye->runEyeDetector(clonedImg, gray_face_CNN, faceDet, pointPos);
+
+			cvReleaseImage(&clonedImg);
+
+			int UL_x = faceDet->faceInformation.LT.x;
+			int UL_y = faceDet->faceInformation.LT.y;
+
+			// face width and height
+			CvPoint pt1, pt2;
+			pt1.x =  faceDet->faceInformation.LT.x;
+			pt1.y = faceDet->faceInformation.LT.y;
+			pt2.x = pt1.x + faceDet->faceInformation.Width;
+			pt2.y = pt1.y + faceDet->faceInformation.Height;
+
+			// face warping.
+
+			IplImage * tarImg = cvCreateImage( cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, warpedImgChNum );
+			
+#if 0 // disabled 2013.2.8
+			faceWarping(	pFrame,  tarImg,
+							( leftEye[0].y + leftEye[1].y )/2, ( leftEye[0].x + leftEye[1].x )/2,
+							( rightEye[0].y + rightEye[1].y )/2, ( rightEye[0].x + rightEye[1].x )/2,
+							( leftMouth[0].y), ( leftMouth[0].x),
+							( rightMouth[0].y), ( rightMouth[0].x),
+							FIXED_LEFT_EYE_Y, FIXED_LEFT_EYE_X,
+							FIXED_RIGHT_EYE_Y, FIXED_RIGHT_EYE_X,
+							FIXED_LEFT_MOUTH_Y, FIXED_LEFT_MOUTH_X,
+							FIXED_RIGHT_MOUTH_Y, FIXED_RIGHT_MOUTH_X);
+#endif
+#if 0 // disabled 2013.2.11
+			//2013.2.8 simply apply rotation 
+			cv::Point2f src_center(faceDet->faceInformation.Width/2.0F, faceDet->faceInformation.Height/2.0F);
+			int lEyeCenterY = ( leftEye[0].y + leftEye[1].y )/2, lEyeCenterX = ( leftEye[0].x + leftEye[1].x )/2;
+			int rEyeCenterY = ( rightEye[0].y + rightEye[1].y )/2, rEyeCenterX = ( rightEye[0].x + rightEye[1].x )/2;
+
+			//
+			double tanAngle = 1.0 * (rEyeCenterY - lEyeCenterY)/(rEyeCenterX - lEyeCenterX);  
+			double angle = 90 * atan( tanAngle ); //small adjustment: only take half adjust degree 180--¡·90
+
+
+			IplImage * clonedImg2 = cvCloneImage(pFrame);
+			cvSetImageROI( clonedImg2, cvRect(pt1.x, pt1.y, faceDet->faceInformation.Width, faceDet->faceInformation.Height));
+			IplImage* faceFrame = cvCreateImage(cvSize(faceDet->faceInformation.Width, faceDet->faceInformation.Height), IPL_DEPTH_8U, warpedImgChNum );
+			cvCopy( clonedImg2, faceFrame);
+			cvReleaseImage(&clonedImg2);
+
+			//sprintf(tmppath,"output_align/facecrop_%s",tmpname);
+			//cvSaveImage(tmppath,faceFrame);
+
+			tarImg = faceRotate( angle, src_center.x, src_center.y, faceFrame, false, warpedImgW, warpedImgH);
+
+			cvReleaseImage(&faceFrame);
+#endif
+			//2013.2.11 face rotation
+#if 0
+			int tr;
+			int tdd = (rightEye->x - leftEye->x) / 40 * 9;
+				
+			tr = (int)(((rand() % 100-50) * 0.02) * tdd);
+			leftEye->x = leftEye->x + tr;
+			tr = (int)(((rand() % 100-50) * 0.02) * tdd);
+			leftEye->y = leftEye->y + tr;
+
+			tr = (int)(((rand() % 100-50) * 0.02) * tdd);
+			rightEye->x = rightEye->x + tr;
+			tr = (int)(((rand() % 100-50) * 0.02) * tdd);
+			rightEye->y = rightEye->y + tr;
+#endif
+
+
+			faceRotate(leftEye, rightEye, pFrame, tarImg, faceDet->faceInformation.Width, faceDet->faceInformation.Height);
+			
+			//downsampleing twice
+			grayDownsample(tarImg, &gf, frameNum,TRUE);
+
+
+			// feature extraction.
+			gf.featureLength = 0;
+
+			//extractCAFeature(&gf);
+#if USE_LGT
+
+			cvCvtColor(tarImg, grayFrame, CV_RGB2GRAY);
+			//get unsigned char image data from IplImage
+			for ( m = 0; m < gf.tHeight; m++)
+			{
+				for ( n =0; n < gf.tWidth; n++)
+					{
+						tmpImageData[ m * gf.tWidth + n] = CV_IMAGE_ELEM( grayFrame, unsigned char, m, n );
+				}
+			}
+
+			extractLGTFeatures(&gf);
+#endif
+
+#if USE_GBP
+			extractGBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf);
+#endif
+#if USE_LBP
+			extractLBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf, FALSE);
+#endif
+#if USE_GABOR
+			extractGaborFeatures( &gf);
+#endif
+
+#if FLIP_MATCH
+			gf.featureLength = 0;
+#if USE_LBP
+			extractLBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf, TRUE);
+#endif
+#endif
+
+#ifdef WRITE_FEATURE_DATUM_2_FILE
+
+			// write feature to a binary file.
+			bufferSingleFeatureID->id	= tmpFaceID;
+			memcpy( bufferSingleFeatureID->feature, gf.faceFeatures, sizeof(float)*FACE_FEATURE_LEN );
+
+			fwrite( bufferSingleFeatureID, 1, sizeof(unitFaceFeatClass), fpOutBinaryFile );
+#endif
+
+#ifdef DO_MATCH
+
+			//matchedFaceID	= matchFace(&gf );
+			//matchedFaceID	= matchFaceAverage(&gf );
+			int bestID;
+			float dist1,dist2,dist3;
+			matchedFaceID	= matchFaceLimitedAverageDebug(&gf, ii+1, &bestID, &dist1, &dist2, &dist3 );
+#endif
+
+			//write distance to file
+			if (!matchedFaceID)
+			{
+				fprintf(pDist,"%s_Y____SelfBest:%.2f____SelfWorst:%.2f____ExtraBest:%.2f__ID:%d\n-----------\n",fileinfo.name,dist1,dist2,dist3,bestID);
+			}
+			else
+			{
+				fprintf(pDist,"%s_N____SelfBest:%.2f____SelfWorst:%.2f____ExtraBest:%.2f__ID:%d\n-----------\n",fileinfo.name,dist1,dist2,dist3,bestID);
+			}
+
+
+			//Count the result for rate calculation
+			resultCnt[ii] ++;
+			if ( matchedFaceID == (ii+1))
+			{
+				correctCnt[ii]++;
+			}
+
+
+			//system("pause");
+			//sprintf(tmppath,"output_align/warped_%s",tmpname);
+
+			//cvSaveImage(tmppath,tarImg);
+			//
+
+			
+
+
+			// plot graphic results.
+			cvRectangle(pFrame, pt1, pt2, cvScalar(0,0,255),2, 8, 0);
+
+			int lEyeCenterY = ( leftEye[0].y + leftEye[1].y )/2, lEyeCenterX = ( leftEye[0].x + leftEye[1].x )/2;
+			int rEyeCenterY = ( rightEye[0].y + rightEye[1].y )/2, rEyeCenterX = ( rightEye[0].x + rightEye[1].x )/2;
+			CvPoint lEyeball = cvPoint(lEyeCenterX, lEyeCenterY);
+			CvPoint rEyeball = cvPoint(rEyeCenterX, rEyeCenterY);
+
+			//modified: only show eyeballs position
+			cvCircle(pFrame, lEyeball,  5, cvScalar(255,0,0), -1);
+			cvCircle(pFrame, rEyeball,  5, cvScalar(255,0,0), -1);
+
+			//cvCircle(pFrame, leftEye[0],  10, cvScalar(255,0,0), -1);
+			//cvCircle(pFrame, leftEye[1],  10, cvScalar(255,0,0), -1);
+			//cvCircle(pFrame, rightEye[0], 10, cvScalar(255,0,0), -1);
+			//cvCircle(pFrame, rightEye[1], 10, cvScalar(255,0,0), -1);
+			//cvCircle(pFrame, *leftMouth,  10, cvScalar(255,0,0), -1);
+			//cvCircle(pFrame, *rightMouth, 10, cvScalar(255,0,0), -1);
+
+			//save labeled pFrame
+			//sprintf(tmppath,"output_align/labeled_%s",tmpname);
+			//cvSaveImage(tmppath,pFrame);
+
+			//fprintf(fpoutput,"%s: (%d,%d) (%d,%d) (%d,%d) (%d,%d) (%d,%d)"
+			//	" (%d,%d) (%d,%d) (%d,%d)\n",tmpname,\
+			//	pt1.x, pt1.y, pt2.x, pt2.y,
+			//	pointPos[0].x,pointPos[0].y,
+			//	pointPos[1].x,pointPos[1].y,
+			//	pointPos[2].x,pointPos[2].y,
+			//	pointPos[3].x,pointPos[3].y,
+			//	pointPos[4].x,pointPos[4].y,
+			//	pointPos[5].x,pointPos[5].y);
+
+//			cvReleaseImage(&normalizedface);
+//			cvReleaseImage(&grayFace);
+#if DEBUG_MODE
+			if( matchedFaceID != (ii+1))
+			{
+				IplImage * tmpDistImg = NULL;
+				IplImage *tmpTarImg =cvCreateImage( cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, warpedImgChNum );
+				//sprintf(debugPath, "C://Users//Zhang//Desktop//DEBUG_MODE//", fileinfo.name);
+				//if (_mkdir(debugPath) == 0)
+				//{
+					sprintf(tmpDebugPath, "C:/Users/Zhang/Desktop/DEBUG_MODE/00%s",fileinfo.name);
+					cvSaveImage(tmpDebugPath, tarImg ); //original face
+					for (int jj = 0; jj<NUM_NEAREST_NBOR; jj++)
+					{
+						tmpDistImg = cvLoadImage(gf.bestDistImageName[jj], 3);
+
+						faceDet->runFaceDetector(tmpDistImg);
+						IplImage * clonedImg = cvCloneImage(tmpDistImg);
+
+						detectEye->runEyeDetector(clonedImg, gray_face_CNN, faceDet, pointPos);
+
+						cvReleaseImage(&clonedImg);
+
+						UL_x = faceDet->faceInformation.LT.x;
+						UL_y = faceDet->faceInformation.LT.y;
+
+						// face width and height
+						pt1.x =  faceDet->faceInformation.LT.x;
+						pt1.y = faceDet->faceInformation.LT.y;
+						pt2.x = pt1.x + faceDet->faceInformation.Width;
+						pt2.y = pt1.y + faceDet->faceInformation.Height;
+
+						// face warping.
+
+						
+
+						lEyeCenterY = ( leftEye[0].y + leftEye[1].y )/2, lEyeCenterX = ( leftEye[0].x + leftEye[1].x )/2;
+						rEyeCenterY = ( rightEye[0].y + rightEye[1].y )/2, rEyeCenterX = ( rightEye[0].x + rightEye[1].x )/2;
+						lEyeball = cvPoint(lEyeCenterX, lEyeCenterY);
+						rEyeball = cvPoint(rEyeCenterX, rEyeCenterY);
+
+						//modified: only show eyeballs position
+						//cvCircle(tmpDistImg, lEyeball,  5, cvScalar(255,0,0), -1);
+						//cvCircle(tmpDistImg, rEyeball,  5, cvScalar(255,0,0), -1);
+						//cvRectangle(tmpDistImg, pt1, pt2, cvScalar(0,0,255),2, 8, 0);
+						faceRotate(leftEye, rightEye, tmpDistImg, tmpTarImg, faceDet->faceInformation.Width, faceDet->faceInformation.Height);
+						cvCircle(tmpTarImg, cvPoint(FIXED_LEFT_EYE_X,FIXED_LEFT_EYE_Y),  4, cvScalar(255,0,0), -1);
+						cvCircle(tmpTarImg, cvPoint(FIXED_RIGHT_EYE_X,FIXED_LEFT_EYE_Y),  4, cvScalar(255,0,0), -1);
+
+
+						sprintf(tmpDebugPath, "C:/Users/Zhang/Desktop/DEBUG_MODE/00%s_%.2f.jpg",fileinfo.name,gf.featDistance[jj]);
+						cvSaveImage(tmpDebugPath, tmpTarImg);
+						
+					}
+				//}
+				cvReleaseImage( &tmpDistImg);
+				cvReleaseImage( &tmpTarImg);
+			}
+#endif
+
+
+			cvReleaseImage(&tarImg);
+
+#ifdef DO_MATCH
+			// debug:
+			printf("\nMatched ID: %d \n------------------\n", matchedFaceID);
+			//printf("\nAdjusted angle: %.4f \n-------------------\n", angle);
+			fprintf(fpoutput, "\n\n%s:	:		%d\n\n", fileinfo.name, matchedFaceID);
+			
+
+			if (pFrame->width > 800)
+			{
+				tmpW = 800;
+				tmpH = (1.0 * pFrame->height / pFrame->width)* tmpW;
+				inputQueryImgResized	= cvCreateImage(cvSize(tmpW, tmpH), IPL_DEPTH_8U, 3);
+				cvResize(pFrame, inputQueryImgResized, 1);
+				cvNamedWindow("Input Image");
+				cvShowImage("Input Image", inputQueryImgResized);
+				cvReleaseImage(&inputQueryImgResized);
+			}
+			else
+			{
+				cvNamedWindow("Input Image");
+				cvShowImage("Input Image", pFrame);
+			}
+
+			cvNamedWindow("Matched Face");
+			cvShowImage("Matched Face", imgFaceIDTag[matchedFaceID-1]);
+			cvWaitKey(100);
+#endif
+
+		}
+		else
+		{
+			cvPutText(pFrame, "NO Face Found", cvPoint(500,30), &font, cvScalar(255,255,255));
+		}
+
+		/************************************************************************/
+		/* Display                                                              */
+		/************************************************************************/
+#if 0
+		cvResize(pFrame, inputQueryImgResized, 1);
+		cvNamedWindow("Input Image");
+		cvShowImage("Input Image", inputQueryImgResized);
+
+		cvNamedWindow("Matched Face");
+		cvShowImage("Matched Face", imgFaceIDTag[matchedFaceID-1]);
+		cvWaitKey(100);
+
+#endif
+		// save original image.
+		//sprintf(tmppath,"output_align/%s",tmpname);
+		//cvSaveImage(tmppath,pFrame);
+		//system("pause");
+	
+		cvReleaseImage(&pFrame);
+
+		frameNum++;
+
+		if (cvWaitKey(1) == 'q')
+			exit;
+	}while (!_findnext(handle,&fileinfo));
+
+	_findclose(handle); 
+	}
+	} //end folder selection
+	//fclose(fpinput);
+	fclose(fpoutput);
+
+	//Result calculation and output
+	float rate[MAX_FACE_ID];
+	float overallRate = 0;
+	int	  totalCnt = 0, totalCorrect = 0;
+	for ( i =0; i< numTaggedFaces; i++)
+	{
+		if (resultCnt[i] == 0)
+		{
+			rate[i] = -1;
+		}
+		else
+		{
+			rate[i] = (float) correctCnt[i] / resultCnt[i];
+			totalCnt += resultCnt[i];
+			totalCorrect += correctCnt[i];
+		}
+	}
+	overallRate = (float)totalCorrect / totalCnt;
+
+
+	FILE* fResult = fopen(RESULT_TXT_DIR, "w");
+	if (fResult == NULL)
+	{
+		printf("Cannot open result txt file!\n");
+	}
+	fprintf(fResult, "Overall rate: %.2f, %d correct matching in %d test images\n----------------------------------\n", overallRate * 100, totalCorrect, totalCnt);
+	for ( i =0; i< numTaggedFaces; i++)
+	{
+		if (resultCnt[i] !=0)
+		{
+			fprintf(fResult, "ID%d: %.2f, %d correct matching in %d test images\n----------------------------------\n", i+1, rate[i]*100, correctCnt[i], resultCnt[i]);
+	
+		}
+		else
+		{
+			fprintf(fResult, "ID%d: no face found\n----------------------------------\n",i+1);
+		}
+	}
+	fclose(fResult);
+	
+	fclose(pDist);
+	
+#ifdef WRITE_FEATURE_DATUM_2_FILE
+	fclose(fpOutBinaryFile);
+#endif
+
+	return NULL;
+}
+
 
 int getSampleFaceFeatures()
 {
@@ -912,8 +1450,9 @@ int main(int argc, char** argv)
 	processFileList();
 	//-------------------
 	//matchLGT(&gf);
-	testVideoData2();	// find the face coordinates and eye, mouse position
+	testVideoData2Debug();	// find the face coordinates and eye, mouse position
 	//testCamera();
+	//cameraDebug();
 	//videoAnalysis();	// extract feature given the face coordinates
 
 	//-------------------
@@ -1128,7 +1667,8 @@ void testCamera()
 
 #ifdef DO_MATCH
 
-			matchedFaceID	= matchFace(&gf );
+			//matchedFaceID	= matchFace(&gf );
+			matchedFaceID = matchFaceLimitedAverage(&gf);
 #endif
 
 
@@ -1272,73 +1812,125 @@ void processFileList()
 
 
 
-/* train LGT features */
-#if 0
-void matchLGT(FACE3D_Type *gf)
+// camera debug
+void cameraDebug()
 {
-	int		numImagesInList = gf->fileList.listLength;
-	int		regionH = gf->tHeight / gf->LGTCenters.numRegionH;
-	int		regionW = gf->tWidth / gf->LGTCenters.numRegionW;
-	int		i,j,m,n,k,l;
-	char	*tmpPath;
-	int		gaborWSize = gf->gaborWSize;
-	float	*gaborResponse = gf->gaborResponse;
-	//float	*tmpGaborResponse;
-	unsigned char *tmpImageData;
-	int		ptr,centersPtr,idx;
-	int		stepPixel = gf->gaborStepPixel; 
-	int		stepWidth = gf->gaborStepWidth;
-	int		fl[warpedImgH][warpedImgW];	
-	float	dist,tmpDist,minDist;
-	int		rRegion, cRegion;
-	int		matchedFaceID;
+      // allocate memory for an image
+      // capture from video device #1
+      CvCapture* capture = cvCaptureFromCAM(1);
+	  
+		cvNamedWindow("Input Image");
+		cvNamedWindow("Aligned Image");
+      // position the window
+      //cvMoveWindow("mainWin", 5, 5);
+      
 
-	//init
-	IplImage *tarFrame = cvCreateImage( cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, warpedImgChNum );
-	IplImage *grayFrame = cvCreateImage(cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, 1 );
-	//tmpGaborResponse = gf->tmpGaborResponse;
-	tmpImageData = gf->tmpImageData;
+                // retrieve the captured frame
+
+                //cameraImg=cvQueryFrame(capture);
+
+
+				CvFont font;
+	double hScale=0.5;
+	double vScale=0.5;
+	int    lineWidth=2;
+	
+	cvInitFont(&font,CV_FONT_HERSHEY_SIMPLEX, hScale,vScale,0,lineWidth);
+
 	eyesDetector * detectEye = new eyesDetector;
+
+	printf("Write out face images with feature points marked\n=============\n");
+
 	faceDetector * faceDet =  new faceDetector();
+//	CvMat*  face_data = cvCreateMat( 1, CNNFACECLIPHEIGHT*CNNFACECLIPWIDTH, CV_32FC1 );
+//	CvMat*  face_data_int = cvCreateMat( 1, CNNFACECLIPHEIGHT*CNNFACECLIPWIDTH, CV_8UC1 );
 	IplImage*  gray_face_CNN = cvCreateImage(cvSize(CNNFACECLIPHEIGHT,CNNFACECLIPWIDTH), 8, 1);
-	// Feature points array for eyes detection
+
+	// Feature points array
 	CvPoint pointPos[6];
 	CvPoint *leftEye    = &pointPos[0];
 	CvPoint *rightEye   = &pointPos[2];
 	CvPoint *leftMouth  = &pointPos[4];
 	CvPoint *rightMouth = &pointPos[5];
 
-	int tmpW = 800, tmpH = 600;
-	int resultCnt[MAX_FACE_ID],correctCnt[MAX_FACE_ID]; //Result rate calculation
+	char inputdir[100]= STR_INPUT_IMAGE_DIR;
+	char tmpname[500];
 
-	for (int i = 0; i<MAX_FACE_ID; i++)
+	char tagImgdir[100]= IMAGE_TAG_DIR;
+	char tagImgName[500];
+	int tmpFaceID;
+	int matchedFaceID;
+	int	i;
+
+	// demo display.
+
+	IplImage *	imgFaceIDTag[MAX_NUM_FACE_ID_TAG];
+	IplImage *	inputQueryImgResized;
+	int			numTaggedFaces = 0;
+
+	for (i=0; i<MAX_NUM_FACE_ID_TAG; i++)
 	{
-		resultCnt[i] = 0;
-		correctCnt[i] = 0;
-	}
+		sprintf( tagImgName, "%s%d.JPG",tagImgdir, i+1);
+		imgFaceIDTag[i]		= cvLoadImage(tagImgName,3);
 
-	FILE *fpoutput = fopen(MATCH_OUTPUT_TXT_FILE,"w");
-	if(fpoutput==NULL){
-		printf("open file testoutput.txt failed!\n");fflush(stdout);
-		exit(-1);
-	}
-
+		if (imgFaceIDTag[i] == NULL)
+		{
+			printf("\nNum of tagged faces: %d\n", i);fflush(stdout);
+			//exit(-1);
+			numTaggedFaces = i;
+			break;
+		}
 	
+	}
 
-	for ( i = 0; i < numImagesInList; i++)
-	{
-		tmpPath = &gf->fileList.fileName[i][0];
-		puts(tmpPath);
-		IplImage *pFrame;
-		pFrame = cvLoadImage(tmpPath, 3);
+		IplImage* pFrame= NULL; 
+		IplImage* orgFace = NULL;
+
+		//Count image numbers
+		static int frameNum = 0;
+
+	// Face feature archive.
+	bufferSingleFeatureID	= (unitFaceFeatClass *)malloc( sizeof(unitFaceFeatClass) );
+
+	/************************************************************************/
+	/* look over face image samples.                                        */
+	/************************************************************************/
+		//fscanf(fpinput, "%s	%d", tmpname, &tmpFaceID);
+	while(1)
+      {
+		// Store captured frame
+
+
+
+		//Image ID
+		//fscanf(fpinput, "%d", &tmpFaceID);
+
+#if 1
+		pFrame = cvQueryFrame( capture );
+		cvShowImage("Input Image", pFrame);
+#else
+		char tmppath[500];
+		//sprintf(tmppath,"%s%s",inputdir,tmpname);
+		sprintf(tmppath,"%s",fileinfo.name);
+		puts(tmppath);
+		sprintf(tmppath,"%s%d/%s",MATCH_IMAGE_DIR, ii+1,fileinfo.name);
+		pFrame = cvLoadImage(tmppath,3);
 		if(pFrame == NULL)
 		{
 			printf("read image file error!\n");fflush(stdout);
 			exit(-1);
 		}
+#endif
+
 		if( faceDet->runFaceDetector(pFrame))
 		{	
 			/* there was a face detected by OpenCV. */
+			//char tmpName[260];
+			//if (frameNum % 5 ==0)
+			//{
+			//sprintf(tmpName, "%d.jpg", frameNum);
+			//cvSaveImage(tmpName, pFrame);
+			//}
 			
 			IplImage * clonedImg = cvCloneImage(pFrame);
 
@@ -1349,104 +1941,232 @@ void matchLGT(FACE3D_Type *gf)
 			int UL_x = faceDet->faceInformation.LT.x;
 			int UL_y = faceDet->faceInformation.LT.y;
 
+			// face width and height
+			CvPoint pt1, pt2;
+			pt1.x =  faceDet->faceInformation.LT.x;
+			pt1.y = faceDet->faceInformation.LT.y;
+			pt2.x = pt1.x + faceDet->faceInformation.Width;
+			pt2.y = pt1.y + faceDet->faceInformation.Height;
+
+			// face warping.
+
+			IplImage * tarImg = cvCreateImage( cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, warpedImgChNum );
 			
-			//align face
-			faceRotate(leftEye, rightEye, pFrame, tarFrame, faceDet->faceInformation.Width, faceDet->faceInformation.Height);
-			cvCvtColor(tarFrame, grayFrame, CV_RGB2GRAY);
-			//get unsigned char image data from IplImage
-			for ( m = 0; m < gf->tHeight; m++)
+
+			//2013.2.11 face rotation
+			faceRotate(leftEye, rightEye, pFrame, tarImg, faceDet->faceInformation.Width, faceDet->faceInformation.Height);
+
+			cvShowImage("Aligned Image", tarImg);
+			
+			//downsampleing twice
+			grayDownsample(tarImg, &gf, frameNum, TRUE);
+
+
+			// feature extraction.
+			gf.featureLength = 0;
+#if USE_GBP
+			extractGBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf);
+#endif
+#if USE_LBP
+			extractLBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf, FALSE);
+#endif
+#if USE_GABOR
+			extractGaborFeatures( &gf);
+#endif
+
+#if FLIP_MATCH
+			gf.featureLength = 0;
+#if USE_LBP
+			extractLBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf, TRUE);
+#endif
+#endif
+
+
+#ifdef DO_MATCH
+
+			//matchedFaceID	= matchFace(&gf );
+			int selfBest, overallBest;
+			float dist1, dist2;
+			//matchedFaceID = matchFaceLimitedAverageDebug(&gf, &selfBest, &overallBest, &dist1, &dist2 );
+#endif
+			if (matchedFaceID)
 			{
-				for ( n =0; n < gf->tWidth; n++)
+				char to_search[260];
+				int cnt = 0;
+				char localTmpPath[260];
+				IplImage* selfBestImg;
+				IplImage* overallBestImg;
+
+				int lEyeCenterY = ( leftEye[0].y + leftEye[1].y )/2, lEyeCenterX = ( leftEye[0].x + leftEye[1].x )/2;
+				int rEyeCenterY = ( rightEye[0].y + rightEye[1].y )/2, rEyeCenterX = ( rightEye[0].x + rightEye[1].x )/2;
+				CvPoint lEyeball = cvPoint(lEyeCenterX, lEyeCenterY);
+				CvPoint rEyeball = cvPoint(rEyeCenterX, rEyeCenterY);
+
+				//modified: only show eyeballs position
+				cvCircle(tarImg, lEyeball,  2, cvScalar(255,0,0), -1);
+				cvCircle(tarImg, rEyeball,  2, cvScalar(255,0,0), -1);
+				sprintf(localTmpPath, "C:/Users/Zhi/Desktop/faceComp/%05d_A.jpg", frameNum);
+				cvSaveImage(localTmpPath, tarImg);
+				//int  numImgs = 0;
+				// for each face tag
+				
+				sprintf(to_search, "%s%d/*.jpg",TRAIN_IMAGE_DIR, 18);
+				long handle;                                                //search handle
+				struct _finddata_t fileinfo;                          // file info struct
+				handle=_findfirst(to_search,&fileinfo);         
+				if(handle != -1) 
+				{
+					do
 					{
-						tmpImageData[ m * gf->tWidth + n] = CV_IMAGE_ELEM( grayFrame, unsigned char, m, n );
+						sprintf(localTmpPath, "%s%d/%s", TRAIN_IMAGE_DIR, 18, fileinfo.name);
+						selfBestImg = cvLoadImage(localTmpPath, 3);
+						if( faceDet->runFaceDetector(selfBestImg))
+						{
+							cnt++;
+						}
+						if (cnt == selfBest)
+						{
+							IplImage * clonedImg = cvCloneImage(selfBestImg);
+
+							detectEye->runEyeDetector(clonedImg, gray_face_CNN, faceDet, pointPos);
+
+							cvReleaseImage(&clonedImg);
+
+							UL_x = faceDet->faceInformation.LT.x;
+							UL_y = faceDet->faceInformation.LT.y;
+
+							// face width and height
+							//CvPoint pt1, pt2;
+							pt1.x =  faceDet->faceInformation.LT.x;
+							pt1.y = faceDet->faceInformation.LT.y;
+							pt2.x = pt1.x + faceDet->faceInformation.Width;
+							pt2.y = pt1.y + faceDet->faceInformation.Height;
+
+							// face warping.
+
+							//IplImage * tarImg = cvCreateImage( cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, warpedImgChNum );
+							
+
+							//2013.2.11 face rotation
+							faceRotate(leftEye, rightEye, selfBestImg, tarImg, faceDet->faceInformation.Width, faceDet->faceInformation.Height);
+							lEyeCenterY = ( leftEye[0].y + leftEye[1].y )/2, lEyeCenterX = ( leftEye[0].x + leftEye[1].x )/2;
+							rEyeCenterY = ( rightEye[0].y + rightEye[1].y )/2, rEyeCenterX = ( rightEye[0].x + rightEye[1].x )/2;
+							lEyeball = cvPoint(lEyeCenterX, lEyeCenterY);
+							rEyeball = cvPoint(rEyeCenterX, rEyeCenterY);
+
+							//modified: only show eyeballs position
+							cvCircle(tarImg, lEyeball,  2, cvScalar(255,0,0), -1);
+							cvCircle(tarImg, rEyeball,  2, cvScalar(255,0,0), -1);
+							sprintf(localTmpPath, "C:/Users/Zhi/Desktop/faceComp/%05d_B_%4.1f.jpg", frameNum, dist1);
+							cvSaveImage(localTmpPath, tarImg);
+
+							break;
+						}
+
+					}while(_findnext(handle,&fileinfo) == 0);               
+			
+					_findclose(handle);
 				}
-			}
+				
+				sprintf(to_search, "%s%d/*.jpg",TRAIN_IMAGE_DIR, matchedFaceID);
+				handle=_findfirst(to_search,&fileinfo);         
+				if(handle != -1) 
+				{
+					do
+					{
+						sprintf(localTmpPath, "%s%d/%s", TRAIN_IMAGE_DIR, matchedFaceID, fileinfo.name);
+						overallBestImg = cvLoadImage(localTmpPath, 3);
+						if( faceDet->runFaceDetector(overallBestImg))
+						{
+							cnt++;
+						}
+						if (cnt == overallBest)
+						{
+							IplImage * clonedImg = cvCloneImage(overallBestImg);
 
-			extractLGTFeatures(gf);
+							detectEye->runEyeDetector(clonedImg, gray_face_CNN, faceDet, pointPos);
 
-			matchedFaceID	= matchFace(gf );
+							cvReleaseImage(&clonedImg);
 
-			//Count the result for rate calculation
-			resultCnt[gf->fileList.fileID[i]] ++;
-			if ( matchedFaceID == gf->fileList.fileID[i])
-			{
-				correctCnt[gf->fileList.fileID[i]]++;
-			}
+							UL_x = faceDet->faceInformation.LT.x;
+							UL_y = faceDet->faceInformation.LT.y;
 
+							// face width and height
+							//CvPoint pt1, pt2;
+							pt1.x =  faceDet->faceInformation.LT.x;
+							pt1.y = faceDet->faceInformation.LT.y;
+							pt2.x = pt1.x + faceDet->faceInformation.Width;
+							pt2.y = pt1.y + faceDet->faceInformation.Height;
 
-			printf("\nMatched ID: %d \n------------------\n", matchedFaceID);
-			//printf("\nAdjusted angle: %.4f \n-------------------\n", angle);
-			fprintf(fpoutput, "\n\n%s:	:		%d\n\n", gf->fileList.fileName, matchedFaceID);
+							// face warping.
+
+							//IplImage * tarImg = cvCreateImage( cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, warpedImgChNum );
+							
+
+							//2013.2.11 face rotation
+							faceRotate(leftEye, rightEye, overallBestImg, tarImg, faceDet->faceInformation.Width, faceDet->faceInformation.Height);
+							lEyeCenterY = ( leftEye[0].y + leftEye[1].y )/2, lEyeCenterX = ( leftEye[0].x + leftEye[1].x )/2;
+							rEyeCenterY = ( rightEye[0].y + rightEye[1].y )/2, rEyeCenterX = ( rightEye[0].x + rightEye[1].x )/2;
+							lEyeball = cvPoint(lEyeCenterX, lEyeCenterY);
+							rEyeball = cvPoint(rEyeCenterX, rEyeCenterY);
+
+							//modified: only show eyeballs position
+							cvCircle(tarImg, lEyeball,  2, cvScalar(255,0,0), -1);
+							cvCircle(tarImg, rEyeball,  2, cvScalar(255,0,0), -1);
+							sprintf(localTmpPath, "C:/Users/Zhi/Desktop/faceComp/%05d_C_%4.1f.jpg", frameNum, dist2);
+							cvSaveImage(localTmpPath, tarImg);
+
+							break;
+						}
+
+					}while(_findnext(handle,&fileinfo) == 0);               
 			
+					_findclose(handle);
+				}
+				}
+				
 
-			if (pFrame->width > 800)
-			{
-				tmpW = 800;
-				tmpH = (1.0 * pFrame->height / pFrame->width)* tmpW;
-				IplImage *inputQueryImgResized	= cvCreateImage(cvSize(tmpW, tmpH), IPL_DEPTH_8U, 3);
-				cvResize(pFrame, inputQueryImgResized, 1);
-				cvNamedWindow("Input Image");
-				cvShowImage("Input Image", inputQueryImgResized);
-				cvReleaseImage(&inputQueryImgResized);
-			}
-			else
-			{
-				cvNamedWindow("Input Image");
-				cvShowImage("Input Image", pFrame);
-			}
 
-			cvNamedWindow("Matched Face");
-			cvShowImage("Matched Face", imgFaceIDTag[matchedFaceID-1]);
-			cvWaitKey(100);
-			
-		}
-	}
+			cvReleaseImage(&tarImg);
 
-	//Result calculation and output
-	float rate[MAX_FACE_ID];
-	float overallRate = 0;
-	int	  totalCnt = 0, totalCorrect = 0;
-	for ( i =0; i< numTaggedFaces; i++)
-	{
-		if (resultCnt[i] == 0)
-		{
-			rate[i] = -1;
+
+
 		}
 		else
 		{
-			rate[i] = (float) correctCnt[i] / resultCnt[i];
-			totalCnt += resultCnt[i];
-			totalCorrect += correctCnt[i];
+			cvPutText(pFrame, "NO Face Found", cvPoint(500,30), &font, cvScalar(255,255,255));
 		}
-	}
-	overallRate = (float)totalCorrect / totalCnt;
 
+		/************************************************************************/
+		/* Display                                                              */
+		/************************************************************************/
+#if 0
+		cvResize(pFrame, inputQueryImgResized, 1);
+		cvNamedWindow("Input Image");
+		cvShowImage("Input Image", inputQueryImgResized);
 
-	FILE* fResult = fopen(RESULT_TXT_DIR, "w");
-	if (fResult == NULL)
-	{
-		printf("Cannot open result txt file!\n");
-	}
-	fprintf(fResult, "Overall rate: %.2f, %d correct matching in %d test images\n----------------------------------\n", overallRate * 100, totalCorrect, totalCnt);
-	for ( i =0; i< numTaggedFaces; i++)
-	{
-		if (resultCnt[i] !=0)
-		{
-			fprintf(fResult, "ID%d: %.2f, %d correct matching in %d test images\n----------------------------------\n", i+1, rate[i]*100, correctCnt[i], resultCnt[i]);
+		cvNamedWindow("Matched Face");
+		cvShowImage("Matched Face", imgFaceIDTag[matchedFaceID-1]);
+		cvWaitKey(100);
+
+#endif
+		// save original image.
+		//sprintf(tmppath,"output_align/%s",tmpname);
+		//cvSaveImage(tmppath,pFrame);
+		//system("pause");
 	
-		}
-		else
-		{
-			fprintf(fResult, "ID%d: no face found\n----------------------------------\n",i+1);
-		}
-	}
-	fclose(fResult);
+		
 
-					
+                // show the image in the window
+				//cvReleaseImage(&pFrame);
+
+				frameNum++;
+
+				if (cvWaitKey(10) == 'q')
+					exit;
 
 
-
+	  }
 
 
 }
-#endif
