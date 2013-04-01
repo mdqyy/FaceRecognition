@@ -7,6 +7,7 @@
 #define GABOR_BIN_DIR "../../image/Gabor.bin"
 #define LGT_BIN		  "../../image/centers.bin"
 #define MAX_FLOAT        3.402823466e+38F //< maximum single float number
+#define PI				 3.1415926535898
 void config(FACE3D_Type * gf)
 {
 	gf->gwStep = 5;
@@ -156,6 +157,7 @@ void initFaceFeature(FACE3D_Type * gf, int width, int height)
 	gf->fImage0 = (int *)malloc(W * H * sizeof(int));
 	gf->fImage1 = (int *)malloc((W * H)/4 * sizeof(int));
 	gf->fImage2 = (int *)malloc((W * H)/16 * sizeof(int));
+	gf->fImage3 = (int *)malloc((W * H)/64 * sizeof(int));
 
 #if FLIP_MATCH
 	gf->fImage0flip = (int *)malloc(W * H * sizeof(int));
@@ -315,6 +317,11 @@ void freeFaceFeature(FACE3D_Type *gf)
 	{
 		free(gf->fImage2);
 		gf->fImage2 = NULL;
+	}
+	if (gf->fImage3 !=NULL)
+	{
+		free(gf->fImage3);
+		gf->fImage3 = NULL;
 	}
 #if FLIP_MATCH
 	if (gf->fImage0flip !=NULL)
@@ -2405,21 +2412,23 @@ void convolution2D(unsigned char *src, float *dst, double *kernel, int size, int
 
 }//end function convulution2D
 
-#if 0
+
 void extractCAFeature(FACE3D_Type * gf)
 {
-	int*	pImg = gf->fImage0;
+	int*	pImg = gf->fImage3;
 	int		lBound, uBound;
 	float	inteval;
-	int		W = gf->tWidth;
-	int		H = gf->tHeight;
+	int		W = CA_WIDTH;
+	int		H = CA_HEIGHT;
 	int		i,j,k;
 	int		ix,iy,jx,jy,kx,ky;
-	int		caImg[warpedImgH][warpedImgW];
+	int		caImg[CA_WIDTH][CA_WIDTH];
 	int		histCA[NUM_CLASS_CA*NUM_CLASS_CA*NUM_CLASS_CA*NUM_ANGLES];
-	int		posHist;
+	int		ptrHist;
 	double  angle;
 	double	slopeAB, slopeBC;
+	int		tmp, a, b, c;
+	float*  faceFeatures = gf->faceFeatures;
 	
 	//get min and max of image
 	lBound = 255;
@@ -2445,10 +2454,22 @@ void extractCAFeature(FACE3D_Type * gf)
 	{
 		for ( j = 0; j < W; j++)
 		{
-			caImg[i][j] = (int)(( pImg[ i * W + j] - lBound) / inteval);
+			if (pImg[ i * W + j] == uBound)
+			{
+				caImg[i][j] = NUM_CLASS_CA-1;
+			}
+			else
+			{
+				caImg[i][j] = (int)(( pImg[ i * W + j] - lBound) / inteval);
+			}
 		}
 	}
 
+	//reset histogram
+	for ( i = 0; i < NUM_CLASS_CA*NUM_CLASS_CA*NUM_CLASS_CA*NUM_ANGLES; i++)
+	{
+		histCA[i] = 0;
+	}
 	//compute histogram
 	for ( iy = 0; iy < H; iy++)
 		for ( ix = 0; ix < W; ix++)
@@ -2457,14 +2478,49 @@ void extractCAFeature(FACE3D_Type * gf)
 					for (ky = 0; ky < H; ky++)
 						for (kx = 0; kx < W; kx++)
 						{
-							if ( ix == jx)
+							//skip if A == B OR A == C OR B == C
+							if (((ix == jx)&&(iy == jy)) || ((ix == kx)&&(iy == ky)) || ((kx == jx)&&(ky == jy)))
 							{
-								slopeAB = 
+								continue;
 							}
-							slopeAB = ( jy - iy) / (jx - ix);
-							slopeBC = ( ky - jy) / (kx - jx);
-							angle = atan( (slopeAB - slopeBC) / ( 1 + slopeAB*slopeBC))
+							if ( ix != jx)
+							{
+								slopeAB = ( jy - iy) / (jx - ix);
+							}
+							else
+							{
+								slopeAB = MAX_FLOAT;
+							}
+							if ( kx != jx)
+							{
+								slopeBC = ( ky - jy) / (kx - jx);
+							}
+							else
+							{
+								slopeBC = MAX_FLOAT;
+							}
+
+							if ( slopeBC == slopeAB)
+							{
+								angle = 0;  // or 180?
+							}
+							else
+							{
+								angle = atan( (slopeAB - slopeBC) / ( 1 + slopeAB*slopeBC));
+							}
+							tmp = (int)((angle + PI/2) / (PI / NUM_ANGLES));
+							a = caImg[iy][ix];
+							b = caImg[jy][jx];
+							c = caImg[ky][kx];
+							ptrHist = ( a * NUM_CLASS_CA * NUM_CLASS_CA + b * NUM_CLASS_CA + c) * NUM_ANGLES + tmp;
+							histCA[ptrHist]++;
+
+						}
+	for ( i = 0; i < NUM_CLASS_CA*NUM_CLASS_CA*NUM_CLASS_CA*NUM_ANGLES; i++)
+	{
+		faceFeatures[i] = histCA[i];
+	}
+
 							
 }
 
-#endif

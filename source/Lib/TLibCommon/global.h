@@ -17,14 +17,16 @@
 #ifndef GLOBAL_H_INCLUDED
 #define GLOBAL_H_INCLUDED
 
-#define USE_LBP				1
+#define USE_LBP				0
 #define USE_LGT				0	//Local Gabor Textons
 #define USE_GBP				0
 #define USE_GABOR			0
+#define USE_CA				1   //correlation angle feature
 #define NUM_NEAREST_NBOR	2
+#define USE_WEIGHT			0
 
-#define FACE_FEATURE_LEN	5120
-#define TOTAL_FEATURE_LEN   5120
+#define FACE_FEATURE_LEN	4500
+#define TOTAL_FEATURE_LEN   4500
 
 #define LBP_STEP	10
 #define LBP_WINDOW	10
@@ -41,11 +43,13 @@
 #define HISTOGRAM_EQUALIZATION 1
 #define ROTATE_INVARIANT_LBP 0
 #define LGT_FEATURE_LEN    2048
-#define USE_WEIGHT			1
+
 
 //-----correlation angle------//
 #define NUM_CLASS_CA        5
 #define NUM_ANGLES			36
+#define CA_WIDTH			10
+#define CA_HEIGHT			10
 
 
 typedef struct imageList
@@ -110,9 +114,10 @@ typedef struct face3DTag
 	int tWidth;						//normalized ROI dimemsions
 	int tHeight;
 
-	int * fImage0;					//original face ROI		256*192	
-	int * fImage1;					//down-sampled by 2;	128*96
-	int * fImage2;					//down-sampled by 4		64*48
+	int * fImage0;					//original face ROI		80*80	
+	int * fImage1;					//down-sampled by 2;	40*40
+	int * fImage2;					//down-sampled by 4		20*20
+	int * fImage3;					//downsampled by 8		10*10
 #if FLIP_MATCH
 	int *fImage0flip;
 	int *fImage1flip;

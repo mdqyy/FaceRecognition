@@ -418,6 +418,11 @@ int testVideoData2()
 
 			// feature extraction.
 			gf.featureLength = 0;
+
+#if USE_CA
+			extractCAFeature(&gf);
+#endif
+
 #if USE_GBP
 			extractGBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf);
 #endif
@@ -742,7 +747,7 @@ int main(int argc, char** argv)
 	//trainLGT(&gf);
 	//trainWeight(&gf);	// train weight for histogram
 	testVideoData2();	// find the face coordinates and eye, mouse position
-	trainWeightForLBP(&gf);
+	//trainWeightForLBP(&gf);
 	//videoAnalysis();	// extract feature given the face coordinates
 
 	//-------------------

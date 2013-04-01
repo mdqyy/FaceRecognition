@@ -411,13 +411,14 @@ void faceRotate(CvPoint* leftEye, CvPoint* rightEye, IplImage* src, IplImage* ds
 //Convert to gray and downsampling twice
 void grayDownsample(IplImage* src, FACE3D_Type * gf, int frameCnt, bool isMatching)
 {
-	int *fImage0, *fImage1, *fImage2, *ptr;
+	int *fImage0, *fImage1, *fImage2, *fImage3, *ptr;
 	int tWidth, tHeight, vR, vC, W, H,tWidth1, tWidth2, tHeight1, tHeight2;
 	int i;
 	unsigned char tmp;
 	fImage0 = gf->fImage0;
 	fImage1 = gf->fImage1;
 	fImage2 = gf->fImage2;
+	fImage3 = gf->fImage3;
 	tWidth = gf->tWidth;
 	tHeight = gf->tHeight;
 	tWidth1 = tWidth / 2;
@@ -436,6 +437,7 @@ void grayDownsample(IplImage* src, FACE3D_Type * gf, int frameCnt, bool isMatchi
 	IplImage* tmpImg0 = cvCreateImage( cvGetSize(src), IPL_DEPTH_8U, 1);
 	IplImage* tmpImg1 = cvCreateImage( cvSize(tWidth/2, tHeight/2), IPL_DEPTH_8U, 1);
 	IplImage* tmpImg2 = cvCreateImage( cvSize(tWidth/4, tHeight/4), IPL_DEPTH_8U, 1);
+	IplImage* tmpImg3 = cvCreateImage( cvSize(tWidth/8, tHeight/8), IPL_DEPTH_8U, 1);
 
 	//convert to gray
 	cvCvtColor(src,tmpImg0,CV_RGB2GRAY);
@@ -465,6 +467,14 @@ void grayDownsample(IplImage* src, FACE3D_Type * gf, int frameCnt, bool isMatchi
 	{
 		memcpy(&tmp, &(tmpImg2->imageData[i]), sizeof(char));
 		fImage2[i] = tmp;
+	}
+
+	//downsample by 8
+	cvResize(tmpImg0, tmpImg3, 1);
+	for (i = 0; i < tWidth/8 * tHeight/8; i++)
+	{
+		memcpy(&tmp, &(tmpImg3->imageData[i]), sizeof(char));
+		fImage3[i] = tmp;
 	}
 
 #if FLIP_MATCH
@@ -508,4 +518,5 @@ void grayDownsample(IplImage* src, FACE3D_Type * gf, int frameCnt, bool isMatchi
 	cvReleaseImage(&tmpImg0);
 	cvReleaseImage(&tmpImg1);
 	cvReleaseImage(&tmpImg2);
+	cvReleaseImage(&tmpImg3);
 }
