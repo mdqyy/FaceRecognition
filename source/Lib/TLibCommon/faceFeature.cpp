@@ -2415,7 +2415,7 @@ void convolution2D(unsigned char *src, float *dst, double *kernel, int size, int
 
 void extractCAFeature(FACE3D_Type * gf)
 {
-	int*	pImg = gf->fImage3;
+	int*	pImg = gf->fImage2;
 	int		lBound, uBound;
 	float	inteval;
 	int		W = CA_WIDTH;

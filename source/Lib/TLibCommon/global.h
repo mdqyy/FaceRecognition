@@ -17,16 +17,16 @@
 #ifndef GLOBAL_H_INCLUDED
 #define GLOBAL_H_INCLUDED
 
-#define USE_LBP				0
+#define USE_LBP				1
 #define USE_LGT				0	//Local Gabor Textons
 #define USE_GBP				0
 #define USE_GABOR			0
-#define USE_CA				1   //correlation angle feature
+#define USE_CA				0   //correlation angle feature
 #define NUM_NEAREST_NBOR	2
-#define USE_WEIGHT			0
+#define USE_WEIGHT			1
 
-#define FACE_FEATURE_LEN	4500
-#define TOTAL_FEATURE_LEN   4500
+#define FACE_FEATURE_LEN	5120
+#define TOTAL_FEATURE_LEN   5120
 
 #define LBP_STEP	10
 #define LBP_WINDOW	10
@@ -48,8 +48,8 @@
 //-----correlation angle------//
 #define NUM_CLASS_CA        5
 #define NUM_ANGLES			36
-#define CA_WIDTH			10
-#define CA_HEIGHT			10
+#define CA_WIDTH			20
+#define CA_HEIGHT			20
 
 
 typedef struct imageList

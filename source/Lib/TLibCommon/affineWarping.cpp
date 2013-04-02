@@ -515,6 +515,10 @@ void grayDownsample(IplImage* src, FACE3D_Type * gf, int frameCnt, bool isMatchi
 	cvSaveImage(tmpPath, tmpImg2);
 #endif
 
+//	char tmpPath[500];
+//	sprintf(tmpPath, "%s%d.jpg", "C:/Users/Zhi/Desktop/Debug/",frameCnt);
+//	cvSaveImage(tmpPath, tmpImg3);
+
 	cvReleaseImage(&tmpImg0);
 	cvReleaseImage(&tmpImg1);
 	cvReleaseImage(&tmpImg2);

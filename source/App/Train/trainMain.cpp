@@ -1180,3 +1180,116 @@ void trainWeightForLBP(FACE3D_Type *gf)
 		
 	
 }//end function trainWeight
+
+
+
+void veriTrain( FACE3D_Type* gf)
+{
+	bool*	label;
+	float**	featureDistance;
+	unitFaceFeatClass* bufferFaceFeatures = gf->bufferFaceFeatures;
+	int		numFaces = gf->validFaces;
+	int		numIntra, numInter;
+	int		ratio = 5;	// inter/ intra ratio
+	int		interRatio;  // skip rate for inter class pairs
+	int		i,j,k;
+	int		numTotal;
+	int		cnt, cntInter;
+	float   h1, h2;
+
+	numIntra = 0;
+	interRatio = 0;
+	for ( i = 0; i < numFaces; i++)
+	{
+		for ( j = i+1; j < numFaces; j++)
+		{
+			interRatio++;
+			if( bufferFaceFeatures[i].id == bufferFaceFeatures[j].id)
+			{
+				numIntra++;
+			}
+		}
+	}
+	numInter = numIntra * ratio;
+	numTotal = numIntra + numInter;
+	interRatio = (int) ((float)interRatio / numInter); 
+
+	//allocate memory
+	label = (bool*)malloc(numTotal * sizeof(bool));
+	featureDistance = (float**)malloc( numTotal * sizeof(float*));
+	for ( i = 0; i < numTotal; i++)
+	{
+		featureDistance[i] = (float*)malloc( TOTAL_FEATURE_LEN * sizeof(float));
+	}
+
+
+	cnt = 0;
+	cntInter = 0;
+	
+	//compute feature distance and store
+	for ( i = 0; i < numFaces; i++)
+	{
+		for ( j = i + 1; j< numFaces; j++)
+		{
+			if ( cnt >= numTotal)
+				break;
+
+			if ( bufferFaceFeatures[i].id == bufferFaceFeatures[j].id)
+			{
+				//same class
+				for ( k = 0; k < TOTAL_FEATURE_LEN; k++)
+				{
+					h1 = bufferFaceFeatures[i].feature[k];
+					h2 = bufferFaceFeatures[j].feature[k];
+					featureDistance[cnt][k] = (h1 > h2) ?  ( h1 - h2): (h2 - h1);
+					label[cnt] = 1;
+					cnt++;
+				}
+			}
+			else
+			{
+				//inter class
+				if ( cntInter % interRatio == 0)
+				{
+					for ( k = 0; k < TOTAL_FEATURE_LEN; k++)
+					{
+						h1 = bufferFaceFeatures[i].feature[k];
+						h2 = bufferFaceFeatures[j].feature[k];
+						featureDistance[cnt][k] = (h1 > h2) ?  ( h1 - h2): (h2 - h1);
+						label[cnt] = 0;
+						cnt++;
+					}
+				}
+				cntInter++;
+			}
+		}
+	}
+		
+
+
+
+
+
+	//release memory
+	if ( label != NULL)
+	{
+		free(label);
+	}
+	for ( i = 0; i < numTotal; i++)
+	{
+		if ( featureDistance[i] != NULL)
+		{
+			free(featureDistance[i]);
+		}
+	}
+	if ( featureDistance != NULL)
+	{
+		free(featureDistance);
+	}
+
+	
+
+
+
+
+}

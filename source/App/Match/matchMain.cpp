@@ -971,7 +971,7 @@ int testVideoData2Debug()
 			// feature extraction.
 			gf.featureLength = 0;
 
-			//extractCAFeature(&gf);
+			extractCAFeature(&gf);
 #if USE_LGT
 
 			cvCvtColor(tarImg, grayFrame, CV_RGB2GRAY);
@@ -1454,7 +1454,7 @@ int main(int argc, char** argv)
 	processFileList();
 	//-------------------
 	//matchLGT(&gf);
-	testVideoData2();	// find the face coordinates and eye, mouse position
+	testVideoData2Debug();	// find the face coordinates and eye, mouse position
 	//testCamera();
 	//cameraDebug();
 	//videoAnalysis();	// extract feature given the face coordinates
