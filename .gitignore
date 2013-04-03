@@ -166,8 +166,10 @@ pip-log.txt
 
 *.jpg
 *.jpeg
-faces.bin
 matchOut.txt
+svmTrain.bin
+faces.bin
+svmLabel.bin
 
 #33_18795_60__3400_120_12_s_q.txt
 #41268_60__340_lefteye_cnr_10.txt

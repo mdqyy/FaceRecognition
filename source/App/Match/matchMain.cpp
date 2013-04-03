@@ -1454,7 +1454,7 @@ int main(int argc, char** argv)
 	processFileList();
 	//-------------------
 	//matchLGT(&gf);
-	testVideoData2Debug();	// find the face coordinates and eye, mouse position
+	testVideoData2();	// find the face coordinates and eye, mouse position
 	//testCamera();
 	//cameraDebug();
 	//videoAnalysis();	// extract feature given the face coordinates

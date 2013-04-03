@@ -45,6 +45,8 @@
 #define LGT_BIN_FILE			"../../image/LGT.bin"
 #define IMAGE_TAG_DIR			"../../image/ImgTag/"
 #define WEIGHTS_BIN				"../../image/weight.bin"
+#define SVM_TRAIN_BIN_FILE		"../../image/svmTrain.bin"
+#define SVM_LABEL_BIN_FILE		"../../image/svmLabel.bin"
 
 //#define DO_MATCH
 //#define	STR_INPUT_IMAGE_DIR		"Query/"
@@ -96,6 +98,7 @@ void processFileList();
 void trainLGT(FACE3D_Type *gf);
 void trainWeight(FACE3D_Type *gf);
 void trainWeightForLBP(FACE3D_Type *gf);
+void veriTrain( FACE3D_Type* gf);
 
 
 
@@ -203,6 +206,7 @@ int testVideoData2()
 	double hScale=0.5;
 	double vScale=0.5;
 	int    lineWidth=2;
+	int    validFaces = 0;
 	
 
 	cvInitFont(&font,CV_FONT_HERSHEY_SIMPLEX, hScale,vScale,0,lineWidth);
@@ -475,7 +479,7 @@ int testVideoData2()
 #endif
 
 #if USE_WEIGHT
-			gf.bufferFaceFeatures[frameNum] = *bufferSingleFeatureID;
+			gf.bufferFaceFeatures[validFaces] = *bufferSingleFeatureID;
 #endif
 
 #ifdef DO_MATCH
@@ -542,7 +546,7 @@ int testVideoData2()
 			cvShowImage("Matched Face", imgFaceIDTag[matchedFaceID-1]);
 			cvWaitKey(100);
 #endif
-
+		validFaces++;
 		}
 		else
 		{
@@ -587,7 +591,7 @@ int testVideoData2()
 #endif
 
 	//record valid faces
-	gf.validFaces = frameNum;
+	gf.validFaces = validFaces;
 	return NULL;
 	
 }
@@ -747,7 +751,12 @@ int main(int argc, char** argv)
 	//trainLGT(&gf);
 	//trainWeight(&gf);	// train weight for histogram
 	testVideoData2();	// find the face coordinates and eye, mouse position
-	//trainWeightForLBP(&gf);
+
+#if USE_WEIGHT
+	veriTrain( &gf );
+	trainWeightForLBP(&gf);
+#endif
+	
 	//videoAnalysis();	// extract feature given the face coordinates
 
 	//-------------------
@@ -1186,7 +1195,7 @@ void trainWeightForLBP(FACE3D_Type *gf)
 void veriTrain( FACE3D_Type* gf)
 {
 	bool*	label;
-	float**	featureDistance;
+	double**	featureDistance;
 	unitFaceFeatClass* bufferFaceFeatures = gf->bufferFaceFeatures;
 	int		numFaces = gf->validFaces;
 	int		numIntra, numInter;
@@ -1216,10 +1225,10 @@ void veriTrain( FACE3D_Type* gf)
 
 	//allocate memory
 	label = (bool*)malloc(numTotal * sizeof(bool));
-	featureDistance = (float**)malloc( numTotal * sizeof(float*));
+	featureDistance = (double**)malloc( numTotal * sizeof(double*));
 	for ( i = 0; i < numTotal; i++)
 	{
-		featureDistance[i] = (float*)malloc( TOTAL_FEATURE_LEN * sizeof(float));
+		featureDistance[i] = (double*)malloc( TOTAL_FEATURE_LEN * sizeof(double));
 	}
 
 
@@ -1243,8 +1252,8 @@ void veriTrain( FACE3D_Type* gf)
 					h2 = bufferFaceFeatures[j].feature[k];
 					featureDistance[cnt][k] = (h1 > h2) ?  ( h1 - h2): (h2 - h1);
 					label[cnt] = 1;
-					cnt++;
 				}
+				cnt++;
 			}
 			else
 			{
@@ -1257,14 +1266,40 @@ void veriTrain( FACE3D_Type* gf)
 						h2 = bufferFaceFeatures[j].feature[k];
 						featureDistance[cnt][k] = (h1 > h2) ?  ( h1 - h2): (h2 - h1);
 						label[cnt] = 0;
-						cnt++;
 					}
+					cnt++;
 				}
 				cntInter++;
 			}
+			
 		}
 	}
 		
+	//write to file
+	FILE* pSVMTrain = fopen( SVM_TRAIN_BIN_FILE, "w+b");
+	if ( pSVMTrain == NULL)
+	{
+		printf("error opening svmTrain.bin\n");
+	}
+	FILE* pSVMLabel = fopen( SVM_LABEL_BIN_FILE, "w+b");
+	if ( pSVMLabel == NULL)
+	{
+		printf("error opening svmLabel.bin\n");
+	}
+
+	//label to file
+	fwrite(label, sizeof(bool), numTotal, pSVMLabel);
+
+	//feature distance to file
+	for ( i = 0; i < numTotal; i++)
+	{
+		fwrite(featureDistance[i],sizeof(double), TOTAL_FEATURE_LEN, pSVMTrain);
+	}
+
+	fclose( pSVMTrain);
+	fclose( pSVMLabel);
+
+
 
 
 
