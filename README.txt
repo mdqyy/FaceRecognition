@@ -57,3 +57,7 @@ ONLY ALGORITHM CHANGES WILL BE DISPLAYED HERE!
 3/21/2013
 
 - LBP with Weighted / limited Average Matching (FERET fb: 95.99%)
+
+4/1
+
+- Add Verification Preparation

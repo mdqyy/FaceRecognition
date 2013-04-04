@@ -753,7 +753,7 @@ int main(int argc, char** argv)
 	testVideoData2();	// find the face coordinates and eye, mouse position
 
 #if USE_WEIGHT
-	veriTrain( &gf );
+	//veriTrain( &gf );
 	trainWeightForLBP(&gf);
 #endif
 	
@@ -1195,15 +1195,17 @@ void trainWeightForLBP(FACE3D_Type *gf)
 void veriTrain( FACE3D_Type* gf)
 {
 	bool*	label;
+	int		featLength = TOTAL_FEATURE_LEN;
 	double**	featureDistance;
 	unitFaceFeatClass* bufferFaceFeatures = gf->bufferFaceFeatures;
 	int		numFaces = gf->validFaces;
 	int		numIntra, numInter;
-	int		ratio = 5;	// inter/ intra ratio
+	int		ratio = 1;	// inter/ intra ratio
 	int		interRatio;  // skip rate for inter class pairs
+	int		intraRatio = 2;
 	int		i,j,k;
 	int		numTotal;
-	int		cnt, cntInter;
+	int		cnt, cntInter,cntIntra;
 	float   h1, h2;
 
 	numIntra = 0;
@@ -1219,6 +1221,8 @@ void veriTrain( FACE3D_Type* gf)
 			}
 		}
 	}
+
+	numIntra = (int) (numIntra / intraRatio);
 	numInter = numIntra * ratio;
 	numTotal = numIntra + numInter;
 	interRatio = (int) ((float)interRatio / numInter); 
@@ -1234,6 +1238,7 @@ void veriTrain( FACE3D_Type* gf)
 
 	cnt = 0;
 	cntInter = 0;
+	cntIntra = 0;
 	
 	//compute feature distance and store
 	for ( i = 0; i < numFaces; i++)
@@ -1246,14 +1251,18 @@ void veriTrain( FACE3D_Type* gf)
 			if ( bufferFaceFeatures[i].id == bufferFaceFeatures[j].id)
 			{
 				//same class
-				for ( k = 0; k < TOTAL_FEATURE_LEN; k++)
+				if ( cntIntra % intraRatio == 0)
 				{
-					h1 = bufferFaceFeatures[i].feature[k];
-					h2 = bufferFaceFeatures[j].feature[k];
-					featureDistance[cnt][k] = (h1 > h2) ?  ( h1 - h2): (h2 - h1);
-					label[cnt] = 1;
+					for ( k = 0; k < TOTAL_FEATURE_LEN; k++)
+					{
+						h1 = bufferFaceFeatures[i].feature[k];
+						h2 = bufferFaceFeatures[j].feature[k];
+						featureDistance[cnt][k] = (h1 > h2) ?  ( h1 - h2): (h2 - h1);
+						label[cnt] = 1;
+					}
+					cnt++;
 				}
-				cnt++;
+				cntIntra++;
 			}
 			else
 			{
@@ -1288,6 +1297,8 @@ void veriTrain( FACE3D_Type* gf)
 	}
 
 	//label to file
+	fwrite(&numTotal,sizeof(int), 1, pSVMLabel);
+	fwrite(&featLength, sizeof(int),1, pSVMLabel);
 	fwrite(label, sizeof(bool), numTotal, pSVMLabel);
 
 	//feature distance to file

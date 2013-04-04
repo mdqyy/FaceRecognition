@@ -25,6 +25,12 @@
 #include <cv.h>
 #include <time.h>
 
+#include "Global.h"
+#include "Define.h"
+
+#include "svm_classifer_clean.h"
+#include "svmImage.h"
+
 #include "TLibCommon/EyesDetector.h"
 #include "TLibCommon/Detector.h"
 #include "TLibCommon/global.h"
@@ -93,6 +99,8 @@ void cameraDebug();
 
 
 FACE3D_Type			gf;
+SVM_GST gst;
+svm_classifer_clean<int,double> svm[NUMBER_OF_MODULES];
 
 unitFaceFeatClass	*bufferSingleFeatureID;
 
@@ -1449,6 +1457,9 @@ int main(int argc, char** argv)
 	loadFaceData( &gf );
 #endif
 
+	//svm init
+	initSystem(&gst,svm);
+
 	//-------------------
 	// data access.
 	processFileList();
@@ -2171,6 +2182,26 @@ void cameraDebug()
 
 
 	  }
+
+
+}
+
+
+
+void veriMatch()
+{
+	int i, j, k;
+	int	numCorrect, numTotal;
+	int	numImgs = 
+	IplImage* img1, img2;
+
+	eyesDetector * detectEye = new eyesDetector;
+	faceDetector * faceDet =  new faceDetector();
+
+	//Start
+	printf("Start verification matching...\n---------------------------------------------\n");
+
+
 
 
 }
