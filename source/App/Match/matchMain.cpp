@@ -74,6 +74,7 @@ int    NTESTSAMPLES = 1;
 
 void testCamera();
 void cameraDebug();
+void veriMatch();
 
 #if 0
 #pragma  comment(lib, "opencv_calib3d242d.lib")
@@ -1465,7 +1466,8 @@ int main(int argc, char** argv)
 	processFileList();
 	//-------------------
 	//matchLGT(&gf);
-	testVideoData2();	// find the face coordinates and eye, mouse position
+	//testVideoData2();	// find the face coordinates and eye, mouse position
+	veriMatch();
 	//testCamera();
 	//cameraDebug();
 	//videoAnalysis();	// extract feature given the face coordinates
@@ -2192,14 +2194,170 @@ void veriMatch()
 {
 	int i, j, k;
 	int	numCorrect, numTotal;
-	int	numImgs = 
-	IplImage* img1, img2;
+	int	numImg = gf.fileList.listLength;
+	int	validPairs;
+	int UL_x, UL_y;
+	float feature1[TOTAL_FEATURE_LEN], feature2[TOTAL_FEATURE_LEN];
+	double featureDistance[TOTAL_FEATURE_LEN];
+	float histTmp;
+	float scoreSVM;
+	bool  matchResult;	//TRUE if intra class
+
 
 	eyesDetector * detectEye = new eyesDetector;
 	faceDetector * faceDet =  new faceDetector();
+	IplImage*  gray_face_CNN = cvCreateImage(cvSize(CNNFACECLIPHEIGHT,CNNFACECLIPWIDTH), 8, 1);
+
+	CvPoint pointPos[6];
+	CvPoint *leftEye    = &pointPos[0];
+	CvPoint *rightEye   = &pointPos[2];
+	CvPoint *leftMouth  = &pointPos[4];
+	CvPoint *rightMouth = &pointPos[5];
+	CvPoint pt1, pt2;
+
+	IplImage * tarImg1 = cvCreateImage( cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, warpedImgChNum );
+	IplImage * tarImg2 = cvCreateImage( cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, warpedImgChNum );
 
 	//Start
 	printf("Start verification matching...\n---------------------------------------------\n");
+	validPairs = 0;
+	numTotal = 0;
+	numCorrect = 0;
+	
+	for ( i = 0; i < numImg; i++)
+	{
+		IplImage* img1 = NULL;
+		img1 = cvLoadImage(gf.fileList.fileName[i], CV_LOAD_IMAGE_COLOR);
+		if ( img1 == NULL)
+		{
+			printf("Error load image in veriMatch()!\n");
+			exit(-1);
+		}
+
+		if( faceDet->runFaceDetector(img1) == 0)	//face not detected
+		{
+			cvReleaseImage(&img1);
+			continue;
+		}
+
+		//face warping, feature extraction...
+		IplImage * clonedImg = cvCloneImage(img1);
+		detectEye->runEyeDetector(clonedImg, gray_face_CNN, faceDet, pointPos);
+		cvReleaseImage(&clonedImg);
+		UL_x = faceDet->faceInformation.LT.x;
+		UL_y = faceDet->faceInformation.LT.y;
+
+		// face width and height	
+		pt1.x =  faceDet->faceInformation.LT.x;
+		pt1.y = faceDet->faceInformation.LT.y;
+		pt2.x = pt1.x + faceDet->faceInformation.Width;
+		pt2.y = pt1.y + faceDet->faceInformation.Height;
+
+		// face warping.
+		faceRotate(leftEye, rightEye, img1, tarImg1, faceDet->faceInformation.Width, faceDet->faceInformation.Height);
+			
+		//downsampleing twice
+		grayDownsample(tarImg1, &gf, 0,TRUE);
+
+		// feature extraction.
+		gf.featureLength = 0;
+
+#if USE_LBP
+		extractLBPFaceFeatures( (unsigned char*)(tarImg1->imageData), (tarImg1->widthStep), &gf, FALSE);
+#endif
+		//store feature1
+		memcpy(&feature1[0], gf.faceFeatures, TOTAL_FEATURE_LEN * sizeof(float)); 
+
+
+		for ( j = i + 1; j < numImg; j++)
+		{
+			IplImage* img2 = NULL;
+			img2 = cvLoadImage(gf.fileList.fileName[j], CV_LOAD_IMAGE_COLOR);
+			if ( img2 == NULL)
+			{
+				printf("Error load image in veriMatch()!\n");
+				exit(-1);
+			}
+
+			if( faceDet->runFaceDetector(img2) == 0)	//face not detected
+			{
+				cvReleaseImage(&img2);
+				continue;
+			}
+
+			//both have valid faces
+			puts(gf.fileList.fileName[i]);
+			puts(gf.fileList.fileName[j]);
+
+			IplImage * clonedImg = cvCloneImage(img2);
+			detectEye->runEyeDetector(clonedImg, gray_face_CNN, faceDet, pointPos);
+			cvReleaseImage(&clonedImg);
+			UL_x = faceDet->faceInformation.LT.x;
+			UL_y = faceDet->faceInformation.LT.y;
+
+			// face width and height	
+			pt1.x =  faceDet->faceInformation.LT.x;
+			pt1.y = faceDet->faceInformation.LT.y;
+			pt2.x = pt1.x + faceDet->faceInformation.Width;
+			pt2.y = pt1.y + faceDet->faceInformation.Height;
+
+			// face warping.
+			faceRotate(leftEye, rightEye, img2, tarImg2, faceDet->faceInformation.Width, faceDet->faceInformation.Height);
+				
+			//downsampleing twice
+			grayDownsample(tarImg2, &gf, 0,TRUE);
+
+			// feature extraction.
+			gf.featureLength = 0;
+
+#if USE_LBP
+			extractLBPFaceFeatures( (unsigned char*)(tarImg2->imageData), (tarImg2->widthStep), &gf, FALSE);
+#endif
+			//store feature1
+			memcpy(&feature2[0], gf.faceFeatures, TOTAL_FEATURE_LEN * sizeof(float)); 
+
+
+			//get feature distance between img1 and img2
+			for ( k = 0; k < TOTAL_FEATURE_LEN; k++)
+			{
+				histTmp = feature1[k] - feature2[k];
+				featureDistance[k] = (histTmp > 0) ? histTmp: ( 0 - histTmp);
+			}
+
+			// SVM test
+			svmTest(featureDistance, TOTAL_FEATURE_LEN, 0, &scoreSVM, svm);
+
+			matchResult = (scoreSVM > 0)? TRUE: FALSE;
+
+			if (matchResult)
+			{
+				printf("Match Result: Same...\n------------------------------------------\n");
+			}
+			else
+			{
+				printf("Match Result: Different...\n------------------------------------------\n");
+			}
+
+			//statistic
+			numTotal++;
+			if ( matchResult ^ ( gf.fileList.fileID[i] == gf.fileList.fileID[j]) == 0)
+			{
+				numCorrect++;
+			}
+
+
+
+
+			validPairs++;
+			cvReleaseImage(&img2);
+		}
+		cvReleaseImage(&img1);
+	}
+
+	printf("\n-------------------------------------------\nRate: %.2f\n", 100.0 * numCorrect / numTotal);
+
+
+
 
 
 
