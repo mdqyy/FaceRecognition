@@ -2350,11 +2350,19 @@ void veriMatch()
 
 			validPairs++;
 			cvReleaseImage(&img2);
+			img2 = NULL;
 		}
 		cvReleaseImage(&img1);
+		img1 = NULL;
 	}
 
 	printf("\n-------------------------------------------\nRate: %.2f\n", 100.0 * numCorrect / numTotal);
+
+
+	//clean-ups
+	delete faceDet;
+	delete detectEye;
+	cvReleaseImage(&gray_face_CNN);
 
 
 

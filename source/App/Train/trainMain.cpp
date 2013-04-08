@@ -35,6 +35,8 @@
 #include "TLibCommon/faceFeature.h"
 #include "TLibCommon/affineWarping.h"
 #include <cxcore.h>
+#include "Global.h"
+#include "svmImage.h"
 
 #define WRITE_FEATURE_DATUM_2_FILE
 #define TRAIN_IMAGE_DIR			"../../image/train/"
@@ -47,6 +49,7 @@
 #define WEIGHTS_BIN				"../../image/weight.bin"
 #define SVM_TRAIN_BIN_FILE		"../../image/svmTrain.bin"
 #define SVM_LABEL_BIN_FILE		"../../image/svmLabel.bin"
+#define SVM_LIST_DIR			"../../image/svm/"
 
 //#define DO_MATCH
 //#define	STR_INPUT_IMAGE_DIR		"Query/"
@@ -90,6 +93,8 @@ int    NTESTSAMPLES = 1;
 
 
 FACE3D_Type			gf;
+SVM_GST				gst;
+
 
 unitFaceFeatClass	*bufferSingleFeatureID;
 
@@ -99,8 +104,29 @@ void trainLGT(FACE3D_Type *gf);
 void trainWeight(FACE3D_Type *gf);
 void trainWeightForLBP(FACE3D_Type *gf);
 void veriTrain( FACE3D_Type* gf);
+void generateSVMList(FACE3D_Type* gf);
+void svmTrainFromList(FACE3D_Type* gf, int start, int end);
+void extractFeatureFromImage(FACE3D_Type* gf, float* feature, IplImage* img);
+
+// shuffle array to randomly select group members
+void shuffle(int *list, int n) 
+{    
+    srand((unsigned) time(NULL)); 
+	int t, j;
 
 
+    if (n > 1) 
+	{
+        int i;
+        for (i = n - 1; i > 0; i--) 
+		{
+            j = i + rand() / (RAND_MAX / (n - i) + 1);
+            t = list[j];
+            list[j] = list[i];
+            list[i] = t;
+        }
+    }
+}
 
 int testLiveFace()
 {
@@ -746,6 +772,8 @@ int main(int argc, char** argv)
 	//-------------------
 	// data access.
 	processFileList();
+	svmTrainFromList(&gf, 0, 8);
+	//generateSVMList(&gf);
 	//-------------------
 
 	//trainLGT(&gf);
@@ -1200,9 +1228,12 @@ void veriTrain( FACE3D_Type* gf)
 	unitFaceFeatClass* bufferFaceFeatures = gf->bufferFaceFeatures;
 	int		numFaces = gf->validFaces;
 	int		numIntra, numInter;
-	int		ratio = 1;	// inter/ intra ratio
+
+	int     groupSize = 3000;	//max group size
+	int		numGroups;
+	int		ratio = 3;	// inter/ intra ratio
 	int		interRatio;  // skip rate for inter class pairs
-	int		intraRatio = 2;
+	int		intraRatio = 1;
 	int		i,j,k;
 	int		numTotal;
 	int		cnt, cntInter,cntIntra;
@@ -1226,10 +1257,11 @@ void veriTrain( FACE3D_Type* gf)
 	numInter = numIntra * ratio;
 	numTotal = numIntra + numInter;
 	interRatio = (int) ((float)interRatio / numInter); 
+	numGroups = (int)ceil( (double)numTotal / groupSize);
 
 	//allocate memory
-	label = (bool*)malloc(numTotal * sizeof(bool));
-	featureDistance = (double**)malloc( numTotal * sizeof(double*));
+	label = (bool*)malloc(groupSize * sizeof(bool));
+	featureDistance = (double**)malloc( groupSize * sizeof(double*));
 	for ( i = 0; i < numTotal; i++)
 	{
 		featureDistance[i] = (double*)malloc( TOTAL_FEATURE_LEN * sizeof(double));
@@ -1237,6 +1269,7 @@ void veriTrain( FACE3D_Type* gf)
 
 
 	cnt = 0;
+	
 	cntInter = 0;
 	cntIntra = 0;
 	
@@ -1337,5 +1370,334 @@ void veriTrain( FACE3D_Type* gf)
 
 
 
+
+}
+
+
+void generateSVMList(FACE3D_Type* gf)
+{
+	svmPair* pairs;
+	int		i, j, k;
+	int		numGroups;
+	int		numInGroup;
+	int		tmpFaceNum = gf->fileList.listLength;
+	int		validFaces;
+	int		numIntra, numInter, numTotal;
+	int		interSkip;
+	int		count, countInter, countIntra, countSkip;
+	int*	listIntra, *listInter;
+	char	path[260];
+	FILE*	pSVMOut;
+
+	faceDetector * faceDet =  new faceDetector();
+	
+
+	//allocate temp memory
+	char** tmpFileName = (char**)malloc( tmpFaceNum * sizeof(char*));
+	for ( i = 0; i < tmpFaceNum; i++)
+	{
+		tmpFileName[i] = new char[260];
+	}
+	int* tmpID = (int*)malloc( tmpFaceNum * sizeof(int));
+
+	validFaces = 0;
+	for ( i = 0; i < tmpFaceNum; i++)
+	{
+		IplImage* imgFrame = NULL;
+		imgFrame = cvLoadImage( gf->fileList.fileName[i], CV_LOAD_IMAGE_COLOR);
+		if ( faceDet->runFaceDetector(imgFrame))
+		{
+			sprintf(tmpFileName[validFaces], "%s", gf->fileList.fileName[i]);
+			tmpID[validFaces] = gf->fileList.fileID[i];
+			validFaces++;
+		}
+	}
+	gf->validFaces = validFaces;
+
+	numIntra = 0;
+	numTotal = 0;
+
+	for ( i = 0; i < validFaces; i++)
+	{
+		for ( j = i + 1; j < validFaces; j++)
+		{
+			if ( tmpID[i] == tmpID[j])
+			{
+				numIntra++;
+			}
+			numTotal++;
+		}
+	}
+
+	numInter = numIntra * INTER_INTRA_RATIO;	//limited number of intra pairs
+	interSkip = (int) ((numTotal - numIntra) / numInter);
+	numTotal = numInter + numIntra;
+	numGroups = (int)ceil( (double)numTotal / PAIR_GROUP_SIZE);
+
+	pairs = (svmPair*)malloc( numTotal * sizeof(svmPair));
+
+	//randomize intra
+	listIntra = (int*)malloc( numIntra * sizeof(int));
+	for ( i = 0; i < numIntra; i++)
+	{
+		listIntra[i] = i;
+	}
+	shuffle( listIntra, numIntra);	//shuffle listIntra
+
+	listInter = (int*)malloc( numInter * sizeof(int));
+	for ( i = 0; i <numInter; i++)
+	{
+		listInter[i] = i + numIntra;
+	}
+	shuffle( listInter, numInter);	//shuffle inter
+
+	//randomly assign pair groups
+	countIntra = 0;
+	countInter = numIntra;	//inter pairs starts from this position
+	countSkip = 0;
+	
+	for ( i = 0; i < validFaces; i++)
+	{
+		for ( j = i+1; j < validFaces; j++)
+		{
+			if ( tmpID[i] == tmpID[j])
+			{
+				//intra class
+				sprintf(pairs[countIntra].filename1,"%s", tmpFileName[i]);
+				sprintf(pairs[countIntra].filename2,"%s", tmpFileName[j]);
+				countIntra++;
+			}
+			else
+			{
+				//inter class
+				if ( (countInter < numTotal) && (countSkip % interSkip == 0))
+				{
+					sprintf(pairs[countInter].filename1,"%s", tmpFileName[i]);
+					sprintf(pairs[countInter].filename2,"%s", tmpFileName[j]);
+					countInter++;
+					countSkip = 0;
+				}
+				countSkip++;
+			}
+		}
+	}
+
+	
+	//write to txt file
+	for ( i = 0; i < numGroups - 1; i++)
+	{
+		sprintf(path, "%s%d.txt", SVM_LIST_DIR, i);
+		pSVMOut = fopen(path, "w+");
+		if ( pSVMOut == NULL)
+		{
+			printf("Error opening svm list txt file!\n");
+		}
+
+		if ( i == numGroups - 1)
+		{
+			continue; // throw out the following
+			//last group may contain less than GROUP SIZE
+			for ( j = PAIR_GROUP_INTRA * ( numGroups - 1); j < numIntra; j++)	//intra
+			{
+				fprintf(pSVMOut, "%d %s %s\n", 1, pairs[listIntra[j]].filename1, pairs[listIntra[j]].filename2);
+			}
+			for ( j = PAIR_GROUP_INTER * ( numGroups - 1); j < numInter; j++)
+			{
+				fprintf(pSVMOut, "%d %s %s\n", -1, pairs[listInter[j]].filename1, pairs[listInter[j]].filename2);
+			}
+		}
+		else
+		{
+			for ( j = PAIR_GROUP_INTRA * i; j < PAIR_GROUP_INTRA * (i + 1); j++)
+			{
+				fprintf(pSVMOut, "%d %s %s\n", 1, pairs[listIntra[j]].filename1, pairs[listIntra[j]].filename2);
+			}
+			for ( j = PAIR_GROUP_INTER * i; j < PAIR_GROUP_INTER * (i + 1); j++)
+			{
+				fprintf(pSVMOut, "%d %s %s\n", -1, pairs[listInter[j]].filename1, pairs[listInter[j]].filename2);
+			}
+		}
+
+		fclose(pSVMOut);
+		pSVMOut = NULL;
+	}
+
+
+
+
+
+
+
+
+	
+
+
+	//clean-ups
+	if ( tmpID != NULL)
+		free(tmpID);
+
+	for ( i = 0; i < tmpFaceNum; i++)
+	{
+		if ( tmpFileName[i] != NULL)
+		{
+			delete [] tmpFileName[i];
+		}
+	}
+	if (tmpFileName != NULL)
+		free(tmpFileName);
+
+	delete faceDet;
+
+	if ( pairs != NULL)
+		free(pairs);
+
+	if ( listIntra != NULL)
+		free(listIntra);
+
+	if ( listInter != NULL)
+		free(listInter);
+
+
+
+}
+
+
+void svmTrainFromList(FACE3D_Type* gf, int start, int end)
+{
+	FILE*	pList;
+	char	path[260];
+	char	fileName1[260], fileName2[260];
+	float	feature1[TOTAL_FEATURE_LEN], feature2[TOTAL_FEATURE_LEN], featureDist[TOTAL_FEATURE_LEN];
+	float	tmpDist;
+	IplImage *img1, *img2;
+	int		label;
+	int		countMod;
+	int		i, j, k;
+
+	//init svm global structure
+	initSystem(&gst);
+	gst.nSamples = PAIR_GROUP_SIZE;
+	gst.featureSize = TOTAL_FEATURE_LEN;
+
+	countMod = 0;
+	for ( i = start; i <= end; i++)
+	{
+		sprintf(path, "%s%d.txt", SVM_LIST_DIR, i);
+		pList = fopen(path, "r");
+		if ( pList == NULL)
+		{
+			printf("Error loading svm list!\n");
+		}
+		for ( j = 0; j < PAIR_GROUP_SIZE; j++)
+		{
+			fscanf(pList, "%d %s %s\n", &label, fileName1, fileName2);
+			
+			//extract features
+			img1 = cvLoadImage(fileName1, CV_LOAD_IMAGE_COLOR);
+			img2 = cvLoadImage(fileName2, CV_LOAD_IMAGE_COLOR);
+
+			extractFeatureFromImage(gf, feature1, img1);
+			extractFeatureFromImage(gf, feature2, img2);
+
+			//feature distance
+			for (k = 0; k < TOTAL_FEATURE_LEN; k++)
+			{
+				tmpDist = feature1[k] - feature2[k];
+				gst.features[j][k] = (tmpDist > 0)? tmpDist: ( 0 - tmpDist);
+			}
+			gst.classLable[j] = label;
+			
+			cvReleaseImage(&img1);
+			cvReleaseImage(&img2);
+		}
+
+		//svm training
+		sprintf(path, "%s%d.mod", SVM_LIST_DIR, countMod);
+		svmTraining(gst.features, gst.nSamples, gst.featureSize, gst.classLable, path);
+		countMod++;
+
+
+			
+
+			
+
+	}
+	
+
+
+
+
+
+
+
+
+}
+
+
+void extractFeatureFromImage(FACE3D_Type* gf, float* feature, IplImage* pFrame)
+{
+	int UL_x, UL_y;
+	CvPoint pt1, pt2;
+	eyesDetector * detectEye = new eyesDetector;
+	faceDetector * faceDet =  new faceDetector();
+	IplImage*  gray_face_CNN = cvCreateImage(cvSize(CNNFACECLIPHEIGHT,CNNFACECLIPWIDTH), 8, 1);
+
+	CvPoint pointPos[6];
+	CvPoint *leftEye    = &pointPos[0];
+	CvPoint *rightEye   = &pointPos[2];
+	CvPoint *leftMouth  = &pointPos[4];
+	CvPoint *rightMouth = &pointPos[5];
+
+	IplImage * tarImg = cvCreateImage( cvSize(warpedImgW, warpedImgH), IPL_DEPTH_8U, warpedImgChNum );
+
+
+	if( faceDet->runFaceDetector(pFrame))
+		{	
+			/* there was a face detected by OpenCV. */
+			
+			IplImage * clonedImg = cvCloneImage(pFrame);
+
+			detectEye->runEyeDetector(clonedImg, gray_face_CNN, faceDet, pointPos);
+
+			cvReleaseImage(&clonedImg);
+
+			UL_x = faceDet->faceInformation.LT.x;
+			UL_y = faceDet->faceInformation.LT.y;
+
+			// face width and height
+			pt1.x =  faceDet->faceInformation.LT.x;
+			pt1.y = faceDet->faceInformation.LT.y;
+			pt2.x = pt1.x + faceDet->faceInformation.Width;
+			pt2.y = pt1.y + faceDet->faceInformation.Height;
+
+			faceRotate(leftEye, rightEye, pFrame, tarImg, faceDet->faceInformation.Width, faceDet->faceInformation.Height);
+
+			grayDownsample(tarImg, gf, 0, FALSE);
+
+			gf->featureLength = 0;
+
+#if USE_CA
+			extractCAFeature(&gf);
+#endif
+
+#if USE_GBP
+			extractGBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), &gf);
+#endif
+#if USE_LBP
+			extractLBPFaceFeatures( (unsigned char*)(tarImg->imageData), (tarImg->widthStep), gf, FALSE);
+#endif
+#if USE_GABOR
+			extractGaborFeatures( &gf );
+#endif
+
+			memcpy( feature, gf->faceFeatures, TOTAL_FEATURE_LEN * sizeof(float));
+	}
+	
+
+	//clean-ups
+	delete detectEye;
+	delete faceDet;
+	cvReleaseImage( &gray_face_CNN);
+	cvReleaseImage( &tarImg);
 
 }

@@ -51,6 +51,19 @@
 #define CA_WIDTH			20
 #define CA_HEIGHT			20
 
+//SVM
+#define	PAIR_GROUP_SIZE		3000
+#define INTER_INTRA_RATIO	4
+#define	PAIR_GROUP_INTRA	(PAIR_GROUP_SIZE / ( INTER_INTRA_RATIO + 1))
+#define PAIR_GROUP_INTER	(PAIR_GROUP_SIZE - PAIR_GROUP_INTRA)
+typedef	struct svmPairType
+{
+	char filename1[260];
+	char filename2[260];
+}svmPair;
+
+
+
 
 typedef struct imageList
 {
