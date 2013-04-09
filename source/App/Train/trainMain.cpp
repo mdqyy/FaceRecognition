@@ -50,6 +50,7 @@
 #define SVM_TRAIN_BIN_FILE		"../../image/svmTrain.bin"
 #define SVM_LABEL_BIN_FILE		"../../image/svmLabel.bin"
 #define SVM_LIST_DIR			"../../image/svm/"
+#define	LBP_FEATURE_DIR			"../../image/LBP/"
 
 //#define DO_MATCH
 //#define	STR_INPUT_IMAGE_DIR		"Query/"
@@ -106,7 +107,8 @@ void trainWeightForLBP(FACE3D_Type *gf);
 void veriTrain( FACE3D_Type* gf);
 void generateSVMList(FACE3D_Type* gf);
 void svmTrainFromList(FACE3D_Type* gf, int start, int end);
-void extractFeatureFromImage(FACE3D_Type* gf, float* feature, IplImage* img);
+void extractFeatureFromImage(FACE3D_Type* gf, float* feature, IplImage* pFrame, eyesDetector * detectEye, faceDetector * faceDet);
+void prepareLBPFeaturesToFile( FACE3D_Type* gf);
 
 // shuffle array to randomly select group members
 void shuffle(int *list, int n) 
@@ -772,6 +774,7 @@ int main(int argc, char** argv)
 	//-------------------
 	// data access.
 	processFileList();
+	//prepareLBPFeaturesToFile(&gf);
 	svmTrainFromList(&gf, 0, 8);
 	//generateSVMList(&gf);
 	//-------------------
@@ -1565,14 +1568,20 @@ void generateSVMList(FACE3D_Type* gf)
 void svmTrainFromList(FACE3D_Type* gf, int start, int end)
 {
 	FILE*	pList;
+	FILE*	pFeature;
 	char	path[260];
-	char	fileName1[260], fileName2[260];
+	char	fileName1[260], fileName2[260],tmpName[260];
 	float	feature1[TOTAL_FEATURE_LEN], feature2[TOTAL_FEATURE_LEN], featureDist[TOTAL_FEATURE_LEN];
 	float	tmpDist;
 	IplImage *img1, *img2;
 	int		label;
 	int		countMod;
 	int		i, j, k;
+	int		tmpID;
+	char*	pExtension;
+
+	//eyesDetector * detectEye = new eyesDetector;
+	//faceDetector * faceDet =  new faceDetector();
 
 	//init svm global structure
 	initSystem(&gst);
@@ -1593,11 +1602,51 @@ void svmTrainFromList(FACE3D_Type* gf, int start, int end)
 			fscanf(pList, "%d %s %s\n", &label, fileName1, fileName2);
 			
 			//extract features
-			img1 = cvLoadImage(fileName1, CV_LOAD_IMAGE_COLOR);
-			img2 = cvLoadImage(fileName2, CV_LOAD_IMAGE_COLOR);
+			printf("-----------------------------------------\n");
+			puts(fileName1);
+			puts(fileName2);
+			printf("-----------------------------------------\n");
 
-			extractFeatureFromImage(gf, feature1, img1);
-			extractFeatureFromImage(gf, feature2, img2);
+			//process filename
+			strcpy(tmpName, fileName1);
+			pExtension = strstr(tmpName, "/");
+			while ( pExtension != NULL)
+			{
+				strcpy(tmpName, pExtension+1);
+				pExtension = NULL;
+				pExtension = strstr(tmpName, "/");
+
+			}
+			pExtension = strstr(tmpName, ".jpg");
+			*pExtension = '\0';
+			sprintf(path, "%s%s.feat",LBP_FEATURE_DIR, tmpName);
+			pFeature = fopen(path, "rb");
+			fread(&tmpID, sizeof(int), 1, pFeature);
+			fread(feature1, sizeof(float), TOTAL_FEATURE_LEN, pFeature);
+			fclose(pFeature);
+
+			strcpy(tmpName, fileName2);
+			pExtension = strstr(tmpName, "/");
+			while ( pExtension != NULL)
+			{
+				strcpy(tmpName, pExtension+1);
+				pExtension = NULL;
+				pExtension = strstr(tmpName, "/");
+
+			}
+			pExtension = strstr(tmpName, ".jpg");
+			*pExtension = '\0';
+			sprintf(path, "%s%s.feat",LBP_FEATURE_DIR, tmpName);
+			pFeature = fopen(path, "rb");
+			fread(&tmpID, sizeof(int), 1, pFeature);
+			fread(feature2, sizeof(float), TOTAL_FEATURE_LEN, pFeature);
+			fclose(pFeature);
+
+			//img1 = cvLoadImage(fileName1, CV_LOAD_IMAGE_COLOR);
+			//img2 = cvLoadImage(fileName2, CV_LOAD_IMAGE_COLOR);
+
+			//extractFeatureFromImage(gf, feature1, img1, detectEye, faceDet);
+			//extractFeatureFromImage(gf, feature2, img2, detectEye, faceDet);
 
 			//feature distance
 			for (k = 0; k < TOTAL_FEATURE_LEN; k++)
@@ -1607,8 +1656,8 @@ void svmTrainFromList(FACE3D_Type* gf, int start, int end)
 			}
 			gst.classLable[j] = label;
 			
-			cvReleaseImage(&img1);
-			cvReleaseImage(&img2);
+			//cvReleaseImage(&img1);
+			//cvReleaseImage(&img2);
 		}
 
 		//svm training
@@ -1617,7 +1666,8 @@ void svmTrainFromList(FACE3D_Type* gf, int start, int end)
 		countMod++;
 
 
-			
+		//delete detectEye;
+		//delete faceDet;
 
 			
 
@@ -1634,12 +1684,13 @@ void svmTrainFromList(FACE3D_Type* gf, int start, int end)
 }
 
 
-void extractFeatureFromImage(FACE3D_Type* gf, float* feature, IplImage* pFrame)
+void extractFeatureFromImage(FACE3D_Type* gf, float* feature, IplImage* pFrame, eyesDetector * detectEye, faceDetector * faceDet)
 {
 	int UL_x, UL_y;
 	CvPoint pt1, pt2;
-	eyesDetector * detectEye = new eyesDetector;
-	faceDetector * faceDet =  new faceDetector();
+	//int size = sizeof( eyesDetector);
+	//eyesDetector * detectEye = new eyesDetector;
+	//faceDetector * faceDet =  new faceDetector();
 	IplImage*  gray_face_CNN = cvCreateImage(cvSize(CNNFACECLIPHEIGHT,CNNFACECLIPWIDTH), 8, 1);
 
 	CvPoint pointPos[6];
@@ -1695,9 +1746,68 @@ void extractFeatureFromImage(FACE3D_Type* gf, float* feature, IplImage* pFrame)
 	
 
 	//clean-ups
-	delete detectEye;
-	delete faceDet;
 	cvReleaseImage( &gray_face_CNN);
 	cvReleaseImage( &tarImg);
+	//delete detectEye;
+	//delete faceDet;
+
+}
+
+
+void prepareLBPFeaturesToFile( FACE3D_Type* gf)
+{
+	FILE*	pList;
+	char	path[260];
+	char	fileName[260];
+	char*	pExtension;
+	int		i, j;
+	float	feature[TOTAL_FEATURE_LEN];
+
+	eyesDetector * detectEye = new eyesDetector;
+	faceDetector * faceDet =  new faceDetector();
+
+	for ( i = 0; i < gf->fileList.listLength; i++)
+	{
+		IplImage* pFrame;
+		pFrame = cvLoadImage(gf->fileList.fileName[i], CV_LOAD_IMAGE_COLOR);
+
+		extractFeatureFromImage(gf, feature, pFrame, detectEye, faceDet);
+
+		//write to file
+		//remove extension
+		strcpy(fileName, gf->fileList.fileName[i]);
+		pExtension = strstr(fileName, "/");
+		while ( pExtension != NULL)
+		{
+			strcpy(fileName, pExtension+1);
+			pExtension = NULL;
+			pExtension = strstr(fileName, "/");
+
+		}
+		pExtension = strstr(fileName, ".jpg");
+		*pExtension = '\0';
+		sprintf(path, "%s%s.feat",LBP_FEATURE_DIR, fileName);
+		pList = fopen(path, "w+b");
+		if (pList == NULL)
+		{
+			printf("Error opening feature binary file %s!\n", path);
+		}
+		fwrite( &gf->fileList.fileID[i], sizeof(int), 1, pList);
+		fwrite( feature, sizeof(float), TOTAL_FEATURE_LEN, pList);
+
+		fclose(pList);
+		cvReleaseImage(&pFrame);
+	}
+
+	delete detectEye;
+	delete faceDet;
+
+		
+		
+
+
+	
+
+
 
 }

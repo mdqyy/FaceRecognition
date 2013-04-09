@@ -2371,3 +2371,11 @@ void veriMatch()
 
 
 }
+
+
+void svmTestFrom(FACE3D_Type* gf)
+{
+	
+
+
+}
