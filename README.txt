@@ -61,3 +61,11 @@ ONLY ALGORITHM CHANGES WILL BE DISPLAYED HERE!
 4/1
 
 - Add Verification Preparation
+
+4/8
+
+- Add SVM Training
+
+4/10
+
+- Add SVM Testing 

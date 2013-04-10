@@ -1583,6 +1583,7 @@ void svmTrainFromList(FACE3D_Type* gf, int start, int end)
 	//eyesDetector * detectEye = new eyesDetector;
 	//faceDetector * faceDet =  new faceDetector();
 
+	assert( (end - start) % 2 == 0);
 	//init svm global structure
 	initSystem(&gst);
 	gst.nSamples = PAIR_GROUP_SIZE;

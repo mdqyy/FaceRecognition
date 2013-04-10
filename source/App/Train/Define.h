@@ -1,5 +1,5 @@
-#ifndef _DEFINE_H_
-#define _DEFINE_H_
+#ifndef _DEFINE_H_TRAIN_
+#define _DEFINE_H_TRAIN_
 
 #define MAX_FEATURE_SIZE 5120
 #define MAX_SAMPLE_SIZE 3000

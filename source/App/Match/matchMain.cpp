@@ -53,6 +53,8 @@
 #define RESULT_TXT_DIR			"../../image/matchResult.txt"
 #define LGT_BIN_FILE			"../../image/LGT.bin"
 #define WEIGHTS_BIN				"../../image/weight.bin"
+#define SVM_LIST_DIR			"../../image/svm/"
+#define	LBP_FEATURE_DIR			"../../image/LBP/"
 
 #define DO_MATCH
 #define	STR_INPUT_IMAGE_DIR		"../../image/match/Query3/"
@@ -75,6 +77,7 @@ int    NTESTSAMPLES = 1;
 void testCamera();
 void cameraDebug();
 void veriMatch();
+void svmTestFromList(FACE3D_Type* gf, int start, int end);
 
 #if 0
 #pragma  comment(lib, "opencv_calib3d242d.lib")
@@ -1460,6 +1463,7 @@ int main(int argc, char** argv)
 
 	//svm init
 	initSystem(&gst,svm);
+	svmTestFromList( &gf, 0, 0);
 
 	//-------------------
 	// data access.
@@ -1467,7 +1471,7 @@ int main(int argc, char** argv)
 	//-------------------
 	//matchLGT(&gf);
 	//testVideoData2();	// find the face coordinates and eye, mouse position
-	veriMatch();
+	//veriMatch();
 	//testCamera();
 	//cameraDebug();
 	//videoAnalysis();	// extract feature given the face coordinates
@@ -2373,9 +2377,123 @@ void veriMatch()
 }
 
 
-void svmTestFrom(FACE3D_Type* gf)
+void svmTestFromList(FACE3D_Type* gf, int start, int end)
 {
-	
+	FILE*	pList, *pFeature;
+	float	feature1[TOTAL_FEATURE_LEN], feature2[TOTAL_FEATURE_LEN];
+	double	featDist[TOTAL_FEATURE_LEN];
+	float	tmpDist;
+	float	tmpScore, maxScore;
+	int		vote;
+	int		tmpID, label, result;
+	int		numCorrect, numTotal;
+	int		countMod;
+	int		countPairs;
+	char	path[260], tmpName[260];
+	char	fileName1[260], fileName2[260];
+	int		i, j, k;
+	char*	pExtension;
+
+	countMod = 0;
+	numCorrect = 0;
+	numTotal = 0;
+	for ( i = start; i <= end; i++)
+	{
+		sprintf(path, "%s%d.txt", SVM_LIST_DIR, i);
+		pList = fopen(path, "r");
+		if ( pList == NULL)
+		{
+			printf("Error opening SVM list!\n");
+		}
+		
+
+		//get pair filenames
+		for ( j = 0; j < PAIR_GROUP_SIZE; j++)
+		{
+			fscanf(pList, "%d %s %s\n", &label, fileName1, fileName2);
+
+			//extract features
+			printf("-----------------------------------------\n");
+			puts(fileName1);
+			puts(fileName2);
+			printf("-----------------------------------------\n");
+
+			//process filename
+			strcpy(tmpName, fileName1);
+			pExtension = strstr(tmpName, "/");
+			while ( pExtension != NULL)
+			{
+				strcpy(tmpName, pExtension+1);
+				pExtension = NULL;
+				pExtension = strstr(tmpName, "/");
+
+			}
+			pExtension = strstr(tmpName, ".jpg");
+			*pExtension = '\0';
+			sprintf(path, "%s%s.feat",LBP_FEATURE_DIR, tmpName);
+			pFeature = fopen(path, "rb");
+			fread(&tmpID, sizeof(int), 1, pFeature);
+			fread(feature1, sizeof(float), TOTAL_FEATURE_LEN, pFeature);
+			fclose(pFeature);
+
+			strcpy(tmpName, fileName2);
+			pExtension = strstr(tmpName, "/");
+			while ( pExtension != NULL)
+			{
+				strcpy(tmpName, pExtension+1);
+				pExtension = NULL;
+				pExtension = strstr(tmpName, "/");
+
+			}
+			pExtension = strstr(tmpName, ".jpg");
+			*pExtension = '\0';
+			sprintf(path, "%s%s.feat",LBP_FEATURE_DIR, tmpName);
+			pFeature = fopen(path, "rb");
+			fread(&tmpID, sizeof(int), 1, pFeature);
+			fread(feature2, sizeof(float), TOTAL_FEATURE_LEN, pFeature);
+			fclose(pFeature);
+
+			//get feature distance
+			for (k = 0; k < TOTAL_FEATURE_LEN; k++)
+			{
+				tmpDist = feature1[k] - feature2[k];
+				featDist[k] = (tmpDist > 0)? tmpDist: ( 0 - tmpDist);
+			}
+
+			//SVM test and vote
+			vote = 0;
+			maxScore = 0;
+			for ( k = 0; k < NUMBER_OF_MODULES; k++)
+			{
+				svmTest(featDist, TOTAL_FEATURE_LEN, k, &tmpScore, svm);
+				if ( abs(tmpScore) > maxScore)
+				{
+					maxScore = abs(tmpScore);
+					vote = (tmpScore >= 0)? 1:-1;
+				}
+				//else
+				//{
+				//	vote--;
+				//}
+			}
+
+			if ( vote * label > 0)
+			{
+				numCorrect++;
+			}
+
+			numTotal++;
+		}
+
+		countMod++;
+	}
+
+	printf("# correct: %d, # total: %d, Accuracy: %.2f%%\n", numCorrect, numTotal,100.0 * numCorrect / numTotal);
+
+
+	system("pause");
+
+
 
 
 }

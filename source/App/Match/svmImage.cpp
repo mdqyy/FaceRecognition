@@ -38,7 +38,7 @@ void initSVMTest()
 
 void initSystem(SVM_GST * gst,svm_classifer_clean<int,double>*svm)
 {
-	gst->path = "C:/Users/Zhi/Desktop/FaceRecognition/image/";
+	gst->path = "C:/Users/Zhi/Desktop/FaceRecognition/image/svm/";
 
 	int k;
 	char modelFilePath[256];
@@ -53,7 +53,7 @@ void initSystem(SVM_GST * gst,svm_classifer_clean<int,double>*svm)
 	/*Load Module*/
 	for (k=0;k<NUMBER_OF_MODULES;k++)
 	{
-		sprintf(modelFilePath,"%stest.mod",gst->path);
+		sprintf(modelFilePath,"%s%d.mod",gst->path,k);
 		svm[k].svm_init_clean(modelFilePath);
 	}
 
