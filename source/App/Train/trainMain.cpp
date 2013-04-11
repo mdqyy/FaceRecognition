@@ -96,6 +96,9 @@ int    NTESTSAMPLES = 1;
 FACE3D_Type			gf;
 SVM_GST				gst;
 
+//init svm classifier
+svm_classifer_clean<int,double> svm;
+
 
 unitFaceFeatClass	*bufferSingleFeatureID;
 
@@ -106,9 +109,10 @@ void trainWeight(FACE3D_Type *gf);
 void trainWeightForLBP(FACE3D_Type *gf);
 void veriTrain( FACE3D_Type* gf);
 void generateSVMList(FACE3D_Type* gf);
-void svmTrainFromList(FACE3D_Type* gf, int start, int end);
+void svmTrainFromList(int start, int end);
 void extractFeatureFromImage(FACE3D_Type* gf, float* feature, IplImage* pFrame, eyesDetector * detectEye, faceDetector * faceDet);
 void prepareLBPFeaturesToFile( FACE3D_Type* gf);
+void boostSVMTrain();
 
 // shuffle array to randomly select group members
 void shuffle(int *list, int n) 
@@ -764,6 +768,8 @@ int main(int argc, char** argv)
 	//-------------------
 	// initializations.
 	//-------------------
+	boostSVMTrain();
+	svmTrainFromList(0, 8);
 
 	initFaceWarping();	
 	initFaceFeature( &gf, 80, 80);
@@ -775,7 +781,7 @@ int main(int argc, char** argv)
 	// data access.
 	processFileList();
 	//prepareLBPFeaturesToFile(&gf);
-	svmTrainFromList(&gf, 0, 8);
+	
 	//generateSVMList(&gf);
 	//-------------------
 
@@ -1565,7 +1571,7 @@ void generateSVMList(FACE3D_Type* gf)
 }
 
 
-void svmTrainFromList(FACE3D_Type* gf, int start, int end)
+void svmTrainFromList(int start, int end)
 {
 	FILE*	pList;
 	FILE*	pFeature;
@@ -1584,8 +1590,9 @@ void svmTrainFromList(FACE3D_Type* gf, int start, int end)
 	//faceDetector * faceDet =  new faceDetector();
 
 	assert( (end - start) % 2 == 0);
+
 	//init svm global structure
-	initSystem(&gst);
+	initSystem(&gst,&svm);
 	gst.nSamples = PAIR_GROUP_SIZE;
 	gst.featureSize = TOTAL_FEATURE_LEN;
 
@@ -1670,7 +1677,7 @@ void svmTrainFromList(FACE3D_Type* gf, int start, int end)
 		//delete detectEye;
 		//delete faceDet;
 
-			
+		system("pause");
 
 	}
 	
@@ -1808,6 +1815,200 @@ void prepareLBPFeaturesToFile( FACE3D_Type* gf)
 
 
 	
+
+
+
+}
+
+
+void boostSVMTrain()
+{
+	//config
+	int		step = 500;
+	int		maxTrain = 5000;
+	int		listLength = 33000;
+	int		maxStep = 10;
+
+	//
+	FILE*	pList, *pFeature;
+	int		curTrain, curList;
+	int		i, j, k;
+	int		tmpID, label;
+	char	path[260], fileName1[260], fileName2[260], tmpName[260];
+	float	feature1[TOTAL_FEATURE_LEN], feature2[TOTAL_FEATURE_LEN];
+	double	tmpDist;
+	double	featDist[TOTAL_FEATURE_LEN];
+	char*	pExtension;
+	int		roundTrain;		// nth train step
+	float	tmpScore;
+
+	//init
+	initSystem(&gst, &svm);
+	gst.featureSize = TOTAL_FEATURE_LEN;
+
+	sprintf(path, "%sfull.txt", SVM_LIST_DIR, i);
+	pList = fopen(path, "r");
+	if ( pList == NULL)
+	{
+		printf("Error loading svm list!\n");
+	}
+
+
+	//first train
+	for ( i = 0; i < step; i++)
+	{
+		fscanf(pList, "%d %s %s\n", &label, fileName1, fileName2);
+			
+			//extract features
+			//printf("-----------------------------------------\n");
+			//puts(fileName1);
+			//puts(fileName2);
+			//printf("-----------------------------------------\n");
+
+			//process filename
+			strcpy(tmpName, fileName1);
+			pExtension = strstr(tmpName, "/");
+			while ( pExtension != NULL)
+			{
+				strcpy(tmpName, pExtension+1);
+				pExtension = NULL;
+				pExtension = strstr(tmpName, "/");
+
+			}
+			pExtension = strstr(tmpName, ".jpg");
+			*pExtension = '\0';
+			sprintf(path, "%s%s.feat",LBP_FEATURE_DIR, tmpName);
+			pFeature = fopen(path, "rb");
+			fread(&tmpID, sizeof(int), 1, pFeature);
+			fread(feature1, sizeof(float), TOTAL_FEATURE_LEN, pFeature);
+			fclose(pFeature);
+
+			strcpy(tmpName, fileName2);
+			pExtension = strstr(tmpName, "/");
+			while ( pExtension != NULL)
+			{
+				strcpy(tmpName, pExtension+1);
+				pExtension = NULL;
+				pExtension = strstr(tmpName, "/");
+
+			}
+			pExtension = strstr(tmpName, ".jpg");
+			*pExtension = '\0';
+			sprintf(path, "%s%s.feat",LBP_FEATURE_DIR, tmpName);
+			pFeature = fopen(path, "rb");
+			fread(&tmpID, sizeof(int), 1, pFeature);
+			fread(feature2, sizeof(float), TOTAL_FEATURE_LEN, pFeature);
+			fclose(pFeature);
+			//feature dist
+			for (k = 0; k < TOTAL_FEATURE_LEN; k++)
+			{
+				tmpDist = feature1[k] - feature2[k];
+				gst.features[i][k] = (tmpDist > 0)? tmpDist: ( 0 - tmpDist);
+			}
+			gst.classLable[i] = label;
+	}
+
+	//svm training
+	sprintf(path, "%sboost.mod", SVM_LIST_DIR);
+	svmTraining(gst.features, step, gst.featureSize, gst.classLable, path);
+	//load mod for testing
+	svm.svm_init_clean(path);
+
+	curTrain = step;
+	curList = step;
+
+	//boosting train
+	for ( i = curList; i < listLength; i++)
+	{
+		if ( curTrain >= (maxTrain - 1))
+		{
+			break;
+		}
+	
+		fscanf(pList, "%d %s %s\n", &label, fileName1, fileName2);
+		curList++;
+		
+		//extract features
+
+		//process filename
+		strcpy(tmpName, fileName1);
+		pExtension = strstr(tmpName, "/");
+		while ( pExtension != NULL)
+		{
+			strcpy(tmpName, pExtension+1);
+			pExtension = NULL;
+			pExtension = strstr(tmpName, "/");
+
+		}
+		pExtension = strstr(tmpName, ".jpg");
+		*pExtension = '\0';
+		sprintf(path, "%s%s.feat",LBP_FEATURE_DIR, tmpName);
+		pFeature = fopen(path, "rb");
+		fread(&tmpID, sizeof(int), 1, pFeature);
+		fread(feature1, sizeof(float), TOTAL_FEATURE_LEN, pFeature);
+		fclose(pFeature);
+
+		strcpy(tmpName, fileName2);
+		pExtension = strstr(tmpName, "/");
+		while ( pExtension != NULL)
+		{
+			strcpy(tmpName, pExtension+1);
+			pExtension = NULL;
+			pExtension = strstr(tmpName, "/");
+
+		}
+		pExtension = strstr(tmpName, ".jpg");
+		*pExtension = '\0';
+		sprintf(path, "%s%s.feat",LBP_FEATURE_DIR, tmpName);
+		pFeature = fopen(path, "rb");
+		fread(&tmpID, sizeof(int), 1, pFeature);
+		fread(feature2, sizeof(float), TOTAL_FEATURE_LEN, pFeature);
+		fclose(pFeature);
+		//feature dist
+		for (k = 0; k < TOTAL_FEATURE_LEN; k++)
+		{
+			tmpDist = feature1[k] - feature2[k];
+			featDist[k] = (tmpDist > 0) ? tmpDist: (0 - tmpDist);
+		}
+
+
+		//test
+		svmTest(featDist, TOTAL_FEATURE_LEN, &tmpScore, &svm);
+
+		if ( tmpScore * label < 0)
+		{
+			//incorrect, add to train
+			for (k = 0; k < TOTAL_FEATURE_LEN; k++)
+			{
+				gst.features[curTrain][k] = (float)featDist[k];
+			}
+			gst.classLable[curTrain] = label;
+			curTrain++;
+		}
+		else
+		{
+			continue;
+		}
+
+
+		if ( (curTrain + 1) % step == 0)
+		{
+			//train again
+			printf("%dth boost\n", (curTrain + 1) / step);
+			printf("curren list: %d\n--------------------------\n", curList);
+			svmTraining(gst.features, curTrain+1, gst.featureSize, gst.classLable, path);
+			svm.svm_init_clean(path);
+		}
+	}
+
+			
+
+
+	
+		
+
+
+	system("pause");
 
 
 

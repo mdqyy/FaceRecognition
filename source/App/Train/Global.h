@@ -14,6 +14,7 @@ typedef struct GST_Tag
 
 	double ** features;
 	double ** featuresNew;
+	double*	feature;	//for test only
 
 	int * sampleLable;
 	int * classLable;	

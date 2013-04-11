@@ -77,7 +77,7 @@ int    NTESTSAMPLES = 1;
 void testCamera();
 void cameraDebug();
 void veriMatch();
-void svmTestFromList(FACE3D_Type* gf, int start, int end);
+void svmTestFromList(int start, int end);
 
 #if 0
 #pragma  comment(lib, "opencv_calib3d242d.lib")
@@ -1455,15 +1455,17 @@ int main(int argc, char** argv)
 	// initializations.
 	//-------------------
 
+	//svm init
+	initSystem(&gst,svm);
+	svmTestFromList(0, 2);
+
+	//
 	initFaceWarping();	
 	initFaceFeature( &gf, 80, 80);
 #ifdef DO_MATCH
 	loadFaceData( &gf );
 #endif
 
-	//svm init
-	initSystem(&gst,svm);
-	svmTestFromList( &gf, 0, 0);
 
 	//-------------------
 	// data access.
@@ -2377,7 +2379,7 @@ void veriMatch()
 }
 
 
-void svmTestFromList(FACE3D_Type* gf, int start, int end)
+void svmTestFromList(int start, int end)
 {
 	FILE*	pList, *pFeature;
 	float	feature1[TOTAL_FEATURE_LEN], feature2[TOTAL_FEATURE_LEN];
@@ -2462,19 +2464,18 @@ void svmTestFromList(FACE3D_Type* gf, int start, int end)
 
 			//SVM test and vote
 			vote = 0;
-			maxScore = 0;
-			for ( k = 0; k < NUMBER_OF_MODULES; k++)
+			//maxScore = 0;
+			for ( k = 0; k < 1; k++)
 			{
 				svmTest(featDist, TOTAL_FEATURE_LEN, k, &tmpScore, svm);
-				if ( abs(tmpScore) > maxScore)
+				if ( tmpScore > 0)
 				{
-					maxScore = abs(tmpScore);
-					vote = (tmpScore >= 0)? 1:-1;
+					vote++;
 				}
-				//else
-				//{
-				//	vote--;
-				//}
+				else
+				{
+					vote--;
+				}
 			}
 
 			if ( vote * label > 0)

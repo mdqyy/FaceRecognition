@@ -15,6 +15,8 @@
 #include "svmImage.h"
 #include "features.h"
 
+
+
 	//BK	BU	GY	OR	RD	WH	YL
 static int modelTree[6][7]={
 	{1,		-1,	 1,	-1,	-1,	 1,	-1},	//model 0
@@ -63,10 +65,11 @@ void initSVMTraning(SVM_GST * gst)
 	
 }
 
-void initSystem(SVM_GST * gst)
+void initSystem(SVM_GST * gst, svm_classifer_clean<int,double>*svm)
 {
 	double ** features, **featuresNew;
 	int k;
+	char modelFilePath[256];
 
 	gst->sampleLable = (int *)malloc(MAX_SAMPLE_SIZE * sizeof(int));
 	gst->classLable = (int *)malloc(MAX_SAMPLE_SIZE * sizeof(int));
@@ -79,11 +82,15 @@ void initSystem(SVM_GST * gst)
 	//for(k=0; k<MAX_SAMPLE_SIZE; k++)
 		//featuresNew[k] = (double *)malloc(MAX_FEATURE_SIZE * sizeof(double));
 
+	gst->feature = (double *)malloc(MAX_SAMPLE_SIZE * sizeof(double));
+
 
 	gst->features = features;
 	//gst->featuresNew = featuresNew;
 
 	gst->nClasses = 2;
+
+	//svm->svm_init_clean(modelFilePath);
 
 	//initSVMTraning(gst);
 }
@@ -298,4 +305,12 @@ void svmTraining(double ** features, int nSample, int featureSize, int * sampleL
 
 
 
+}
+
+
+void svmTest(double * feature, int featureSize,float * scores,svm_classifer_clean<int,double> *svm)
+{
+	int temp = 6;
+	svm->svm_classifier_clean(&temp,feature,scores,featureSize,1);
+	
 }

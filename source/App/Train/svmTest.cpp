@@ -257,6 +257,6 @@ void test(char *docfile,char*modelfile)
 	/*delete []docfile;
 	delete []modelfile;
 	delete []predictionsfile;*/
-	system("pause");
+	//system("pause");
 }
 

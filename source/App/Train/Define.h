@@ -2,7 +2,7 @@
 #define _DEFINE_H_TRAIN_
 
 #define MAX_FEATURE_SIZE 5120
-#define MAX_SAMPLE_SIZE 3000
+#define MAX_SAMPLE_SIZE 10000
 
 #define USE_DECISION_TREE 
 
