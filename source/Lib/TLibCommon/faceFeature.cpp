@@ -829,6 +829,8 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 	//uniform LBP look up table
 #if UNIFORM_LBP
 	unsigned int  lookupTab[256];
+	bool		  usedBin[256];
+	int			  tmpVote[256];
 	unsigned int  temp[8] = { 1, 2, 4, 8, 16, 32, 64, 128};
 	unsigned int  curNum = 0;
 	for (int i = 0; i < 256; i++ )
@@ -855,6 +857,21 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 			lookupTab[curNum] = curNum;
 		}
 	}
+
+
+	for ( i = 0; i < 256; i++)
+	{
+		tmpVote[i] = 0;
+	}
+	for ( i = 0; i < 256; i++)
+	{
+		tmpVote[lookupTab[i]]++;
+	}
+	for ( i = 0; i < 256; i++)
+	{
+		usedBin[i] = (tmpVote[i] > 0)? TRUE: FALSE;
+	}
+
 #endif
 
 	tWidth0 = tWidth;
@@ -934,7 +951,7 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 				featurePtr = gf->featureLength; //2013.2.20 in order to combine different features
 
 				// reset. 2013.01.24
-				//memset(faceFeatures, 0, sizeof(float) * FACE_FEATURE_LEN );
+				//memset(faceFeatures, 0, sizeof(float) * TOTAL_FEATURE_LEN );
 
 				//----------------------------------------------------------
 				//extract Gabor coefficients at fImage0
@@ -1036,11 +1053,26 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 
 									//save to the feature vector
 								
-									for(i=0; i<256; i++)
+#if UNIFORM_LBP
+								for ( i = 0; i < NUM_BIN; i++)
+								{
+									faceFeatures[featurePtr + i] = 0;
+								}
+								for( i = 0; i < 256; i++)
+								{
+									if ( usedBin[i] )
 									{
 										faceFeatures[featurePtr] = LBPHist[i];
 										featurePtr++;
 									}
+								}
+#else
+								for(i=0; i<256; i++)
+								{
+									faceFeatures[featurePtr] = LBPHist[i];
+									featurePtr++;
+								}
+#endif
 
 
 							}
@@ -1090,11 +1122,27 @@ void extractLBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 									}
 
 										//save to the feature vector
-										for(i=0; i<256; i++)
-										{
-											faceFeatures[featurePtr] = LBPHist[i];
-											featurePtr++;
-										}
+#if UNIFORM_LBP
+								for ( i = 0; i < NUM_BIN; i++)
+								{
+									faceFeatures[featurePtr + i] = 0;
+								}
+
+								for( i = 0; i < 256; i++)
+								{
+									if ( usedBin[i] )
+									{
+										faceFeatures[featurePtr] = LBPHist[i];
+										featurePtr++;
+									}
+								}
+#else
+								for(i=0; i<256; i++)
+								{
+									faceFeatures[featurePtr] = LBPHist[i];
+									featurePtr++;
+								}
+#endif
 
 								}
 
@@ -1253,6 +1301,36 @@ void extractGBPFaceFeatures(unsigned char * imageData, int widthStep, FACE3D_Typ
 	tWidth0 = tWidth;
 	tWidth1 = tWidth / 2;
 	tWidth2 = tWidth / 4;
+
+#if UNIFORM_LBP
+	unsigned int  lookupTab[256];
+	unsigned int  temp[8] = { 1, 2, 4, 8, 16, 32, 64, 128};
+	unsigned int  curNum = 0;
+	for (int i = 0; i < 256; i++ )
+	{
+		lookupTab[i] = 0xF4; // a non-uniform pattern of LBP
+	}
+
+	// fill-in the uniform patterns
+	lookupTab[0] = 0; // flat
+	lookupTab[255] = 255; // spot
+	int pos = 0;
+
+	for (int addTimes = 1; addTimes < 7; addTimes++)
+	{
+		for (int i = 0; i < 8; i++ )
+		{
+			curNum = 0;
+			for (int j = 0; j < addTimes; j++ )
+			{
+				pos = i + j;
+				pos = pos % 8;
+				curNum += temp[ pos ];
+			}
+			lookupTab[curNum] = curNum;
+		}
+	}
+#endif
 
 
 

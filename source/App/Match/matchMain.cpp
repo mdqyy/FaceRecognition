@@ -1457,7 +1457,7 @@ int main(int argc, char** argv)
 
 	//svm init
 	initSystem(&gst,svm);
-	svmTestFromList(0, 2);
+	svmTestFromList(9, 10);
 
 	//
 	initFaceWarping();	

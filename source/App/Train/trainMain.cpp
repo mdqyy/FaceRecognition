@@ -768,8 +768,8 @@ int main(int argc, char** argv)
 	//-------------------
 	// initializations.
 	//-------------------
-	boostSVMTrain();
-	svmTrainFromList(0, 8);
+	//boostSVMTrain();
+	//svmTrainFromList(0, 8);
 
 	initFaceWarping();	
 	initFaceFeature( &gf, 80, 80);
@@ -780,7 +780,7 @@ int main(int argc, char** argv)
 	//-------------------
 	// data access.
 	processFileList();
-	//prepareLBPFeaturesToFile(&gf);
+	prepareLBPFeaturesToFile(&gf);
 	
 	//generateSVMList(&gf);
 	//-------------------
@@ -1824,6 +1824,7 @@ void prepareLBPFeaturesToFile( FACE3D_Type* gf)
 void boostSVMTrain()
 {
 	//config
+	int		firstStep = 500;
 	int		step = 500;
 	int		maxTrain = 5000;
 	int		listLength = 33000;
@@ -1855,7 +1856,7 @@ void boostSVMTrain()
 
 
 	//first train
-	for ( i = 0; i < step; i++)
+	for ( i = 0; i < firstStep; i++)
 	{
 		fscanf(pList, "%d %s %s\n", &label, fileName1, fileName2);
 			
@@ -1910,12 +1911,12 @@ void boostSVMTrain()
 
 	//svm training
 	sprintf(path, "%sboost.mod", SVM_LIST_DIR);
-	svmTraining(gst.features, step, gst.featureSize, gst.classLable, path);
+	svmTraining(gst.features, firstStep, gst.featureSize, gst.classLable, path);
 	//load mod for testing
 	svm.svm_init_clean(path);
 
-	curTrain = step;
-	curList = step;
+	curTrain = firstStep;
+	curList = firstStep;
 
 	//boosting train
 	for ( i = curList; i < listLength; i++)
