@@ -10,6 +10,10 @@
 #define PI				 3.1415926535898
 void config(FACE3D_Type * gf)
 {
+	gf->bUniformLBP = TRUE;
+	gf->bUseLBP		= TRUE;
+	gf->bUseGabor	= TRUE;
+	gf->bUseIntensity = FALSE;
 	gf->gwStep = 5;
 	//gf->tWidth = 256;
 	//gf->tHeight = 192;
@@ -278,6 +282,55 @@ void initFaceFeature(FACE3D_Type * gf, int width, int height)
 	gf->bufferFaceFeatures = (unitFaceFeatClass *)malloc( sizeof(unitFaceFeatClass) * MAX_INPUT_IMAGES);
 	gf->histWeight = (float *)malloc(sizeof(float) * TOTAL_FEATURE_LEN);
 #endif
+
+
+	if ( gf->bUniformLBP)
+	{
+		gf->lbpLookUpTable = (int*)malloc( sizeof(int) * 256);
+		
+		int	base[8] = { 1, 2, 4, 8, 16, 32, 64, 128};
+		int		i, j, k, pos;
+		int		tmp;
+		int		projBin;
+		int* tab = gf->lbpLookUpTable;
+
+		//init
+		for ( i = 0; i < 256; i++)
+		{
+			tab[i] = 59;
+		}
+		tab[0] = 0;
+		tab[255] = 1;
+
+		projBin = 2;
+		for ( i = 1; i < 8; i++)
+		{
+			//num of 1s from 1 to 7
+			
+			for ( pos = 0; pos < 8; pos++)
+			{
+				k = pos;
+				tmp = 0;
+				for ( j = 0; j < i; j++)
+				{
+					k = k % 8;
+					tmp += base[k];
+					k++;
+				}
+				tab[tmp] = projBin++;
+			}
+		}
+	}
+
+	if ( gf->bUseLBP)
+	{
+		gf->lbpFeatures = (int*)malloc(sizeof(int) * LBP_FEATURE_LEN);
+	}
+
+	if ( gf->bUseGabor)
+	{
+		gf->gaborFeatures = (float*)malloc(sizeof(float) * GABOR_FEATURE_LEN);
+	}
 			
 }
 
@@ -394,6 +447,18 @@ void freeFaceFeature(FACE3D_Type *gf)
 		gf->histWeight = NULL;
 	}
 #endif
+
+	if ( gf->lbpLookUpTable != NULL)
+	{
+		free(gf->lbpLookUpTable);
+		gf->lbpLookUpTable = NULL;
+	}
+
+	if ( gf->lbpFeatures != NULL)
+	{
+		free(gf->lbpFeatures);
+		gf->lbpFeatures = NULL;
+	}
 
 }
 

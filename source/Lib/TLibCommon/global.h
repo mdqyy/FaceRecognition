@@ -25,11 +25,17 @@
 #define NUM_NEAREST_NBOR	2
 #define USE_WEIGHT			1
 
+//FEATURE LENGTH
+#define	LBP_FEATURE_LEN		59*20
+#define	GABOR_FEATURE_LEN	2000
 #define FACE_FEATURE_LEN	5120
 #define TOTAL_FEATURE_LEN   5120
 
+//LBP
 #define LBP_STEP	10
 #define LBP_WINDOW	10
+
+//GABOR
 #define MAX_NUM_GABOR	40
 
 
@@ -56,6 +62,8 @@
 #define INTER_INTRA_RATIO	4
 #define	PAIR_GROUP_INTRA	(PAIR_GROUP_SIZE / ( INTER_INTRA_RATIO + 1))
 #define PAIR_GROUP_INTER	(PAIR_GROUP_SIZE - PAIR_GROUP_INTRA)
+
+
 typedef	struct svmPairType
 {
 	char filename1[260];
@@ -138,7 +146,21 @@ typedef struct face3DTag
 	float *faceFeaturesFlip;
 #endif
 
-	float * faceFeatures;
+	float * faceFeatures;			//old features location
+
+	bool	bUseLBP;
+	bool	bUseGabor;
+	bool	bUseIntensity;
+	int*	lbpFeatures;
+	float*	gaborFeatures;
+	int*  intensityFeatures;
+
+	//uniform LBP?
+	bool	bUniformLBP;
+	int*	lbpLookUpTable;
+
+
+
 	unitFaceFeatClass *bufferFaceFeatures;	//store face features and id for weight training
 	float *histWeight;
 	int featurePtr;
