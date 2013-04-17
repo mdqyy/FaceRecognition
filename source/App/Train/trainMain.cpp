@@ -18,8 +18,11 @@
     Details.
 */
 
-#include <stdio.h>
+#ifdef _WIN32
 #include <io.h>
+#endif
+
+#include <stdio.h>
 #include <highgui.h>
 #include <math.h>
 #include <cv.h>
