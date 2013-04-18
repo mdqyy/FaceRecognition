@@ -1,5 +1,6 @@
 /** @file */
-#pragma once
+#ifndef _EYEDETECTOR_H_
+#define	_EYEDETECTOR_H_
 
 #include "cv.h"
 #include "global.h"
@@ -7,6 +8,8 @@
 #include "ConvNN.h"
 
 #include "faceDetector.h"
+
+
 
 
 /**	
@@ -86,3 +89,6 @@ private:
 	CvMat*  face_data ;//= cvCreateMat( 1, CNNFACECLIPHEIGHT*CNNFACECLIPWIDTH, CV_32FC1 );
 	CvMat*  face_data_int;// = cvCreateMat( 1, CNNFACECLIPHEIGHT*CNNFACECLIPWIDTH, CV_8UC1 );
 };
+
+
+#endif	//_EYEDETECTOR_H_

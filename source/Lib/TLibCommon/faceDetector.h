@@ -1,4 +1,6 @@
 /** @file */
+#ifndef	_FACE_DETECTOR_H_
+#define	_FACE_DETECTOR_H_
 
 #include "cv.h"
 #include "highgui.h"
@@ -11,7 +13,7 @@ struct face
     CvPoint RB;/**< Co-ordinates of Right Top of the Face */
     int Width;/**< Width of the Face */
     int Height;/**< Height of the Face */
-} ;
+};
 /**
 * Face Detector Class. This Class Runs the OpenCV Haar Detect Functions for finding the Face.
 */
@@ -56,3 +58,7 @@ private:
     CvMemStorage* storage;
 
 };
+
+
+
+#endif //_FACE_DETECTOR_H_

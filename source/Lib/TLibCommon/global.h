@@ -1,206 +1,147 @@
-/**************************************************************************
-* Program Name: iVAS
+/***
+* Program Name: faceRecognition
 *
-* Filename: define.h
+* Script File: global.h
 *
 * Description:
 *  
-*
-*  Define system parameters and media format.
+*  Define system parameters and global structures
 *   
-*  
 *
-* Copyright (C) 2011-2012.
+* Copyright (C) 2013-2014.
 * All Rights Reserved.
-**************************************************************************/
+***/
 
-#ifndef GLOBAL_H_INCLUDED
-#define GLOBAL_H_INCLUDED
-
-#define USE_LBP				1
-#define USE_LGT				0	//Local Gabor Textons
-#define USE_GBP				0
-#define USE_GABOR			0
-#define USE_CA				0   //correlation angle feature
-#define NUM_NEAREST_NBOR	2
-#define USE_WEIGHT			1
-
-//FEATURE LENGTH
-#define	LBP_FEATURE_LEN		59*20
-#define	GABOR_FEATURE_LEN	2000
-#define FACE_FEATURE_LEN	5120
-#define TOTAL_FEATURE_LEN   5120
-
-//LBP
-#define LBP_STEP	10
-#define LBP_WINDOW	10
-
-//GABOR
-#define MAX_NUM_GABOR	40
+#ifndef __GLOBAL_H__
+#define __GLOBAL_H__
 
 
-#define MAX_FACE_ID			300
-#define MAX_FACES_EACH_CLASS	50	//max images in each class
-#define MAX_INPUT_IMAGES	1500   // Max input training or matchin images
-
-#define DEBUG_OUTPUT_ALIGNED 0
-#define DEBUG_MODE			0
-#define FLIP_MATCH			0
-#define HISTOGRAM_EQUALIZATION 1
-#define ROTATE_INVARIANT_LBP 0
-#define LGT_FEATURE_LEN    2048
+#define MAX_FLOAT_NUMBER        3.402823466e+38F //< maximum single float number
+#define PI						3.1415926535898
 
 
-//-----correlation angle------//
-#define NUM_CLASS_CA        5
-#define NUM_ANGLES			36
-#define CA_WIDTH			20
-#define CA_HEIGHT			20
-
-//SVM
-#define	PAIR_GROUP_SIZE		3000
-#define INTER_INTRA_RATIO	4
-#define	PAIR_GROUP_INTRA	(PAIR_GROUP_SIZE / ( INTER_INTRA_RATIO + 1))
-#define PAIR_GROUP_INTER	(PAIR_GROUP_SIZE - PAIR_GROUP_INTRA)
+//typedef
+typedef unsigned int	UInt;
+typedef	unsigned char	UChar;
 
 
-typedef	struct svmPairType
+
+typedef	struct unitFeatStructure
 {
-	char filename1[260];
-	char filename2[260];
-}svmPair;
+	int		id;				//face id
+
+	float*	featLBP;		//LBP features
+	float*	featGabor;		//Gabor features
+	float*	featIntensity;	//Intensity features
+}featStruct;
 
 
 
-
-typedef struct imageList
+//global structure for Face Recogniton
+typedef struct globalStructure
 {
-	char fileName[MAX_INPUT_IMAGES][260];
-	int	 fileID[MAX_INPUT_IMAGES];
-	int  listLength;
-}imageListClass;
+	//global switchs
+	bool	bUseLBP;		//use LBP features
+	bool	bUseGabor;		//use Gabor features
+	bool	bUseIntensity;	//use Intensity features
+	bool	bUseHOG;		//use HOG features
+	bool	bUseCA;			//use correlation angles
 
-typedef struct CentersTag
-{
-	int numRegionH, numRegionW;
-	int numCenters;				// k
-	float *centers;			//kmean centers
-	int vecterSize;				
-}LGTCentersClass;
+	bool	bUseWeight;		//use weight control
+	bool	bFlipMatch;		//use flip match
+	bool	bHistEqu;		//use histogram equalization
+	bool	bUniformLBP;	//use uniform LBP
+	bool	bChiDist;		//use chi-square distance
 
-typedef struct unitFaceFeatClass
-{
-	int		id;
-	float	feature[TOTAL_FEATURE_LEN];
-#if DEBUG_MODE
-	char	imagename[200];
-#endif
+	//feature parameters
+	int		featLenTotal;	//overall feature length
+	int		featLenLBP;		//LBP feature length
+	int		featLenGabor;	
+	int		featLenIntensity;
+	int		featLenHOG;
+	int		featLenCA;
 
-
-
-}unitFaceFeatClass;
-
-typedef struct face3DTag
-{
-	imageListClass		fileList;
-	LGTCentersClass		LGTCenters;
-	int	  validFaces;
-	float *gaborResponse;
-	float *tmpGaborResponse;
-	unsigned char *tmpImageData;
-	int	gaborStepWidth;
-	int gaborStepPixel;
-	int *histLGT;
-	int FRAME_WIDTH;
-	int FRAME_HEIGHT;
-
-	unsigned char * mask;
-
-	int gaborWSize;					//size of the Gabor filter
-	int nGabors;					//num of Gabor filters
-	double ** gaborCoefficients;
-
-	int gwStep;						//stepSize of the shifting Gabor windows
-	int LBP_H_Step;
-	int LBP_W_Step;
-	int LBP_H_Window;
-	int LBP_W_Window;
-	int * LBPHist;
-
-	int RX0;						//the region of interest for face
-	int RY0;
-	int RX1;
-	int RY1;
-
-	int tWidth;						//normalized ROI dimemsions
-	int tHeight;
-
-	int * fImage0;					//original face ROI		80*80	
-	int * fImage1;					//down-sampled by 2;	40*40
-	int * fImage2;					//down-sampled by 4		20*20
-	int * fImage3;					//downsampled by 8		10*10
-#if FLIP_MATCH
-	int *fImage0flip;
-	int *fImage1flip;
-	int *fImage2flip;
-	float *faceFeaturesFlip;
-#endif
-
-	float * faceFeatures;			//old features location
-
-	bool	bUseLBP;
-	bool	bUseGabor;
-	bool	bUseIntensity;
-	int*	lbpFeatures;
-	float*	gaborFeatures;
-	int*  intensityFeatures;
-
-	//uniform LBP?
-	bool	bUniformLBP;
-	int*	lbpLookUpTable;
+	//Face alignment
+	int		faceWidth;		//Crop face width
+	int		faceHeight;
+	int		faceWidth1;		//downsampled face width
+	int		faceHeight1;
+	int		faceWidth2;
+	int		faceHeight2;
+	int		faceRegion0X;	//face ROI top left x
+	int		faceRegion0Y;	//face ROI top left y
+	int		faceRegion1X;
+	int		faceRegion1Y;
+	int		leftEyeX;		//assigned left eye x coordinate
+	int		leftEyeY;		//assigned left eye y coordinate
+	int		rightEyeX;		//assigned right eye x coordinate
+	int		rightEyeY;		//assigned right eye y coordinate
+	int		actLeftEyeX;	//actual left eye x
+	int		actLeftEyeY;
+	int		actRightEyeX;
+	int		actRightEyeY;
+	int		faceChannel;	//number of face image channels: 1 - gray, 3 - color
 
 
+	//LBP
+	int		numBinsLBP;		//histogram bins of LBP
+	int		numHistsLBP;	//num of histograms of LBP
+	int*	uniTableLBP;	//look up table for uniformLBP
+	int		LBPStepW;		//LBP width step
+	int		LBPStepH;		//LBP height step
+	int		LBPWindowW;		//LBP window width
+	int		LBPWindowH;
+	UInt*	LBPHist;		//LBP histogram
+	int		LBPNeighBorThreshold;	//LBP neighboor threshold
 
-	unitFaceFeatClass *bufferFaceFeatures;	//store face features and id for weight training
-	float *histWeight;
-	int featurePtr;
-	int numIDtag;                   //number of tagged IDs 2013.2.20
+	//data
+	UChar*	face;			//original face data
+	UChar*	face1;			//downsampled face data
+	UChar*	face2;
 
-	int				featureLength;	// Face matching via Nearest Neighbors Vote. 2013.01.21
-	int				bufFaceDataLen;
-	unsigned char	*bufferFaceData;
-	float			featDistance[NUM_NEAREST_NBOR];
-	int				usedDistFlag[NUM_NEAREST_NBOR];
-	int				bestDistID[NUM_NEAREST_NBOR];
-	int				voteCntFaceID[MAX_FACE_ID];
+	featStruct	features;	//feature struct
 
-#if DEBUG_MODE
-	char		bestDistImageName[NUM_NEAREST_NBOR+1][200];
-#endif
-
-#if ROTATE_INVARIANT_LBP
-	int		lookupTable[256];
-#endif
-	
-
-}FACE3D_Type;
-
-
-
-
-
+	float*	weight;			//features weights
 
 	
 
-#endif //DEFINE_H_INCLUDED
+	//paths
+	char	trainImageDir[260];		//train image directory
+	char	faceBinPath[260];		//face.bin 
+	char	imageTagDir[260];		//image tags dir
+	char	weightBinPath[260];		//weight bin
+	char	svmListDir[260];
+
+	char	matchImageDir[260];		//match image dir
+	char	resultTxtPath[260];		//result text file
+
+	char	gaborBinPath[260];		//gabor kernel bin
+
+
+	//limitations
+	int		maxFaceTags;				//max face tags
+	
+
+
+
+
+
+
+
+}gFaceReco;
+
+
+#endif //__GLOBAL_H__
 
 
 ////////////// faceCNN
-#ifndef _GLOBAL_H_
-#define _GLOBAL_H_
+#ifndef _CV_GLOBAL_H_
+#define _CV_GLOBAL_H_
+
 
 #include <stdio.h>
 #include "cv.h"
+
 
 using namespace std;
 
@@ -217,6 +158,8 @@ typedef struct eyes
 	eyeFeature RE;
 	int     Length;
 } eyesInfo;
+
+
 
 
 
@@ -303,62 +246,4 @@ typedef struct Camera_Para
 } CameraPara;
 
 
-#endif
-
-
-/**************************************************************************
-* Program Name: iVAS
-*
-* Filename: define.h
-*
-* Description:
-*  
-*
-*  Define system parameters and media format.
-*   
-*  
-*
-* Copyright (C) 2011-2012.
-* All Rights Reserved.
-**************************************************************************/
-
-#ifndef GLOBAL_H_INCLUDED
-#define GLOBAL_H_INCLUDED
-
-
-typedef struct face3DTag
-{
-	int FRAME_WIDTH;
-	int FRAME_HEIGHT;
-
-	unsigned char * mask;
-
-	int gaborWSize;					//size of the Gabor filter
-	int nGabors;					//num of Gabor filters
-	double ** gaborCoefficients;
-
-	int gwStep;						//stepSize of the shifting Gabor windows
-	int LBP_H_Step;
-	int LBP_W_Step;
-	int * LBPHist;
-
-	int RX0;						//the region of interest for face
-	int RY0;
-	int RX1;
-	int RY1;
-
-	int tWidth;						//normalized ROI dimemsions
-	int tHeight;
-
-	int * fImage0;					//original face ROI		256*192	
-	int * fImage1;					//down-sampled by 2;	128*96
-	int * fImage2;					//down-sampled by 4		64*48
-
-	float * faceFeatures;
-	int featurePtr;
-
-
-}FACE3D_Type;
-
-
-#endif //DEFINE_H_INCLUDED
+#endif // _CV_GLOBAL_H_
