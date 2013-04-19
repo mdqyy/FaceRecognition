@@ -1,9 +1,9 @@
 /**
 * Program Name: faceRecognition
 *
-* Script File: trainMain.cpp
+* Script File: cameraCapture.cpp
 *
-* Face Recognition Training main function and config
+* Face Recognition camera capture module
 *
 **/
 
@@ -17,6 +17,8 @@
 int    NSAMPLES = 1;
 int    MAX_ITER = 1;
 int    NTESTSAMPLES = 1;
+
+
 
 
 using namespace std;
@@ -111,7 +113,6 @@ void config(gFaceReco* gf, char* configFile)
 	sprintf(gf->matchImageDir,"%s", "../../image/match/");
 	sprintf(gf->resultTxtPath,"%s", "../../image/matchResult.txt");
 	sprintf(gf->gaborBinPath,"%s", "../../image/gabor.bin");
-	sprintf(gf->cameraCaptureDir, "%s", "../../image/cameraCapture/");
 
 	gf->faceWidth1 = gf->faceWidth / 2;
 	gf->faceWidth2 = gf->faceWidth / 4;
@@ -158,7 +159,11 @@ void main()
 
 
 	//--------------------------------------------------//
+	
 
+
+
+	//-------------------------------------------------//
 
 
 

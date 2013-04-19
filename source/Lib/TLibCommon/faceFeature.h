@@ -22,9 +22,13 @@
 
 void initGlobalStruct(gFaceReco* gf);
 void freeGlobalStruct(gFaceReco* gf);
+void initOneFeature(featStruct* fst, gFaceReco* gf);
+void freeOneFeature(featStruct* fst);
 
 inline void resetLBPHist(UInt* hist, int n);
 void extractLBPFeatures(gFaceReco* gf);
+void dumpFeatures(gFaceReco* gf, bool bAdd);
+void loadFeatures(gFaceReco* gf);
 
 
 #endif //_FACE_FEATURE_H_

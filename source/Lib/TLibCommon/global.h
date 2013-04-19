@@ -100,6 +100,8 @@ typedef struct globalStructure
 	UChar*	face2;
 
 	featStruct	features;	//feature struct
+	featStruct*	loadedFeatures;	//loaded features from trained binary file
+	int		numLoadedFaces;	//number of loaded faces from binary file
 
 	float*	weight;			//features weights
 
@@ -116,6 +118,8 @@ typedef struct globalStructure
 	char	resultTxtPath[260];		//result text file
 
 	char	gaborBinPath[260];		//gabor kernel bin
+	
+	char	cameraCaptureDir[260];	//camera capture
 
 
 	//limitations

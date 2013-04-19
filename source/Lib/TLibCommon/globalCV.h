@@ -26,7 +26,6 @@ typedef struct globalCVStruct
 	eyesDetector*	eyeDet;
 	IplImage*		gray_face_CNN;
 	CvPoint			pointPos[6];
-	IplImage*		curImg;
 	IplImage*		warpedImg;
 	IplImage**		faceTags;
 }gFaceRecoCV;

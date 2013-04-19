@@ -16,18 +16,25 @@
 
 #include "cvFaceFeature.h"
 #include <cv.h>
+#include <highgui.h>
+#include <istream>
 
 using namespace cv;
 
 
 void initGlobalCVStruct(gFaceRecoCV* gcv, gFaceReco* gf)
 {
+	int i;
 	gcv->faceDet = new faceDetector();
 	gcv->eyeDet = new eyesDetector;
 	gcv->gray_face_CNN = cvCreateImage(cvSize(CNNFACECLIPHEIGHT,CNNFACECLIPWIDTH), 8, 1);
 	gcv->warpedImg = cvCreateImage( cvSize(gf->faceWidth, gf->faceHeight), IPL_DEPTH_8U, gf->faceChannel );
 
 	gcv->faceTags = (IplImage**)malloc(sizeof(IplImage*) * gf->maxFaceTags);
+	for ( i = 0; i < gf->maxFaceTags; i++)
+	{
+		gcv->faceTags[i] = NULL;
+	}
 
 }
 
@@ -44,8 +51,6 @@ void freeGlobalCVStruct(gFaceRecoCV* gcv, gFaceReco* gf)
 		delete gcv->eyeDet;
 	if (gcv->gray_face_CNN != NULL)
 		cvReleaseImage(&(gcv->gray_face_CNN));
-	if (gcv->curImg != NULL)
-		cvReleaseImage(&(gcv->curImg));
 	if (gcv->warpedImg != NULL)
 		cvReleaseImage(&(gcv->warpedImg));
 
@@ -225,4 +230,59 @@ void faceAlign(IplImage* src, IplImage* dst, gFaceReco* gf)
 
 
 
+
+void cameraCapture(gFaceReco* gf, gFaceRecoCV* gcv)
+{
+	char		key;
+	char		assignName[260];
+	char		path[260];
+	int			assignID;
+	int			frame;
+	//init capture
+	CvCapture*	capture = cvCaptureFromCAM(1);
+	IplImage*	pFrame;
+	cvNamedWindow("Camera Input", CV_WINDOW_AUTOSIZE);
+	cvNamedWindow("Face", CV_WINDOW_AUTOSIZE);
+
+	//start
+	printf("Start camera capture, press 'r' to record, press 'q' to exit...\n");
+
+
+	frame = 0;
+	assignID = 0;
+	while((key = cvWaitKey(10)) != 'q')
+	{
+		pFrame = cvQueryFrame(capture);
+		cvShowImage("Camera Input", pFrame);
+
+		if ( key == 'r')
+		{
+			printf("\n-----------------\nInput Name:\n");
+			gets(assignName);
+			printf("Input ID:\n");
+			cin >> assignID;
+		}
+
+		if ( assignID != 0)
+		{
+			if ( gcv->faceDet->runFaceDetector(pFrame))
+			{
+				//face detected
+				sprintf(path, "%s%d/%d.jpg", gf->cameraCaptureDir, assignID, frame);
+				cvSaveImage(path, pFrame);
+				printf(".");
+			}
+		}
+
+		frame++;
+		cvReleaseImage(&pFrame);
+	}//end while
+
+	cvDestroyWindow("Camera Input");
+	cvDestroyWindow("Face");
+
+	system("pause");
+
+}//end cameraCapture
+			
 

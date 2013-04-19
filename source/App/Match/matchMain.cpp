@@ -14,6 +14,10 @@
 #include "TLibCommon/faceFeature.h"
 #include "TLibCommon/get_config.h"
 
+int    NSAMPLES = 1;
+int    MAX_ITER = 1;
+int    NTESTSAMPLES = 1;
+
 using namespace std;
 
 
