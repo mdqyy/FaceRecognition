@@ -35,6 +35,11 @@ typedef	struct unitFeatStructure
 	float*	featIntensity;	//Intensity features
 }featStruct;
 
+typedef	struct imagePathStructure
+{
+	int		id;
+	char	path[260];		//reletive path
+}pathStruct;
 
 
 //global structure for Face Recogniton
@@ -52,6 +57,8 @@ typedef struct globalStructure
 	bool	bHistEqu;		//use histogram equalization
 	bool	bUniformLBP;	//use uniform LBP
 	bool	bChiDist;		//use chi-square distance
+
+	bool	bOverWriteBin;	//overwrite feature binary file
 
 	//feature parameters
 	int		featLenTotal;	//overall feature length
@@ -101,6 +108,10 @@ typedef struct globalStructure
 
 	featStruct	features;	//feature struct
 	featStruct*	loadedFeatures;	//loaded features from trained binary file
+	pathStruct*	imageList;	//image list
+	int		maxNumImages;	//max number of input images
+	int		numImageInList;	//number of images in the input list
+	int		numValidFaces;	//number of detected face images
 	int		numLoadedFaces;	//number of loaded faces from binary file
 
 	float*	weight;			//features weights
@@ -123,7 +134,9 @@ typedef struct globalStructure
 
 
 	//limitations
-	int		maxFaceTags;				//max face tags
+	int		maxFaceTags;			//max face tags
+	int		trainStartID;			//train start ID
+	int		trainEndID;
 	
 
 

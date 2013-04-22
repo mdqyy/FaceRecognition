@@ -27,7 +27,7 @@ void freeOneFeature(featStruct* fst);
 
 inline void resetLBPHist(UInt* hist, int n);
 void extractLBPFeatures(gFaceReco* gf);
-void dumpFeatures(gFaceReco* gf, bool bAdd);
+void dumpFeatures(gFaceReco* gf, FILE* pFaceFeatBin);
 void loadFeatures(gFaceReco* gf);
 
 

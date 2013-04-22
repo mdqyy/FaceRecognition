@@ -15,9 +15,11 @@
 **/
 
 #include "cvFaceFeature.h"
+#include "faceFeature.h"
 #include <cv.h>
 #include <highgui.h>
 #include <istream>
+#include <io.h>
 
 using namespace cv;
 
@@ -127,7 +129,7 @@ void faceAlign(IplImage* src, IplImage* dst, gFaceReco* gf)
 	wStepTar	= dst->widthStep;
 
 	distX = gf->actRightEyeX - gf->actLeftEyeX;
-	distY = gf->actRightEyeY - gf->actLeftEyeY;
+	distY = gf->actLeftEyeY - gf->actRightEyeY;		//y coordinates are inverse of natural images
 
 	resAX = 1.0 * distX / (gf->rightEyeX - gf->leftEyeX);
 	resBX = 1.0 * distY / (gf->rightEyeX - gf->leftEyeX);
@@ -146,9 +148,9 @@ void faceAlign(IplImage* src, IplImage* dst, gFaceReco* gf)
 			// if within image, do interpolation.
 
 			if (	( wr	>=0 )			&&
-					( wr	<(hSrcImg-1) )	&&
+					( wr	<hSrcImg )	&&
 					( wc	>=0 )			&&
-					( wc	<(wSrcImg-1) )		)
+					( wc	<wSrcImg )		)
 			{
 				ptrTarImg = (r * wStepTar + c * gf->faceChannel);
 
@@ -168,8 +170,8 @@ void faceAlign(IplImage* src, IplImage* dst, gFaceReco* gf)
 			}
 			else
 			{
-				//should not happen
-				printf("Warning: Warping out of range!\n");
+				//out of range
+				//printf("Warning: Warping out of range!\n");
 			}
 		}//end columns
 	}//end rows
@@ -285,4 +287,153 @@ void cameraCapture(gFaceReco* gf, gFaceRecoCV* gcv)
 
 }//end cameraCapture
 			
+
+/* process Training Images, prepare path, id...*/
+void processTrainInput(gFaceReco* gf, gFaceRecoCV* gcv)
+{
+	int			numImages;
+	int			startID, endID;
+	char		path[260];
+	char		to_search[260];
+	int			i, j;
+	long		handle;                             //search handle
+	struct		_finddata_t fileinfo;               // file info struct
+	pathStruct*	list;
+
+
+	startID		= gf->trainStartID;
+	endID		= gf->trainEndID;
+	numImages	= 0;
+	list		= gf->imageList;
+
+	if ( access(gf->trainImageDir, 4) != -1)
+	{
+		//read permission
+		for ( i = startID; i <= endID; i++)
+		{
+			sprintf(path, "%s%d/", gf->trainImageDir, i);
+			if ( access(path, 4) != -1)
+			{
+				//directory exists and is readable
+				sprintf(to_search, "%s%d/*.jpg", gf->trainImageDir, i);
+				handle = _findfirst(to_search, &fileinfo);
+				if ( handle != -1)
+				{
+					do
+					{
+						sprintf(path, "%s%d/%s", gf->trainImageDir, i, fileinfo.name);
+						list[numImages].id = i;
+						sprintf(list[numImages].path,"%s", path);
+						numImages++;
+
+					}while(_findnext(handle,&fileinfo) == 0);
+					_findclose(handle);
+				}//end searching in folder
+			}
+		}//end folder loop
+	}//end reading folder list
+
+	gf->numImageInList = numImages;	//save # image in list
+
+}//end processTrainIput
+						
+
+
+	
+/* main training procedure */
+void train(gFaceReco* gf, gFaceRecoCV* gcv)
+{
+	
+	int			i;
+	int			numPercent;
+	IplImage*	pFrame = NULL;
+	FILE*		pFaceFeatBin;
+	errno_t		err;
+
+
+	if ( !(gf->bOverWriteBin) )	
+	{
+		//addition mode, wont clear exist records
+		err = fopen_s(&pFaceFeatBin, gf->faceBinPath, "ab");
+	}
+	else
+	{
+		err = fopen_s(&pFaceFeatBin, gf->faceBinPath, "wb");
+	}
+
+	if (err != 0)
+	{
+		printf("Can't open feature binary file to write!\n");
+		system("pause");
+		exit(-1);
+	}
+
+	//write switches first
+	fwrite(&(gf->bUseLBP), sizeof(bool), 1, pFaceFeatBin);
+	fwrite(&(gf->bUseGabor), sizeof(bool), 1, pFaceFeatBin);
+	fwrite(&(gf->bUseIntensity), sizeof(bool), 1, pFaceFeatBin);
+	fwrite(&(gf->featLenTotal), sizeof(int), 1, pFaceFeatBin);
+
+	//process list
+	processTrainInput(gf, gcv);
+
+	//main procedure
+	numPercent  = (int)(gf->numImageInList / 100);
+
+	for ( i = 0; i < gf->numImageInList; i++)
+	{
+		//percentage progress
+		if ( i % (5 * numPercent) == 0)
+		{
+			printf("%d%%...\n",i / numPercent);
+		}
+		pFrame = cvLoadImage(gf->imageList[i].path, CV_LOAD_IMAGE_COLOR);
+		if ( pFrame == NULL)
+		{
+			printf("Error load image in train list!\n");
+			system("pause");
+			exit(-1);
+		}
+		gf->features.id  = gf->imageList[i].id;
+
+		//run face and eyes detection
+		runFaceAndEyesDetect(pFrame, gf, gcv);
+
+		//face alignment
+		faceAlign(pFrame, gcv->warpedImg, gf);
+		//cvSaveImage("C:/Users/Zhi/Desktop/face.jpg", gcv->warpedImg);
+
+		//feature extraction
+		if ( gf->bUseLBP)
+		{
+			extractLBPFeatures(gf);
+		}
+		
+		if ( gf->bUseGabor)
+		{
+
+		}
+
+		if ( gf->bUseIntensity)
+		{
+
+		}
+		
+		//write features to binary file
+		dumpFeatures(gf, pFaceFeatBin);
+		//
+		cvReleaseImage(&pFrame);
+	}//end list
+
+
+
+
+
+
+
+	//close binary file
+	fclose(pFaceFeatBin);
+
+}//end train
+
 

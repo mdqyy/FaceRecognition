@@ -89,6 +89,8 @@ void initGlobalStruct(gFaceReco* gf)
 
 	gf->loadedFeatures = NULL;
 
+	gf->imageList = (pathStruct*)malloc(sizeof(pathStruct) * gf->maxNumImages);
+
 
 
 
@@ -125,6 +127,12 @@ void freeGlobalStruct(gFaceReco* gf)
 			freeOneFeature(&(gf->loadedFeatures[i]));
 		}
 		gf->loadedFeatures = NULL;
+	}
+
+	if ( gf->imageList != NULL)
+	{
+		free(gf->imageList);
+		gf->imageList = NULL;
 	}
 
 
@@ -337,35 +345,9 @@ void extractLBPFeatures(gFaceReco* gf)
 
 
 
-void dumpFeatures(gFaceReco* gf, bool bAdd)
+void dumpFeatures(gFaceReco* gf, FILE* pFaceFeatBin)
 {
-	FILE*		pFaceFeatBin;
-	errno_t		err;
-
-	if ( bAdd )	
-	{
-		//addition mode, wont clear exist records
-		err = fopen_s(&pFaceFeatBin, gf->faceBinPath, "ab");
-	}
-	else
-	{
-		err = fopen_s(&pFaceFeatBin, gf->faceBinPath, "wb");
-	}
-
-	if (err != 0)
-	{
-		printf("Can't open feature binary file to write!\n");
-		system("pause");
-		exit(-1);
-	}
-
-
-	//write switches first
-	fwrite(&(gf->bUseLBP), sizeof(bool), 1, pFaceFeatBin);
-	fwrite(&(gf->bUseGabor), sizeof(bool), 1, pFaceFeatBin);
-	fwrite(&(gf->bUseIntensity), sizeof(bool), 1, pFaceFeatBin);
-	fwrite(&(gf->featLenTotal), sizeof(int), 1, pFaceFeatBin);
-
+	
 	//write features to binary file
 	fwrite(&(gf->features.id), sizeof(int), 1, pFaceFeatBin);
 	if ( gf->bUseLBP)
@@ -384,7 +366,7 @@ void dumpFeatures(gFaceReco* gf, bool bAdd)
 	}
 
 
-	fclose(pFaceFeatBin);
+	
 
 }//end dumpFeatures
 

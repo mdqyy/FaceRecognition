@@ -30,6 +30,9 @@ bool runFaceAndEyesDetect(IplImage* pFrame, gFaceReco* gf, gFaceRecoCV* gcv);	//
 void faceAlign(IplImage* src, IplImage* dst, gFaceReco* gf);	//face alignment
 
 void cameraCapture(gFaceReco* gf, gFaceRecoCV* gcv);
+void processTrainInput(gFaceReco* gf, gFaceRecoCV* gcv);		//train input 
+
+void train(gFaceReco* gf, gFaceRecoCV* gcv);
 
 
 

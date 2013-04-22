@@ -39,9 +39,13 @@ void config(gFaceReco* gf, char* configFile)
 		LoadParmBool(m, gf->bHistEqu, "HistEqu");
 		LoadParmBool(m, gf->bUniformLBP, "UniformLBP");
 		LoadParmBool(m, gf->bChiDist, "ChiDist");
+		LoadParmBool(m, gf->bOverWriteBin, "OverWriteBin");
 
 		//limits
 		LoadParm(m, gf->maxFaceTags, "maxFaceTags");
+		LoadParm(m, gf->maxNumImages, "maxNumImages");
+		LoadParm(m, gf->trainStartID, "trainStartID");
+		LoadParm(m, gf->trainEndID, "trainEndID");
 
 
 		//face
@@ -76,9 +80,14 @@ void config(gFaceReco* gf, char* configFile)
 		gf->bHistEqu = 1;
 		gf->bUniformLBP = 1;
 		gf->bChiDist = 1;
+		gf->bOverWriteBin = 1;
 
 		//limits
 		gf->maxFaceTags = 300;
+		gf->maxNumImages = 1500;
+		gf->trainStartID = 1;
+		gf->trainEndID = 60;
+
 
 		//face
 		gf->faceWidth = 80;
@@ -158,7 +167,11 @@ void main()
 
 
 	//--------------------------------------------------//
+	//To do
+	train(&gf, &gcv);
 
+
+	//--------------------------------------------------//
 
 
 
