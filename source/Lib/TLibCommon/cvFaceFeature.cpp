@@ -27,8 +27,9 @@ using namespace cv;
 void initGlobalCVStruct(gFaceRecoCV* gcv, gFaceReco* gf)
 {
 	int i;
-	gcv->faceDet = new faceDetector();
 	gcv->eyeDet = new eyesDetector;
+	gcv->faceDet = new faceDetector;
+	
 	gcv->gray_face_CNN = cvCreateImage(cvSize(CNNFACECLIPHEIGHT,CNNFACECLIPWIDTH), 8, 1);
 	gcv->warpedImg = cvCreateImage( cvSize(gf->faceWidth, gf->faceHeight), IPL_DEPTH_8U, gf->faceChannel );
 
@@ -148,9 +149,9 @@ void faceAlign(IplImage* src, IplImage* dst, gFaceReco* gf)
 			// if within image, do interpolation.
 
 			if (	( wr	>=0 )			&&
-					( wr	<hSrcImg )	&&
+					( wr	<(hSrcImg-1) )	&&
 					( wc	>=0 )			&&
-					( wc	<wSrcImg )		)
+					( wc	<(wSrcImg-1) )		)
 			{
 				ptrTarImg = (r * wStepTar + c * gf->faceChannel);
 
@@ -338,6 +339,69 @@ void processTrainInput(gFaceReco* gf, gFaceRecoCV* gcv)
 }//end processTrainIput
 						
 
+/* process test input */
+void processMatchInput(gFaceReco* gf, gFaceRecoCV* gcv)
+{
+	int			numImages;
+	char		path[260];
+	char		to_search[260];
+	int			i, j;
+	int			numTags;
+	long		handle;                             //search handle
+	struct		_finddata_t fileinfo;               // file info struct
+	pathStruct*	list;
+
+	numImages	= 0;
+	numTags		= 0;
+	list		= gf->imageList;
+
+
+	//load tagged images
+	for ( i = 1; i <= gf->maxFaceTags; i++)
+	{
+		sprintf(path, "%s%d.jpg", gf->imageTagDir, i);
+		gcv->faceTags[i-1] = cvLoadImage(path, CV_LOAD_IMAGE_COLOR);
+		{
+			if ( gcv->faceTags[i-1] != NULL)
+				numTags++;
+		}
+	}
+	printf("Number of loaded face tags: %d\n", numTags);
+	gf->numTags = numTags;
+
+	//load testing images to list
+	if ( access(gf->matchImageDir, 4) != -1)
+	{
+		//read permission
+		for ( i = 1; i <= gf->maxFaceTags; i++)
+		{
+			sprintf(path, "%s%d/", gf->matchImageDir, i);
+			if ( access(path, 4) != -1)
+			{
+				//directory exists and is readable
+				sprintf(to_search, "%s%d/*.jpg", gf->matchImageDir, i);
+				handle = _findfirst(to_search, &fileinfo);
+				if ( handle != -1)
+				{
+					do
+					{
+						sprintf(path, "%s%d/%s", gf->matchImageDir, i, fileinfo.name);
+						list[numImages].id = i;
+						sprintf(list[numImages].path,"%s", path);
+						numImages++;
+
+					}while(_findnext(handle,&fileinfo) == 0);
+					_findclose(handle);
+				}//end searching in folder
+			}
+		}//end folder loop
+	}//end reading folder list
+
+	gf->numImageInList = numImages;	//save # image in list
+
+
+
+}//end processMatchInput
 
 	
 /* main training procedure */
@@ -383,9 +447,12 @@ void train(gFaceReco* gf, gFaceRecoCV* gcv)
 	for ( i = 0; i < gf->numImageInList; i++)
 	{
 		//percentage progress
-		if ( i % (5 * numPercent) == 0)
+		if ( numPercent > 0)
 		{
-			printf("%d%%...\n",i / numPercent);
+			if ( i % (5 * numPercent) == 0)
+			{
+				printf("%d%%...\n",i / numPercent);
+			}
 		}
 		pFrame = cvLoadImage(gf->imageList[i].path, CV_LOAD_IMAGE_COLOR);
 		if ( pFrame == NULL)
@@ -411,12 +478,12 @@ void train(gFaceReco* gf, gFaceRecoCV* gcv)
 		
 		if ( gf->bUseGabor)
 		{
-
+			extractGaborFeatures(gf);
 		}
 
 		if ( gf->bUseIntensity)
 		{
-
+			extractIntensityFeatures(gf);
 		}
 		
 		//write features to binary file
@@ -426,14 +493,126 @@ void train(gFaceReco* gf, gFaceRecoCV* gcv)
 	}//end list
 
 
-
-
-
-
-
 	//close binary file
 	fclose(pFaceFeatBin);
 
 }//end train
 
 
+void match(gFaceReco* gf, gFaceRecoCV* gcv)
+{
+	int			i;
+	int			matchedID;
+	IplImage*	pFrame = NULL;
+	FILE*		pResultOutput;
+	errno_t		err;
+	UInt*		correctMatch;
+	UInt*		totalInClass;
+	int			overallCorrect, overallTotal;
+
+	//open result output text file
+	err = fopen_s(&pResultOutput, gf->resultTxtPath, "w");
+	if (err != 0)
+	{
+		printf("Can't open result text file to write!\n");
+		system("pause");
+		exit(-1);
+	}
+
+	//load saved features from binary file
+	loadFeatures(gf);
+
+	//process list
+	processMatchInput(gf, gcv);
+
+	//statistic initilization
+	correctMatch = (UInt*)malloc(sizeof(UInt) * gf->numTags);
+	totalInClass = (UInt*)malloc(sizeof(UInt) * gf->numTags);
+	for ( i = 0; i < gf->numTags; i++)
+	{
+		correctMatch[i] = 0;
+		totalInClass[i] = 0;
+	}
+	overallCorrect = 0;
+	overallTotal = 0;
+
+	//cvWindow
+	cvNamedWindow("Query Image", CV_WINDOW_AUTOSIZE);
+	cvNamedWindow("Matched Face", CV_WINDOW_AUTOSIZE);
+
+	for ( i = 0; i < gf->numImageInList; i++)
+	{
+		pFrame = cvLoadImage(gf->imageList[i].path, CV_LOAD_IMAGE_COLOR);
+		if ( pFrame == NULL)
+		{
+			printf("Error load image in train list!\n");
+			system("pause");
+			exit(-1);
+		}
+		//run face and eyes detection
+		runFaceAndEyesDetect(pFrame, gf, gcv);
+
+		//face alignment
+		faceAlign(pFrame, gcv->warpedImg, gf);
+		//cvSaveImage("c:/Users/Zhi/Desktop/dump.jpg",gcv->warpedImg);
+
+		//feature extraction
+		if ( gf->bUseLBP)
+		{
+			extractLBPFeatures(gf);
+		}
+		
+		if ( gf->bUseGabor)
+		{
+			extractGaborFeatures(gf);
+		}
+
+		if ( gf->bUseIntensity)
+		{
+			extractIntensityFeatures(gf);
+		}
+
+		matchedID = matchFaceID(gf);
+
+		//Result
+		printf("Matched Face ID: %d\n----------------------------\n", matchedID);
+		cvShowImage("Query Image", pFrame);
+		cvShowImage("Matched Face", gcv->faceTags[matchedID-1]);
+		cvWaitKey(100);
+
+		//Benchmark only
+		if ( matchedID == gf->imageList[i].id)
+		{
+			//correct
+			correctMatch[gf->imageList[i].id - 1] += 1;
+			overallCorrect++;
+		}
+		totalInClass[gf->imageList[i].id - 1] += 1;
+		overallTotal++;
+
+
+		cvReleaseImage(&pFrame);
+	}//end list
+
+
+	//write benchmark result
+	fprintf(pResultOutput, "Benchmark of match result:\n");
+	fprintf(pResultOutput, "Overall match number: %d, Overall Correct Matches:%d, Accuracy: %.2f\n", overallTotal, overallCorrect, 100.0*overallCorrect/overallTotal);
+	fprintf(pResultOutput, "------------------------------------------------------\n\n");
+	for ( i = 0; i < gf->numTags; i++)
+	{
+		fprintf(pResultOutput, "ID: %d_%d of %d correct, Accuracy:%.2f\n--------------------------\n", i+1, correctMatch[i], totalInClass[i], 100.0*correctMatch[i]/totalInClass[i]);
+	}
+
+
+
+	
+	//clean-ups
+	fclose(pResultOutput);
+	free(correctMatch);
+	free(totalInClass);
+
+
+
+
+}//end match

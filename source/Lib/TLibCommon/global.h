@@ -46,75 +46,98 @@ typedef	struct imagePathStructure
 typedef struct globalStructure
 {
 	//global switchs
-	bool	bUseLBP;		//use LBP features
-	bool	bUseGabor;		//use Gabor features
-	bool	bUseIntensity;	//use Intensity features
-	bool	bUseHOG;		//use HOG features
-	bool	bUseCA;			//use correlation angles
+	bool		bUseLBP;		//use LBP features
+	bool		bUseGabor;		//use Gabor features
+	bool		bUseIntensity;	//use Intensity features
+	bool		bUseHOG;		//use HOG features
+	bool		bUseCA;			//use correlation angles
 
-	bool	bUseWeight;		//use weight control
-	bool	bFlipMatch;		//use flip match
-	bool	bHistEqu;		//use histogram equalization
-	bool	bUniformLBP;	//use uniform LBP
-	bool	bChiDist;		//use chi-square distance
+	bool		bUseWeight;		//use weight control
+	bool		bFlipMatch;		//use flip match
+	bool		bHistEqu;		//use histogram equalization
+	bool		bUniformLBP;	//use uniform LBP
+	bool		bChiDist;		//use chi-square distance
 
-	bool	bOverWriteBin;	//overwrite feature binary file
+	bool		bOverWriteBin;	//overwrite feature binary file
 
 	//feature parameters
-	int		featLenTotal;	//overall feature length
-	int		featLenLBP;		//LBP feature length
-	int		featLenGabor;	
-	int		featLenIntensity;
-	int		featLenHOG;
-	int		featLenCA;
+	int			featLenTotal;	//overall feature length
+	int			featLenLBP;		//LBP feature length
+	int			featLenGabor;	
+	int			featLenIntensity;
+	int			featLenHOG;
+	int			featLenCA;
 
 	//Face alignment
-	int		faceWidth;		//Crop face width
-	int		faceHeight;
-	int		faceWidth1;		//downsampled face width
-	int		faceHeight1;
-	int		faceWidth2;
-	int		faceHeight2;
-	int		faceRegion0X;	//face ROI top left x
-	int		faceRegion0Y;	//face ROI top left y
-	int		faceRegion1X;
-	int		faceRegion1Y;
-	int		leftEyeX;		//assigned left eye x coordinate
-	int		leftEyeY;		//assigned left eye y coordinate
-	int		rightEyeX;		//assigned right eye x coordinate
-	int		rightEyeY;		//assigned right eye y coordinate
-	int		actLeftEyeX;	//actual left eye x
-	int		actLeftEyeY;
-	int		actRightEyeX;
-	int		actRightEyeY;
-	int		faceChannel;	//number of face image channels: 1 - gray, 3 - color
+	int			faceWidth;		//Crop face width
+	int			faceHeight;
+	int			faceWidth1;		//downsampled face width
+	int			faceHeight1;
+	int			faceWidth2;
+	int			faceHeight2;
+	
+	int			leftEyeX;		//assigned left eye x coordinate
+	int			leftEyeY;		//assigned left eye y coordinate
+	int			rightEyeX;		//assigned right eye x coordinate
+	int			rightEyeY;		//assigned right eye y coordinate
+	int			actLeftEyeX;	//actual left eye x
+	int			actLeftEyeY;
+	int			actRightEyeX;
+	int			actRightEyeY;
+	int			faceChannel;	//number of face image channels: 1 - gray, 3 - color
 
 
 	//LBP
-	int		numBinsLBP;		//histogram bins of LBP
-	int		numHistsLBP;	//num of histograms of LBP
-	int*	uniTableLBP;	//look up table for uniformLBP
-	int		LBPStepW;		//LBP width step
-	int		LBPStepH;		//LBP height step
-	int		LBPWindowW;		//LBP window width
-	int		LBPWindowH;
-	UInt*	LBPHist;		//LBP histogram
-	int		LBPNeighBorThreshold;	//LBP neighboor threshold
+	int			numBinsLBP;		//histogram bins of LBP
+	int			numHistsLBP;	//num of histograms of LBP
+	int*		uniTableLBP;	//look up table for uniformLBP
+	int			LBPStepW;		//LBP width step
+	int			LBPStepH;		//LBP height step
+	int			LBPWindowW;		//LBP window width
+	int			LBPWindowH;
+	UInt*		LBPHist;		//LBP histogram
+	int			LBPNeighBorThreshold;	//LBP neighboor threshold
+
+	//Gabor
+	int			nGabors;		//# gabor kernels
+	int			gaborSize;		//gabor kernel size(square kernel)
+	double**	gaborCoefs;		//gabor coefficients
+	int			numBinsGabor;	//number of bins in each Gabor histogram
+	int			numHistsGabor;	//number of histograms of Gabor
+	int			gaborStepW;		//Gabor width step
+	int			gaborStepH;
+	int			gaborWindowW;	//gabor window width
+	int			gaborWindowH;
+	UInt*		GaborHist;		//Gabor histogram
+	float*		gaborResponse;	//Gabor responese
+	float*		gaborResponseReal;
+	float*		gaborResponseImg;
+	int			gaborNeighBorThreshold;
+
+	//Intensity
+	int			numBinsIntensity;
+	int			numHistsIntensity;
+	int			IntensityStepW;
+	int			IntensityStepH;
+	int			IntensityWindowW;
+	int			IntensityWindowH;
+	UInt*		IntensityHist;
 
 	//data
-	UChar*	face;			//original face data
-	UChar*	face1;			//downsampled face data
-	UChar*	face2;
+	UChar*		face;			//original face data
+	UChar*		face1;			//downsampled face data
+	UChar*		face2;
 
 	featStruct	features;	//feature struct
 	featStruct*	loadedFeatures;	//loaded features from trained binary file
 	pathStruct*	imageList;	//image list
-	int		maxNumImages;	//max number of input images
-	int		numImageInList;	//number of images in the input list
-	int		numValidFaces;	//number of detected face images
-	int		numLoadedFaces;	//number of loaded faces from binary file
 
-	float*	weight;			//features weights
+	int			numTags;		//number of people in tag
+	int			numImageInList;	//number of images in the input list
+	int			numValidFaces;	//number of detected face images
+	int			numLoadedFaces;	//number of loaded faces from binary file
+
+	float*		weight;			//features weights
 
 	
 
@@ -137,6 +160,8 @@ typedef struct globalStructure
 	int		maxFaceTags;			//max face tags
 	int		trainStartID;			//train start ID
 	int		trainEndID;
+	
+	int		maxNumImages;			//max number of input images
 	
 
 

@@ -41,16 +41,31 @@ int faceDetector::checkFaceDetected()
 
 faceDetector::faceDetector()
 {
+	
+    cascade = (CvHaarClassifierCascade*)cvLoad(HAAR_CASCADE_FACE,0,0,0);
 
-    cascade = (CvHaarClassifierCascade*)cvLoad(HAAR_CASCADE_FACE, 0, 0, 0 );
     storage = cvCreateMemStorage(0);
+	
     cvClearMemStorage( storage );
+
+	//This is to avoid error linking lib to the code
+	//Unspecified error (The node does not represent a user object (unknown type?)) in function cvRead, C:\User\VP\opencv\cxcore\src\cxpersistence.cpp(5061) 
+	IplImage* img = cvCreateImage(cvSize(30,30), 8,1);
+	CvSeq* faces = cvHaarDetectObjects( img, cascade, storage,1.1, 2, 0/*CV_HAAR_DO_CANNY_PRUNING*/,cvSize(30, 30) );
+	cvReleaseImage(&img);
+	//end dummy function
+
     faceInformation.LT= cvPoint(0,0);
     faceInformation.RB= cvPoint(0,0);
     faceInformation.Width=0;
     faceInformation.Height=0;
 
 }
+faceDetector::~faceDetector()
+{
+	cvRelease((void**)(&cascade));
+}
+
 int faceDetector::runFaceDetector(IplImage *input)
 {
     double t = (double)cvGetTickCount();

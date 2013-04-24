@@ -1,122 +1,124 @@
-Overall rate: 0.00, 0 correct matching in 217 test images
-----------------------------------
-ID1: 0.00, 0 correct matching in 4 test images
-----------------------------------
-ID2: 0.00, 0 correct matching in 3 test images
-----------------------------------
-ID3: 0.00, 0 correct matching in 3 test images
-----------------------------------
-ID4: 0.00, 0 correct matching in 2 test images
-----------------------------------
-ID5: 0.00, 0 correct matching in 2 test images
-----------------------------------
-ID6: 0.00, 0 correct matching in 4 test images
-----------------------------------
-ID7: 0.00, 0 correct matching in 4 test images
-----------------------------------
-ID8: 0.00, 0 correct matching in 6 test images
-----------------------------------
-ID9: 0.00, 0 correct matching in 3 test images
-----------------------------------
-ID10: 0.00, 0 correct matching in 3 test images
-----------------------------------
-ID11: 0.00, 0 correct matching in 3 test images
-----------------------------------
-ID12: 0.00, 0 correct matching in 5 test images
-----------------------------------
-ID13: 0.00, 0 correct matching in 5 test images
-----------------------------------
-ID14: 0.00, 0 correct matching in 3 test images
-----------------------------------
-ID15: 0.00, 0 correct matching in 5 test images
-----------------------------------
-ID16: 0.00, 0 correct matching in 5 test images
-----------------------------------
-ID17: 0.00, 0 correct matching in 5 test images
-----------------------------------
-ID18: 0.00, 0 correct matching in 4 test images
-----------------------------------
-ID19: 0.00, 0 correct matching in 8 test images
-----------------------------------
-ID20: 0.00, 0 correct matching in 4 test images
-----------------------------------
-ID21: 0.00, 0 correct matching in 6 test images
-----------------------------------
-ID22: 0.00, 0 correct matching in 4 test images
-----------------------------------
-ID23: 0.00, 0 correct matching in 5 test images
-----------------------------------
-ID24: 0.00, 0 correct matching in 4 test images
-----------------------------------
-ID25: 0.00, 0 correct matching in 5 test images
-----------------------------------
-ID26: 0.00, 0 correct matching in 4 test images
-----------------------------------
-ID27: 0.00, 0 correct matching in 4 test images
-----------------------------------
-ID28: 0.00, 0 correct matching in 3 test images
-----------------------------------
-ID29: 0.00, 0 correct matching in 4 test images
-----------------------------------
-ID30: 0.00, 0 correct matching in 3 test images
-----------------------------------
-ID31: 0.00, 0 correct matching in 2 test images
-----------------------------------
-ID32: 0.00, 0 correct matching in 4 test images
-----------------------------------
-ID33: 0.00, 0 correct matching in 2 test images
-----------------------------------
-ID34: 0.00, 0 correct matching in 4 test images
-----------------------------------
-ID35: 0.00, 0 correct matching in 4 test images
-----------------------------------
-ID36: 0.00, 0 correct matching in 4 test images
-----------------------------------
-ID37: 0.00, 0 correct matching in 4 test images
-----------------------------------
-ID38: 0.00, 0 correct matching in 4 test images
-----------------------------------
-ID39: 0.00, 0 correct matching in 3 test images
-----------------------------------
-ID40: 0.00, 0 correct matching in 2 test images
-----------------------------------
-ID41: 0.00, 0 correct matching in 2 test images
-----------------------------------
-ID42: 0.00, 0 correct matching in 4 test images
-----------------------------------
-ID43: 0.00, 0 correct matching in 4 test images
-----------------------------------
-ID44: 0.00, 0 correct matching in 3 test images
-----------------------------------
-ID45: 0.00, 0 correct matching in 1 test images
-----------------------------------
-ID46: 0.00, 0 correct matching in 3 test images
-----------------------------------
-ID47: 0.00, 0 correct matching in 6 test images
-----------------------------------
-ID48: 0.00, 0 correct matching in 3 test images
-----------------------------------
-ID49: 0.00, 0 correct matching in 4 test images
-----------------------------------
-ID50: 0.00, 0 correct matching in 3 test images
-----------------------------------
-ID51: 0.00, 0 correct matching in 2 test images
-----------------------------------
-ID52: 0.00, 0 correct matching in 2 test images
-----------------------------------
-ID53: 0.00, 0 correct matching in 3 test images
-----------------------------------
-ID54: 0.00, 0 correct matching in 3 test images
-----------------------------------
-ID55: 0.00, 0 correct matching in 3 test images
-----------------------------------
-ID56: 0.00, 0 correct matching in 3 test images
-----------------------------------
-ID57: 0.00, 0 correct matching in 2 test images
-----------------------------------
-ID58: 0.00, 0 correct matching in 3 test images
-----------------------------------
-ID59: 0.00, 0 correct matching in 3 test images
-----------------------------------
-ID60: 0.00, 0 correct matching in 4 test images
-----------------------------------
+Benchmark of match result:
+Overall match number: 255, Overall Correct Matches:162, Accuracy: 63.53
+------------------------------------------------------
+
+ID: 1_4 of 4 correct, Accuracy:100.00
+--------------------------
+ID: 2_3 of 3 correct, Accuracy:100.00
+--------------------------
+ID: 3_3 of 3 correct, Accuracy:100.00
+--------------------------
+ID: 4_3 of 3 correct, Accuracy:100.00
+--------------------------
+ID: 5_2 of 2 correct, Accuracy:100.00
+--------------------------
+ID: 6_4 of 4 correct, Accuracy:100.00
+--------------------------
+ID: 7_4 of 4 correct, Accuracy:100.00
+--------------------------
+ID: 8_6 of 6 correct, Accuracy:100.00
+--------------------------
+ID: 9_3 of 3 correct, Accuracy:100.00
+--------------------------
+ID: 10_3 of 3 correct, Accuracy:100.00
+--------------------------
+ID: 11_3 of 3 correct, Accuracy:100.00
+--------------------------
+ID: 12_5 of 5 correct, Accuracy:100.00
+--------------------------
+ID: 13_5 of 5 correct, Accuracy:100.00
+--------------------------
+ID: 14_3 of 4 correct, Accuracy:75.00
+--------------------------
+ID: 15_5 of 5 correct, Accuracy:100.00
+--------------------------
+ID: 16_5 of 5 correct, Accuracy:100.00
+--------------------------
+ID: 17_5 of 5 correct, Accuracy:100.00
+--------------------------
+ID: 18_4 of 4 correct, Accuracy:100.00
+--------------------------
+ID: 19_3 of 8 correct, Accuracy:37.50
+--------------------------
+ID: 20_1 of 6 correct, Accuracy:16.67
+--------------------------
+ID: 21_5 of 6 correct, Accuracy:83.33
+--------------------------
+ID: 22_4 of 4 correct, Accuracy:100.00
+--------------------------
+ID: 23_5 of 5 correct, Accuracy:100.00
+--------------------------
+ID: 24_1 of 4 correct, Accuracy:25.00
+--------------------------
+ID: 25_2 of 5 correct, Accuracy:40.00
+--------------------------
+ID: 26_2 of 4 correct, Accuracy:50.00
+--------------------------
+ID: 27_3 of 4 correct, Accuracy:75.00
+--------------------------
+ID: 28_3 of 3 correct, Accuracy:100.00
+--------------------------
+ID: 29_2 of 4 correct, Accuracy:50.00
+--------------------------
+ID: 30_1 of 3 correct, Accuracy:33.33
+--------------------------
+ID: 31_0 of 4 correct, Accuracy:0.00
+--------------------------
+ID: 32_4 of 5 correct, Accuracy:80.00
+--------------------------
+ID: 33_0 of 4 correct, Accuracy:0.00
+--------------------------
+ID: 34_2 of 5 correct, Accuracy:40.00
+--------------------------
+ID: 35_3 of 6 correct, Accuracy:50.00
+--------------------------
+ID: 36_1 of 5 correct, Accuracy:20.00
+--------------------------
+ID: 37_3 of 4 correct, Accuracy:75.00
+--------------------------
+ID: 38_4 of 4 correct, Accuracy:100.00
+--------------------------
+ID: 39_3 of 5 correct, Accuracy:60.00
+--------------------------
+ID: 40_4 of 4 correct, Accuracy:100.00
+--------------------------
+ID: 41_2 of 3 correct, Accuracy:66.67
+--------------------------
+ID: 42_1 of 4 correct, Accuracy:25.00
+--------------------------
+ID: 43_3 of 4 correct, Accuracy:75.00
+--------------------------
+ID: 44_1 of 3 correct, Accuracy:33.33
+--------------------------
+ID: 45_1 of 4 correct, Accuracy:25.00
+--------------------------
+ID: 46_2 of 4 correct, Accuracy:50.00
+--------------------------
+ID: 47_2 of 7 correct, Accuracy:28.57
+--------------------------
+ID: 48_2 of 4 correct, Accuracy:50.00
+--------------------------
+ID: 49_2 of 4 correct, Accuracy:50.00
+--------------------------
+ID: 50_1 of 4 correct, Accuracy:25.00
+--------------------------
+ID: 51_2 of 4 correct, Accuracy:50.00
+--------------------------
+ID: 52_0 of 4 correct, Accuracy:0.00
+--------------------------
+ID: 53_2 of 4 correct, Accuracy:50.00
+--------------------------
+ID: 54_2 of 4 correct, Accuracy:50.00
+--------------------------
+ID: 55_3 of 4 correct, Accuracy:75.00
+--------------------------
+ID: 56_1 of 4 correct, Accuracy:25.00
+--------------------------
+ID: 57_2 of 3 correct, Accuracy:66.67
+--------------------------
+ID: 58_3 of 3 correct, Accuracy:100.00
+--------------------------
+ID: 59_1 of 6 correct, Accuracy:16.67
+--------------------------
+ID: 60_3 of 5 correct, Accuracy:60.00
+--------------------------

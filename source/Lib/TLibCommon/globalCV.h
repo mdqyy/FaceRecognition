@@ -22,6 +22,7 @@
 
 typedef struct globalCVStruct
 {
+
 	faceDetector*	faceDet;
 	eyesDetector*	eyeDet;
 	IplImage*		gray_face_CNN;

@@ -30,6 +30,7 @@ public:
     *@see Initializes Structures for Haar Detection
     */
     faceDetector(void);
+	~faceDetector(void);
     /**
     *Runs the Face Detection Algorithm on the param image
     *@param input The Input image on which the algorithm should be run on.
