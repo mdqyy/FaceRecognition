@@ -33,6 +33,7 @@ typedef	struct unitFeatStructure
 	float*	featLBP;		//LBP features
 	float*	featGabor;		//Gabor features
 	float*	featIntensity;	//Intensity features
+	float*	featReferDist;	//Reference distance features
 }featStruct;
 
 typedef	struct imagePathStructure
@@ -49,6 +50,7 @@ typedef struct globalStructure
 	bool		bUseLBP;		//use LBP features
 	bool		bUseGabor;		//use Gabor features
 	bool		bUseIntensity;	//use Intensity features
+	bool		bUseReferDist;	//use Reference distance features
 	bool		bUseHOG;		//use HOG features
 	bool		bUseCA;			//use correlation angles
 
@@ -62,6 +64,7 @@ typedef struct globalStructure
 
 	//feature parameters
 	int			featLenTotal;	//overall feature length
+	int			featLenReferDist;	//Reference distance feature length
 	int			featLenLBP;		//LBP feature length
 	int			featLenGabor;	
 	int			featLenIntensity;
@@ -130,6 +133,7 @@ typedef struct globalStructure
 
 	featStruct	features;	//feature struct
 	featStruct*	loadedFeatures;	//loaded features from trained binary file
+	featStruct*	bufferFeatures;	//buffer features for k-means
 	pathStruct*	imageList;	//image list
 
 	int			numTags;		//number of people in tag

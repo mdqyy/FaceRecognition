@@ -410,6 +410,7 @@ void train(gFaceReco* gf, gFaceRecoCV* gcv)
 	
 	int			i;
 	int			numPercent;
+	int			numValidFaces;
 	IplImage*	pFrame = NULL;
 	FILE*		pFaceFeatBin;
 	errno_t		err;
@@ -433,6 +434,7 @@ void train(gFaceReco* gf, gFaceRecoCV* gcv)
 	}
 
 	//write switches first
+	fwrite(&(gf->bUseReferDist), sizeof(bool), 1, pFaceFeatBin);
 	fwrite(&(gf->bUseLBP), sizeof(bool), 1, pFaceFeatBin);
 	fwrite(&(gf->bUseGabor), sizeof(bool), 1, pFaceFeatBin);
 	fwrite(&(gf->bUseIntensity), sizeof(bool), 1, pFaceFeatBin);
@@ -443,6 +445,7 @@ void train(gFaceReco* gf, gFaceRecoCV* gcv)
 
 	//main procedure
 	numPercent  = (int)(gf->numImageInList / 100);
+	numValidFaces = 0;
 
 	for ( i = 0; i < gf->numImageInList; i++)
 	{
@@ -464,33 +467,52 @@ void train(gFaceReco* gf, gFaceRecoCV* gcv)
 		gf->features.id  = gf->imageList[i].id;
 
 		//run face and eyes detection
-		runFaceAndEyesDetect(pFrame, gf, gcv);
-
-		//face alignment
-		faceAlign(pFrame, gcv->warpedImg, gf);
-		//cvSaveImage("C:/Users/Zhi/Desktop/face.jpg", gcv->warpedImg);
-
-		//feature extraction
-		if ( gf->bUseLBP)
+		if (runFaceAndEyesDetect(pFrame, gf, gcv))
 		{
-			extractLBPFeatures(gf);
-		}
-		
-		if ( gf->bUseGabor)
-		{
-			extractGaborFeatures(gf);
-		}
+			//face alignment
+			faceAlign(pFrame, gcv->warpedImg, gf);
+			//cvSaveImage("C:/Users/Zhi/Desktop/face.jpg", gcv->warpedImg);
 
-		if ( gf->bUseIntensity)
-		{
-			extractIntensityFeatures(gf);
-		}
-		
-		//write features to binary file
-		dumpFeatures(gf, pFaceFeatBin);
-		//
+			//feature extraction
+			if ( gf->bUseLBP)
+			{
+				extractLBPFeatures(gf);
+			}
+			
+			if ( gf->bUseGabor)
+			{
+				extractGaborFeatures(gf);
+			}
+
+			if ( gf->bUseIntensity)
+			{
+				extractIntensityFeatures(gf);
+			}
+
+			if ( gf->bUseReferDist)
+			{
+				//copy features to buffer
+				copyOneFeatureToBuffer(gf, numValidFaces);
+			}
+			else
+			{
+				//write features to binary file
+				dumpFeatures(gf, pFaceFeatBin);
+			}
+
+			numValidFaces++;
+		}//end face detected
+
 		cvReleaseImage(&pFrame);
 	}//end list
+
+	gf->numValidFaces = numValidFaces;
+
+	if ( gf->bUseReferDist)
+	{
+		extractReferDistFeatures(gf);
+		dumpFeatures(gf, pFaceFeatBin);
+	}
 
 
 	//close binary file
@@ -571,7 +593,7 @@ void match(gFaceReco* gf, gFaceRecoCV* gcv)
 		{
 			extractIntensityFeatures(gf);
 		}
-
+		gf->features.id = gf->imageList[i].id;
 		matchedID = matchFaceID(gf);
 
 		//Result
@@ -601,7 +623,7 @@ void match(gFaceReco* gf, gFaceRecoCV* gcv)
 	fprintf(pResultOutput, "------------------------------------------------------\n\n");
 	for ( i = 0; i < gf->numTags; i++)
 	{
-		fprintf(pResultOutput, "ID: %d_%d of %d correct, Accuracy:%.2f\n-------------------------------------\n", i+1, correctMatch[i], totalInClass[i], 100.0*correctMatch[i]/totalInClass[i]);
+		fprintf(pResultOutput, "ID: %d	%d of %d correct, Accuracy:%.2f\n-------------------------------------\n", i+1, correctMatch[i], totalInClass[i], 100.0*correctMatch[i]/totalInClass[i]);
 	}
 
 

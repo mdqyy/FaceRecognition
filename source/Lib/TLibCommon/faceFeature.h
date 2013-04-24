@@ -37,5 +37,8 @@ void extractIntensityFeatures(gFaceReco* gf);
 int matchFaceID(gFaceReco* gf);
 float matchFeatureHistDist(float* feature1, float* feature2, int length);
 
+void copyOneFeatureToBuffer(gFaceReco* gf, int idx);
+void extractReferDistFeatures(gFaceReco* gf);
+
 
 #endif //_FACE_FEATURE_H_
