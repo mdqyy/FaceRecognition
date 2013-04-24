@@ -601,7 +601,7 @@ void match(gFaceReco* gf, gFaceRecoCV* gcv)
 	fprintf(pResultOutput, "------------------------------------------------------\n\n");
 	for ( i = 0; i < gf->numTags; i++)
 	{
-		fprintf(pResultOutput, "ID: %d_%d of %d correct, Accuracy:%.2f\n--------------------------\n", i+1, correctMatch[i], totalInClass[i], 100.0*correctMatch[i]/totalInClass[i]);
+		fprintf(pResultOutput, "ID: %d_%d of %d correct, Accuracy:%.2f\n-------------------------------------\n", i+1, correctMatch[i], totalInClass[i], 100.0*correctMatch[i]/totalInClass[i]);
 	}
 
 
