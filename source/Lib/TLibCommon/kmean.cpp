@@ -188,16 +188,8 @@ int kMeanClustering(float ** data, int nPoints, int nDim, int nClusters, KMeanTy
 
 		for(n=0; n<nPoints; n++)
 		{
-			//minDist = 1000000000;     //This is not sufficient
-			tmp = 0;
-			for(i=0; i<nDim; i++)
-			{
-				diff = data[n][i] - kMeanClusterCenters[0][i];
-				tmp = tmp + diff * diff;
-			}
-			minDist = tmp;
-			minPtr = 0;
-			for(k=1; k<nClusters; k++)
+			minDist = 10000000000000;     //This is not sufficient
+			for(k=0; k<nClusters; k++)
 			{
 				//find the distance to each cluster center
 				tmp = 0;
@@ -235,11 +227,14 @@ int kMeanClustering(float ** data, int nPoints, int nDim, int nClusters, KMeanTy
 			{
 				for(i=0;i<nDim; i++)
 					kMeanClusterCentersBuf[k][i] = kMeanClusterCentersBuf[k][i] / ct;
+
+
 			}
 			else
 			{
 				//use the old one
-				kMeanClusterCentersBuf[k][i] = kMeanClusterCenters[k][i];
+				for ( i = 0; i < nDim; i++)
+					kMeanClusterCentersBuf[k][i] = kMeanClusterCenters[k][i];
 			}
 
 			for(i=0; i<nDim; i++)

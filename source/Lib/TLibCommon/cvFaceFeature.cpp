@@ -510,8 +510,7 @@ void train(gFaceReco* gf, gFaceRecoCV* gcv)
 
 	if ( gf->bUseReferDist)
 	{
-		extractReferDistFeatures(gf);
-		dumpFeatures(gf, pFaceFeatBin);
+		extractReferDistFeatures(gf, pFaceFeatBin);
 	}
 
 

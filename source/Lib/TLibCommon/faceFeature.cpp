@@ -530,7 +530,7 @@ void freeOneFeature(featStruct* fst)
 
 
 
-
+/* reset histogram */
 inline void resetHist(UInt* hist, int n)
 {
 	int		i;
@@ -538,6 +538,26 @@ inline void resetHist(UInt* hist, int n)
 	{
 		hist[i] = 0;
 	}
+}
+
+/* shuffle array to randomly select group members */
+void shuffle(int *list, int n) 
+{    
+    srand((unsigned) time(NULL)); 
+	int t, j;
+
+
+    if (n > 1) 
+	{
+        int i;
+        for (i = n - 1; i > 0; i--) 
+		{
+            j = i + rand() / (RAND_MAX / (n - i) + 1);
+            t = list[j];
+            list[j] = list[i];
+            list[i] = t;
+        }
+    }
 }
 
 /*  Extract LBP Features  */
@@ -687,29 +707,22 @@ void dumpFeatures(gFaceReco* gf, FILE* pFaceFeatBin)
 	//write features to binary file
 	fwrite(&(gf->features.id), sizeof(int), 1, pFaceFeatBin);	//write id
 
-	if ( gf->bUseReferDist)
+	
+	if ( gf->bUseLBP)
 	{
-		fwrite(gf->features.featReferDist, sizeof(float), gf->featLenReferDist, pFaceFeatBin);
-	}
-	else
-	{
-		if ( gf->bUseLBP)
-		{
-			fwrite(gf->features.featLBP, sizeof(float), gf->featLenLBP, pFaceFeatBin);
-		}
-
-		if ( gf->bUseGabor)
-		{
-			fwrite(gf->features.featGabor, sizeof(float), gf->featLenGabor, pFaceFeatBin);
-		}
-
-		if ( gf->bUseIntensity)
-		{
-			fwrite(gf->features.featIntensity, sizeof(float), gf->featLenIntensity, pFaceFeatBin);
-		}
+		fwrite(gf->features.featLBP, sizeof(float), gf->featLenLBP, pFaceFeatBin);
 	}
 
+	if ( gf->bUseGabor)
+	{
+		fwrite(gf->features.featGabor, sizeof(float), gf->featLenGabor, pFaceFeatBin);
+	}
 
+	if ( gf->bUseIntensity)
+	{
+		fwrite(gf->features.featIntensity, sizeof(float), gf->featLenIntensity, pFaceFeatBin);
+	}
+	
 	
 
 }//end dumpFeatures
@@ -770,20 +783,27 @@ void loadFeatures(gFaceReco* gf)
 		initOneFeature(&(gf->loadedFeatures[i]), gf);
 		fread(&tmpLoadedID, sizeof(int), 1, pCurrent);
 		gf->loadedFeatures[i].id = tmpLoadedID;
-		if ( gf->bUseLBP)
+		if ( gf->bUseReferDist)
 		{
-			gf->loadedFeatures[i].featLBP = (float*)malloc(sizeof(float) * gf->featLenLBP);
-			fread(gf->loadedFeatures[i].featLBP, sizeof(float), gf->featLenLBP, pCurrent);
+			fread(gf->loadedFeatures[i].featReferDist, sizeof(float), gf->featLenReferDist, pCurrent);
 		}
-		if ( gf->bUseGabor)
+		else
 		{
-			gf->loadedFeatures[i].featGabor = (float*)malloc(sizeof(float) * gf->featLenGabor);
-			fread(gf->loadedFeatures[i].featGabor, sizeof(float), gf->featLenGabor, pCurrent);
-		}
-		if ( gf->bUseIntensity)
-		{
-			gf->loadedFeatures[i].featIntensity = (float*)malloc(sizeof(float) * gf->featLenIntensity);
-			fread(gf->loadedFeatures[i].featIntensity, sizeof(float), gf->featLenIntensity, pCurrent);
+			if ( gf->bUseLBP)
+			{
+				//gf->loadedFeatures[i].featLBP = (float*)malloc(sizeof(float) * gf->featLenLBP);
+				fread(gf->loadedFeatures[i].featLBP, sizeof(float), gf->featLenLBP, pCurrent);
+			}
+			if ( gf->bUseGabor)
+			{
+				//gf->loadedFeatures[i].featGabor = (float*)malloc(sizeof(float) * gf->featLenGabor);
+				fread(gf->loadedFeatures[i].featGabor, sizeof(float), gf->featLenGabor, pCurrent);
+			}
+			if ( gf->bUseIntensity)
+			{
+				//gf->loadedFeatures[i].featIntensity = (float*)malloc(sizeof(float) * gf->featLenIntensity);
+				fread(gf->loadedFeatures[i].featIntensity, sizeof(float), gf->featLenIntensity, pCurrent);
+			}
 		}
 
 	}
@@ -1196,14 +1216,20 @@ void copyOneFeatureToBuffer(gFaceReco* gf, int idx)
 * Apply kmeans to get reference centers
 * Then get the distance features as a new feature
 **/
-void extractReferDistFeatures(gFaceReco* gf)
+void extractReferDistFeatures(gFaceReco* gf, FILE* pFaceFeatBin)
 {
 	KMeanType		KM;
 	int				vectorSize;
 	int				dataSize;
 	int				numClusters;
-	int				i, j, ptr;
+	int				i, j, k, ptr;
 	float**			kmInput;
+	int*			list;
+	featStruct*		bufferFeat;
+	float			dist, tmpDist;
+
+
+	bufferFeat = gf->bufferFeatures;
 
 	//init k-means
 	vectorSize = 0;
@@ -1218,29 +1244,65 @@ void extractReferDistFeatures(gFaceReco* gf)
 	numClusters = gf->featLenReferDist;
 	initKMeanWithParameters(&KM, dataSize, vectorSize, numClusters);
 	kmInput = (float**)malloc(sizeof(float*) * dataSize);
+	//concatenating features
 	for ( i = 0; i < dataSize; i++)
 	{
 		kmInput[i] = (float*)malloc(sizeof(float) * vectorSize);
 		ptr = 0;
 		if ( gf->bUseLBP)
 		{
-			memcpy(&kmInput[ptr], gf->features.featLBP, sizeof(float) * gf->featLenLBP);
+			memcpy(&(kmInput[i][ptr]), bufferFeat[i].featLBP, sizeof(float) * gf->featLenLBP);
 			ptr += gf->featLenLBP;
 		}
 		if ( gf->bUseGabor)
 		{
-			memcpy(&kmInput[ptr], gf->features.featGabor, sizeof(float) * gf->featLenGabor);
+			memcpy(&(kmInput[i][ptr]), bufferFeat[i].featGabor, sizeof(float) * gf->featLenGabor);
 			ptr += gf->featLenGabor;
 		}
 		if ( gf->bUseIntensity)
 		{
-			memcpy(&kmInput[ptr], gf->features.featIntensity, sizeof(float) * gf->featLenIntensity);
+			memcpy(&(kmInput[i][ptr]), bufferFeat[i].featIntensity, sizeof(float) * gf->featLenIntensity);
 			ptr += gf->featLenIntensity;
 		}
 	}//end prepare for k-mean data
 
+	//randomly assign centers
+	list = (int*)malloc(sizeof(int) * dataSize);
+	for ( i = 0; i < dataSize; i++)
+	{
+		list[i] = i;
+	}
+	shuffle(list, dataSize);
+	for ( i = 0; i < numClusters; i++)
+	{
+		memcpy(&KM.kMeanClusterCenters[i][0], &kmInput[list[i]][0], sizeof(float) * vectorSize);
+	}
+
 	//apply k-means
 	kMeanClustering(kmInput, dataSize, vectorSize, numClusters, &KM, TRUE);
+
+
+	
+	//extract new feature with cluster centers
+	for ( i = 0; i < dataSize; i++)
+	{
+		for ( j = 0; j < numClusters; j++)
+		{
+			dist = 0;
+			for ( k = 0; k < vectorSize; k++)
+			{
+				tmpDist = KM.kMeanClusterCenters[j][k] - kmInput[i][k];
+				dist += tmpDist * tmpDist;
+			}
+			gf->features.featReferDist[j] = dist;
+		}
+
+		//write features to binary file
+		fwrite(&(bufferFeat[i].id), sizeof(int), 1, pFaceFeatBin);
+
+		fwrite(gf->features.featReferDist, sizeof(float), numClusters, pFaceFeatBin);
+	}
+
 
 	
 
@@ -1252,6 +1314,10 @@ void extractReferDistFeatures(gFaceReco* gf)
 	}
 	free(kmInput);
 	kmInput = NULL;
+	free(list);
+	list = NULL;
+
+	releaseKMean(&KM, dataSize, vectorSize, numClusters);
 
 
 }//end extractReferDistFeatures

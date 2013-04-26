@@ -6,7 +6,7 @@
 
 #define MAX_NUM_CLUSTERS	300
 #define MAX_VECTOR_SIZE		10000
-#define AVG_ERROR_THRESHOLD	10
+#define AVG_ERROR_THRESHOLD	0.01
 #define MAX_KMEAN_DATA_SIZE 2000
 
 typedef struct KMeanTag

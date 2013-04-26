@@ -27,6 +27,8 @@ void initOneFeature(featStruct* fst, gFaceReco* gf);
 void freeOneFeature(featStruct* fst);
 
 inline void resetHist(UInt* hist, int n);
+void shuffle(int *list, int n);
+
 void extractLBPFeatures(gFaceReco* gf);
 void dumpFeatures(gFaceReco* gf, FILE* pFaceFeatBin);
 void loadFeatures(gFaceReco* gf);
@@ -38,7 +40,7 @@ int matchFaceID(gFaceReco* gf);
 float matchFeatureHistDist(float* feature1, float* feature2, int length);
 
 void copyOneFeatureToBuffer(gFaceReco* gf, int idx);
-void extractReferDistFeatures(gFaceReco* gf);
+void extractReferDistFeatures(gFaceReco* gf, FILE* pFaceFeatBin);
 
 
 #endif //_FACE_FEATURE_H_
