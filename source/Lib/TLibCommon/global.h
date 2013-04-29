@@ -47,6 +47,7 @@ typedef	struct imagePathStructure
 typedef struct globalStructure
 {
 	//global switchs
+	bool		bVerification;	//verification mode
 	bool		bUseLBP;		//use LBP features
 	bool		bUseGabor;		//use Gabor features
 	bool		bUseIntensity;	//use Intensity features
@@ -126,6 +127,9 @@ typedef struct globalStructure
 	int			IntensityWindowH;
 	UInt*		IntensityHist;
 
+	//Reference centers
+	float**		referCenters;	//reference centers
+
 	//data
 	UChar*		face;			//original face data
 	UChar*		face1;			//downsampled face data
@@ -158,6 +162,7 @@ typedef struct globalStructure
 	char	gaborBinPath[260];		//gabor kernel bin
 	
 	char	cameraCaptureDir[260];	//camera capture
+	char	referCentersPath[260];	//reference centers binary
 
 
 	//limitations

@@ -34,6 +34,7 @@ void processTrainInput(gFaceReco* gf, gFaceRecoCV* gcv);		//train input
 void processMatchInput(gFaceReco* gf, gFaceRecoCV* gcv);		//test input
 
 void train(gFaceReco* gf, gFaceRecoCV* gcv);
+void trainVerification(gFaceReco* gf, gFaceRecoCV* gcv);
 void match(gFaceReco* gf, gFaceRecoCV* gcv);
 
 

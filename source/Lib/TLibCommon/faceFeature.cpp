@@ -29,6 +29,7 @@ void config(gFaceReco* gf, char* configFile)
 	if ( ReadConfig(configFile, m))   // Read parameters from config file
 	{
 		//load parameters from config file
+		LoadParmBool(m, gf->bVerification, "bVerification");
 		LoadParmBool(m, gf->bUseReferDist, "UseReferDist");
 		LoadParmBool(m, gf->bUseLBP, "UseLBP");
 		LoadParmBool(m, gf->bUseGabor, "UseGabor");
@@ -156,7 +157,7 @@ void config(gFaceReco* gf, char* configFile)
 
 	}
 
-	//rest 
+	//path 
 	sprintf(gf->trainImageDir,"%s", "../../image/train/");
 	sprintf(gf->faceBinPath,"%s", "../../image/faces.bin");
 	sprintf(gf->imageTagDir,"%s", "../../image/ImgTag/");
@@ -166,6 +167,7 @@ void config(gFaceReco* gf, char* configFile)
 	sprintf(gf->resultTxtPath,"%s", "../../image/matchResult.txt");
 	sprintf(gf->gaborBinPath,"%s", "../../image/gabor.bin");
 	sprintf(gf->cameraCaptureDir, "%s", "../../image/cameraCapture/");
+	sprintf(gf->referCentersPath, "%s", "../../image/referCenters.bin");
 
 	gf->faceWidth1 = gf->faceWidth / 2;
 	gf->faceWidth2 = gf->faceWidth / 4;
@@ -348,7 +350,7 @@ void initGlobalStruct(gFaceReco* gf)
 		gf->IntensityHist = NULL;
 	}
 
-	if ( gf->bUseReferDist)
+	if ( (gf->bUseReferDist) || (gf->bVerification))
 	{
 		int i;
 		gf->bufferFeatures = (featStruct*)malloc(sizeof(featStruct) * gf->maxNumImages);
@@ -361,7 +363,8 @@ void initGlobalStruct(gFaceReco* gf)
 	{
 		gf->bufferFeatures = NULL;
 	}
-	
+
+	gf->referCenters = NULL;
 
 
 
@@ -394,7 +397,7 @@ void freeGlobalStruct(gFaceReco* gf)
 
 	if ( gf->loadedFeatures != NULL)
 	{
-		for ( i = 0; i < gf->maxNumImages; i++)
+		for ( i = 0; i < gf->numLoadedFaces; i++)
 		{
 			freeOneFeature(&(gf->loadedFeatures[i]));
 		}
@@ -455,6 +458,19 @@ void freeGlobalStruct(gFaceReco* gf)
 	{
 		free(gf->IntensityHist);
 		gf->IntensityHist = NULL;
+	}
+
+	if ( gf->referCenters != NULL)
+	{
+		for ( i = 0; i < gf->featLenReferDist; i++)
+		{
+			if ( gf->referCenters[i] != NULL)
+			{
+				free(gf->referCenters[i]);
+				gf->referCenters[i] = NULL;
+			}
+		}
+		gf->referCenters = NULL;
 	}
 
 
@@ -636,7 +652,7 @@ void extractLBPFeatures(gFaceReco* gf)
 			//save into features
 			for ( k = 0; k < numBins; k++)
 			{
-				feature[ptrFeat] = hist[k];
+				feature[ptrFeat] = (float)hist[k];
 				ptrFeat++;
 			}
 		}
@@ -741,6 +757,7 @@ void loadFeatures(gFaceReco* gf)
 	int			numFaces;
 	int			i;
 	int			tmpLoadedID;
+	int			directFeatLen;
 
 	err = fopen_s(&pFaceFeatBin, gf->faceBinPath, "rb");
 	if (err != 0)
@@ -810,6 +827,36 @@ void loadFeatures(gFaceReco* gf)
 
 	fclose(pFaceFeatBin);
 	pCurrent = NULL;
+
+	//load reference centers(if enabled)
+	if ( gf->bUseReferDist)
+	{
+		FILE* pReferCenters;
+		err = fopen_s(&pReferCenters, gf->referCentersPath, "rb");
+		if (err != 0)
+		{
+			printf("Can't open referCenters.bin to read!\n");
+			system("pause");
+			exit(-1);
+		}
+
+		directFeatLen = 0;
+		if ( gf->bUseLBP)
+			directFeatLen += gf->featLenLBP;
+		if ( gf->bUseGabor)
+			directFeatLen += gf->featLenGabor;
+		if ( gf->bUseIntensity)
+			directFeatLen += gf->featLenIntensity;
+
+		gf->referCenters = (float**)malloc(sizeof(float*) * gf->featLenReferDist);
+		for ( i = 0; i < gf->featLenReferDist; i++)
+		{
+			gf->referCenters[i] = (float*)malloc(sizeof(float) * directFeatLen);
+			fread(gf->referCenters[i], sizeof(float), directFeatLen, pReferCenters);
+		}
+		fclose(pReferCenters);
+	}
+		
 
 	//load weight
 	if ( gf->bUseWeight)
@@ -995,7 +1042,7 @@ void extractGaborFeatures(gFaceReco* gf)
 				//save into features
 				for ( k = 0; k < numBins; k++)
 				{
-					feature[ptrFeat] = hist[k];
+					feature[ptrFeat] = (float)hist[k];
 					ptrFeat++;
 				}
 			}
@@ -1066,7 +1113,7 @@ void extractIntensityFeatures(gFaceReco* gf)
 			//save to feature vector
 			for ( k = 0; k < numBins; k++)
 			{
-				feature[featPtr] = hist[k];
+				feature[featPtr] = (float)hist[k];
 				featPtr++;
 			}
 		}
@@ -1097,7 +1144,7 @@ void extractIntensityFeatures(gFaceReco* gf)
 			//save to feature vector
 			for ( k = 0; k < numBins; k++)
 			{
-				feature[featPtr] = hist[k];
+				feature[featPtr] = (float)hist[k];
 				featPtr++;
 			}
 		}
@@ -1133,17 +1180,24 @@ int matchFaceID(gFaceReco* gf)
 	for ( i = 0; i < numLoadedFaces; i++)
 	{
 		sumDist = 0;
-		if ( gf->bUseLBP)
+		if ( gf->bUseReferDist)
 		{
-			//sumDist += matchFeatureHistDist( currFeatures->featLBP, loadedFeatures[i].featLBP, gf->featLenLBP);
+			sumDist += matchFeatureDist( currFeatures->featReferDist, loadedFeatures[i].featReferDist, gf->featLenReferDist);
 		}
-		if ( gf->bUseGabor)
+		else
 		{
-			//sumDist += matchFeatureHistDist( currFeatures->featGabor, loadedFeatures[i].featGabor, gf->featLenGabor);
-		}
-		if ( gf->bUseIntensity)
-		{
-			sumDist += matchFeatureHistDist( currFeatures->featIntensity, loadedFeatures[i].featIntensity, gf->featLenIntensity);
+			if ( gf->bUseLBP)
+			{
+				//sumDist += matchFeatureHistDist( currFeatures->featLBP, loadedFeatures[i].featLBP, gf->featLenLBP);
+			}
+			if ( gf->bUseGabor)
+			{
+				//sumDist += matchFeatureHistDist( currFeatures->featGabor, loadedFeatures[i].featGabor, gf->featLenGabor);
+			}
+			if ( gf->bUseIntensity)
+			{
+				sumDist += matchFeatureHistDist( currFeatures->featIntensity, loadedFeatures[i].featIntensity, gf->featLenIntensity);
+			}
 		}
 
 		if ( sumDist < minDist)
@@ -1151,6 +1205,7 @@ int matchFaceID(gFaceReco* gf)
 			matchedID = loadedFeatures[i].id;
 			minDist = sumDist;
 		}
+		
 	}
 
 	//return 
@@ -1161,7 +1216,31 @@ int matchFaceID(gFaceReco* gf)
 
 }//end matchFaceID
 
+float matchFeatureDist(float* feature1, float* feature2, int length)
+{
+	float	h1, h2;
+	int		i;
+	float	dist, normalizedDist, tmp;
 
+
+	dist = 0;
+	for ( i = 0; i < length; i++)
+	{
+		h1 = feature1[i];
+		h2 = feature2[i];
+		tmp = h1 - h2;
+		dist += tmp * tmp;
+	}
+
+	normalizedDist = dist / length;
+
+	return normalizedDist;
+
+
+}//end matchFeatureDist
+
+
+/* match histogram distance sumation */
 float matchFeatureHistDist(float* feature1, float* feature2, int length)
 {
 	float	h1, h2;
@@ -1196,6 +1275,8 @@ void copyOneFeatureToBuffer(gFaceReco* gf, int idx)
 	currFeat = &gf->features;
 	bufferFeat = &gf->bufferFeatures[idx];
 
+	bufferFeat->id = currFeat->id;
+
 	if ( gf->bUseLBP)
 	{
 		memcpy(bufferFeat->featLBP, currFeat->featLBP, sizeof(float) * gf->featLenLBP);
@@ -1227,6 +1308,18 @@ void extractReferDistFeatures(gFaceReco* gf, FILE* pFaceFeatBin)
 	int*			list;
 	featStruct*		bufferFeat;
 	float			dist, tmpDist;
+	FILE*			pReferCenters;
+	errno_t			err;
+
+
+	//open reference centers binary
+	err = fopen_s(&pReferCenters, gf->referCentersPath, "wb");
+	if ( err != 0)
+	{
+		printf("Error opening referCenters.bin to write!\n");
+		system("pause");
+		exit(-1);
+	}
 
 
 	bufferFeat = gf->bufferFeatures;
@@ -1302,11 +1395,18 @@ void extractReferDistFeatures(gFaceReco* gf, FILE* pFaceFeatBin)
 
 		fwrite(gf->features.featReferDist, sizeof(float), numClusters, pFaceFeatBin);
 	}
+	
+	//write centers to binary file
+	for ( j = 0; j < numClusters; j++)
+	{
+		fwrite(KM.kMeanClusterCenters[j], sizeof(float), vectorSize, pReferCenters);
+	}
 
 
 	
 
 	//clean-ups
+	fclose(pReferCenters);
 	for ( i = 0; i < dataSize; i++)
 	{
 		free(kmInput[i]);
@@ -1321,3 +1421,57 @@ void extractReferDistFeatures(gFaceReco* gf, FILE* pFaceFeatBin)
 
 
 }//end extractReferDistFeatures
+
+
+/* Extract Reference distances in match */
+void extractReferDistFeaturesInMatch(gFaceReco* gf)
+{
+	int				i, j;
+	int				ptr;
+	float			dist, tmpDist;
+	featStruct		features;
+	
+
+	features	= gf->features;
+
+	for ( j = 0; j < gf->featLenReferDist; j++)
+	{
+		ptr = 0;
+		dist = 0;
+		if ( gf->bUseLBP)
+		{
+			for ( i = 0; i < gf->featLenLBP; i++)
+			{
+				tmpDist = features.featLBP[i] - gf->referCenters[j][ptr];
+				dist += tmpDist * tmpDist;
+				ptr++;
+			}
+		}
+		if ( gf->bUseGabor)
+		{
+			for ( i = 0; i< gf->featLenGabor; i++)
+			{
+				tmpDist = features.featGabor[i] - gf->referCenters[j][ptr];
+				dist += tmpDist * tmpDist;
+				ptr++;
+			}
+		}
+
+		if ( gf->bUseIntensity)
+		{
+			for ( i = 0; i < gf->featLenIntensity; i++)
+			{
+				tmpDist = features.featIntensity[i] - gf->referCenters[j][ptr];
+				dist += tmpDist * tmpDist;
+				ptr++;
+			}
+		}
+
+		features.featReferDist[j] = dist;
+	}//end one reference distance feature
+
+
+
+
+
+}//end extractReferDistFeaturesInMatch

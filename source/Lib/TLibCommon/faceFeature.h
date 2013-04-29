@@ -37,10 +37,12 @@ void extractGaborFeatures(gFaceReco* gf);
 void extractIntensityFeatures(gFaceReco* gf);
 
 int matchFaceID(gFaceReco* gf);
+float matchFeatureDist(float* feature1, float* feature2, int length);
 float matchFeatureHistDist(float* feature1, float* feature2, int length);
 
 void copyOneFeatureToBuffer(gFaceReco* gf, int idx);
-void extractReferDistFeatures(gFaceReco* gf, FILE* pFaceFeatBin);
+void extractReferDistFeatures(gFaceReco* gf, FILE* pFaceFeatBin); // for train only
+void extractReferDistFeaturesInMatch(gFaceReco* gf); // for match only
 
 
 #endif //_FACE_FEATURE_H_

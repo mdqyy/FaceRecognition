@@ -1,5 +1,5 @@
 Benchmark of match result:
-Overall match number: 255, Overall Correct Matches:146, Accuracy: 57.25
+Overall match number: 255, Overall Correct Matches:106, Accuracy: 41.57
 ------------------------------------------------------
 
 ID: 1	4 of 4 correct, Accuracy:100.00
@@ -38,15 +38,15 @@ ID: 17	5 of 5 correct, Accuracy:100.00
 -------------------------------------
 ID: 18	4 of 4 correct, Accuracy:100.00
 -------------------------------------
-ID: 19	2 of 8 correct, Accuracy:25.00
+ID: 19	0 of 8 correct, Accuracy:0.00
 -------------------------------------
-ID: 20	2 of 6 correct, Accuracy:33.33
+ID: 20	0 of 6 correct, Accuracy:0.00
 -------------------------------------
-ID: 21	5 of 6 correct, Accuracy:83.33
+ID: 21	3 of 6 correct, Accuracy:50.00
 -------------------------------------
-ID: 22	2 of 4 correct, Accuracy:50.00
+ID: 22	0 of 4 correct, Accuracy:0.00
 -------------------------------------
-ID: 23	4 of 5 correct, Accuracy:80.00
+ID: 23	1 of 5 correct, Accuracy:20.00
 -------------------------------------
 ID: 24	2 of 4 correct, Accuracy:50.00
 -------------------------------------
@@ -54,11 +54,11 @@ ID: 25	1 of 5 correct, Accuracy:20.00
 -------------------------------------
 ID: 26	2 of 4 correct, Accuracy:50.00
 -------------------------------------
-ID: 27	3 of 4 correct, Accuracy:75.00
+ID: 27	1 of 4 correct, Accuracy:25.00
 -------------------------------------
-ID: 28	3 of 3 correct, Accuracy:100.00
+ID: 28	1 of 3 correct, Accuracy:33.33
 -------------------------------------
-ID: 29	2 of 4 correct, Accuracy:50.00
+ID: 29	0 of 4 correct, Accuracy:0.00
 -------------------------------------
 ID: 30	0 of 3 correct, Accuracy:0.00
 -------------------------------------
@@ -68,25 +68,25 @@ ID: 32	4 of 5 correct, Accuracy:80.00
 -------------------------------------
 ID: 33	0 of 4 correct, Accuracy:0.00
 -------------------------------------
-ID: 34	2 of 5 correct, Accuracy:40.00
+ID: 34	0 of 5 correct, Accuracy:0.00
 -------------------------------------
-ID: 35	2 of 6 correct, Accuracy:33.33
+ID: 35	1 of 6 correct, Accuracy:16.67
 -------------------------------------
-ID: 36	1 of 5 correct, Accuracy:20.00
+ID: 36	2 of 5 correct, Accuracy:40.00
 -------------------------------------
 ID: 37	3 of 4 correct, Accuracy:75.00
 -------------------------------------
-ID: 38	4 of 4 correct, Accuracy:100.00
+ID: 38	2 of 4 correct, Accuracy:50.00
 -------------------------------------
-ID: 39	2 of 5 correct, Accuracy:40.00
+ID: 39	1 of 5 correct, Accuracy:20.00
 -------------------------------------
-ID: 40	4 of 4 correct, Accuracy:100.00
+ID: 40	2 of 4 correct, Accuracy:50.00
 -------------------------------------
-ID: 41	2 of 3 correct, Accuracy:66.67
+ID: 41	0 of 3 correct, Accuracy:0.00
 -------------------------------------
-ID: 42	2 of 4 correct, Accuracy:50.00
+ID: 42	0 of 4 correct, Accuracy:0.00
 -------------------------------------
-ID: 43	2 of 4 correct, Accuracy:50.00
+ID: 43	1 of 4 correct, Accuracy:25.00
 -------------------------------------
 ID: 44	1 of 3 correct, Accuracy:33.33
 -------------------------------------
@@ -96,11 +96,11 @@ ID: 46	1 of 4 correct, Accuracy:25.00
 -------------------------------------
 ID: 47	1 of 7 correct, Accuracy:14.29
 -------------------------------------
-ID: 48	1 of 4 correct, Accuracy:25.00
+ID: 48	0 of 4 correct, Accuracy:0.00
 -------------------------------------
 ID: 49	0 of 4 correct, Accuracy:0.00
 -------------------------------------
-ID: 50	1 of 4 correct, Accuracy:25.00
+ID: 50	0 of 4 correct, Accuracy:0.00
 -------------------------------------
 ID: 51	1 of 4 correct, Accuracy:25.00
 -------------------------------------
@@ -108,17 +108,17 @@ ID: 52	0 of 4 correct, Accuracy:0.00
 -------------------------------------
 ID: 53	2 of 4 correct, Accuracy:50.00
 -------------------------------------
-ID: 54	1 of 4 correct, Accuracy:25.00
+ID: 54	0 of 4 correct, Accuracy:0.00
 -------------------------------------
-ID: 55	3 of 4 correct, Accuracy:75.00
+ID: 55	1 of 4 correct, Accuracy:25.00
 -------------------------------------
 ID: 56	0 of 4 correct, Accuracy:0.00
 -------------------------------------
-ID: 57	2 of 3 correct, Accuracy:66.67
+ID: 57	0 of 3 correct, Accuracy:0.00
 -------------------------------------
-ID: 58	2 of 3 correct, Accuracy:66.67
+ID: 58	0 of 3 correct, Accuracy:0.00
 -------------------------------------
 ID: 59	1 of 6 correct, Accuracy:16.67
 -------------------------------------
-ID: 60	3 of 5 correct, Accuracy:60.00
+ID: 60	1 of 5 correct, Accuracy:20.00
 -------------------------------------

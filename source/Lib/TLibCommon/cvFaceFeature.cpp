@@ -575,7 +575,7 @@ void match(gFaceReco* gf, gFaceRecoCV* gcv)
 
 		//face alignment
 		faceAlign(pFrame, gcv->warpedImg, gf);
-		//cvSaveImage("c:/Users/Zhi/Desktop/dump.jpg",gcv->warpedImg);
+		
 
 		//feature extraction
 		if ( gf->bUseLBP)
@@ -591,6 +591,11 @@ void match(gFaceReco* gf, gFaceRecoCV* gcv)
 		if ( gf->bUseIntensity)
 		{
 			extractIntensityFeatures(gf);
+		}
+
+		if ( gf->bUseReferDist)
+		{
+			extractReferDistFeaturesInMatch(gf);
 		}
 		gf->features.id = gf->imageList[i].id;
 		matchedID = matchFaceID(gf);
@@ -637,3 +642,14 @@ void match(gFaceReco* gf, gFaceRecoCV* gcv)
 
 
 }//end match
+
+
+
+/* train verification module using SVM */
+void trainVerification(gFaceReco* gf, gFaceRecoCV* gcv)
+{
+
+
+
+
+}//end trainVerification
