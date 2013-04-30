@@ -1347,6 +1347,9 @@ int matchFaceIDVerification(gFaceReco* gf)
 	float			score;
 	int*			voteBin, *capBin;
 	float			maxVote, tmpVote;
+	//debug only
+	int				incorrectMatch = 0;
+	int				totalMatch = 0;
 
 
 	loadedFeatures	= gf->loadedFeatures;
@@ -1382,6 +1385,19 @@ int matchFaceIDVerification(gFaceReco* gf)
 		if ( capBin[i] > 0)
 		{
 			tmpVote = ((float)voteBin[i]) / capBin[i];
+			//debug only
+			if ( i == currFeatures->id - 1)
+			{
+				incorrectMatch += capBin[i] - voteBin[i];
+				printf("%d	Correct: %.2f\n", i+1, tmpVote * 100);
+			}
+			else
+			{
+				incorrectMatch += voteBin[i];
+				printf("%d	Incorrect: %.2f\n", i+1, tmpVote*100);
+			}
+			totalMatch += capBin[i];
+			//end debug
 			if ( tmpVote > maxVote)
 			{
 				maxVote = tmpVote;
@@ -1389,8 +1405,11 @@ int matchFaceIDVerification(gFaceReco* gf)
 			}
 		}
 	}
-			
-
+	
+	//debug only
+	printf("Single match SVM rate: %.2f\n", (1.0 - (float)incorrectMatch/totalMatch)*100);
+	system("pause");
+	//
 	//clean-up
 	free(voteBin);
 	voteBin = NULL;
