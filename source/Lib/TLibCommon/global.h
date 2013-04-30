@@ -47,6 +47,9 @@ typedef	struct imagePathStructure
 typedef struct globalStructure
 {
 	//global switchs
+	bool		bIsTraining;	//training phase
+	bool		bIsMatching;	//matching phase
+
 	bool		bVerification;	//verification mode
 	bool		bUseLBP;		//use LBP features
 	bool		bUseGabor;		//use Gabor features
@@ -127,6 +130,14 @@ typedef struct globalStructure
 	int			IntensityWindowH;
 	UInt*		IntensityHist;
 
+	//SVM
+	int			svmNumClasses;		//number of classes in svm
+	int			svmNumSamples;		//svm samples
+	int			svmInterIntraRatio;	//Inter/Intra ratio
+	float**		svmTrainFeatures;	//SVM training buffer
+	int*		svmSampleLabels;	//SVM training labels
+	float*		svmTmpFeature;		//one feature
+
 	//Reference centers
 	float**		referCenters;	//reference centers
 
@@ -163,6 +174,8 @@ typedef struct globalStructure
 	
 	char	cameraCaptureDir[260];	//camera capture
 	char	referCentersPath[260];	//reference centers binary
+
+	char	svmModelPath[260];		//svm model path
 
 
 	//limitations

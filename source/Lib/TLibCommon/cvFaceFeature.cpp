@@ -447,6 +447,7 @@ void train(gFaceReco* gf, gFaceRecoCV* gcv)
 	numPercent  = (int)(gf->numImageInList / 100);
 	numValidFaces = 0;
 
+	printf("Start...\n");
 	for ( i = 0; i < gf->numImageInList; i++)
 	{
 		//percentage progress
@@ -496,6 +497,10 @@ void train(gFaceReco* gf, gFaceRecoCV* gcv)
 			}
 			else
 			{
+				if ( gf->bVerification)
+				{
+					copyOneFeatureToBuffer(gf, numValidFaces);
+				}
 				//write features to binary file
 				dumpFeatures(gf, pFaceFeatBin);
 			}
@@ -598,7 +603,15 @@ void match(gFaceReco* gf, gFaceRecoCV* gcv)
 			extractReferDistFeaturesInMatch(gf);
 		}
 		gf->features.id = gf->imageList[i].id;
-		matchedID = matchFaceID(gf);
+
+		if ( gf->bVerification)
+		{
+			matchedID = matchFaceIDVerification(gf);
+		}
+		else
+		{
+			matchedID = matchFaceID(gf);
+		}
 
 		//Result
 		printf("Matched Face ID: %d\n----------------------------\n", matchedID);
@@ -623,11 +636,13 @@ void match(gFaceReco* gf, gFaceRecoCV* gcv)
 
 	//write benchmark result
 	fprintf(pResultOutput, "Benchmark of match result:\n");
-	fprintf(pResultOutput, "Overall match number: %d, Overall Correct Matches:%d, Accuracy: %.2f\n", overallTotal, overallCorrect, 100.0*overallCorrect/overallTotal);
+	fprintf(pResultOutput, "Overall match number: %d, Overall Correct Matches:%d, Accuracy: %.2f\n", 
+		overallTotal, overallCorrect, 100.0*overallCorrect/overallTotal);
 	fprintf(pResultOutput, "------------------------------------------------------\n\n");
 	for ( i = 0; i < gf->numTags; i++)
 	{
-		fprintf(pResultOutput, "ID: %d	%d of %d correct, Accuracy:%.2f\n-------------------------------------\n", i+1, correctMatch[i], totalInClass[i], 100.0*correctMatch[i]/totalInClass[i]);
+		fprintf(pResultOutput, "ID: %d	%d of %d correct, Accuracy:%.2f\n-------------------------------------\n", 
+			i+1, correctMatch[i], totalInClass[i], 100.0*correctMatch[i]/totalInClass[i]);
 	}
 
 
@@ -648,8 +663,111 @@ void match(gFaceReco* gf, gFaceRecoCV* gcv)
 /* train verification module using SVM */
 void trainVerification(gFaceReco* gf, gFaceRecoCV* gcv)
 {
+	//svm_classifer_clean<int,float> svm;
+	int**	svmPair;
+	int*	list;
+	int		numPairs;
+	int		i, j, cntIntra, cntInter, tmpPtr;
+	int		numIntraSamples, numInterSamples, numSamples;
 
+	numSamples = gf->svmNumSamples;
+	numIntraSamples = numSamples / ( 1 + gf->svmInterIntraRatio);
+	numInterSamples = numSamples - numIntraSamples;
+
+	//get features first
+	train(gf, gcv);
+
+	printf("Now start SVM Training...\n");
+	//calculate total number of pairs
+	numPairs = 0;
+	for ( i = 1; i < gf->numValidFaces; i++)
+	{
+		numPairs += i;
+	}
+	//allocate temp pairs
+	svmPair = (int**)malloc(sizeof(int*) * numPairs);
+	for ( i = 0; i < numPairs; i++)
+	{
+		svmPair[i] = (int*)malloc(sizeof(int) * 2);
+	}
+	list = (int*)malloc(sizeof(int) * numPairs);
+
+	//assign pairs
+	cntIntra = 0;
+	cntInter = 0;
+	for ( i = 0; i < gf->numValidFaces; i++)
+	{
+		for ( j = i + 1; j < gf->numValidFaces; j++)
+		{
+			//intra class up-down, inter classes reverse order
+			if ( gf->bufferFeatures[i].id == gf->bufferFeatures[j].id)
+			{
+				svmPair[cntIntra][0] = i;
+				svmPair[cntIntra][1] = j;
+				cntIntra++;
+			}
+			else
+			{
+				tmpPtr = numPairs - cntInter - 1;
+				svmPair[tmpPtr][0] = i;
+				svmPair[tmpPtr][1] = j;
+				cntInter++;
+			}
+		}
+	}
+
+	//generate SVM training data
+	assert( (cntIntra >= numIntraSamples) && (cntInter >= numInterSamples) && (cntInter > cntIntra));
+
+	//first pick up intra samples
+	for ( i = 0; i < cntIntra; i++)
+	{
+		list[i] = i;
+	}
+	shuffle(list, cntIntra);
+	for ( i = 0; i < numIntraSamples; i++)
+	{
+		extractAbsDist(gf, &gf->bufferFeatures[svmPair[list[i]][0]], &gf->bufferFeatures[svmPair[list[i]][1]], gf->svmTmpFeature);
+		memcpy(gf->svmTrainFeatures[i], gf->svmTmpFeature, sizeof(float) * gf->featLenTotal);
+		gf->svmSampleLabels[i] = 1;
+	}
+
+	//then inter samples
+	for ( i = 0; i < cntInter; i++)
+	{
+		list[i] = i + cntIntra;
+	}
+	shuffle(list, cntInter);
+	for ( i = 0; i < numInterSamples; i++)
+	{
+		extractAbsDist(gf, &gf->bufferFeatures[svmPair[list[i]][0]], &gf->bufferFeatures[svmPair[list[i]][1]], gf->svmTmpFeature);
+		memcpy(gf->svmTrainFeatures[i+numIntraSamples], gf->svmTmpFeature, sizeof(float) * gf->featLenTotal);
+		gf->svmSampleLabels[i+numIntraSamples] = -1;
+	}
+
+
+	//call svm training
+	svmTraining(gf->svmTrainFeatures, numSamples, gf->featLenTotal, gf->svmSampleLabels, gf->svmModelPath);
+
+
+	//clean-ups
+	for ( i = 0; i < numPairs; i++)
+	{
+		free(svmPair[i]);
+		svmPair[i] = NULL;
+	}
+	free(svmPair);
+	svmPair = NULL;
+	
+	free(list);
+	list = NULL;
 
 
 
 }//end trainVerification
+
+
+
+
+
+

@@ -39,10 +39,17 @@ void extractIntensityFeatures(gFaceReco* gf);
 int matchFaceID(gFaceReco* gf);
 float matchFeatureDist(float* feature1, float* feature2, int length);
 float matchFeatureHistDist(float* feature1, float* feature2, int length);
+int matchFaceIDVerification(gFaceReco* gf);
 
 void copyOneFeatureToBuffer(gFaceReco* gf, int idx);
 void extractReferDistFeatures(gFaceReco* gf, FILE* pFaceFeatBin); // for train only
 void extractReferDistFeaturesInMatch(gFaceReco* gf); // for match only
+void extractAbsDist(gFaceReco* gf, featStruct* feature1, featStruct* feature2, float* dist);
+
+void svmTraining(float ** features, int nSample, int featureSize, int * sampleLable, 
+				 char * modelFileName);
+void trainmodel(char*docfile,char* modelfile );
+void test(char *docfile,char*modelfile);	//svm test
 
 
 #endif //_FACE_FEATURE_H_

@@ -26,6 +26,8 @@ void main()
 	//initilization
 	gFaceReco		gf;
 	gFaceRecoCV		gcv;
+	gf.bIsTraining = 0;
+	gf.bIsMatching = 1;
 	config(&gf, "../../image/config.cfg");
 	initGlobalStruct(&gf);
 	initGlobalCVStruct(&gcv, &gf);
