@@ -49,6 +49,8 @@ typedef struct globalStructure
 	//global switchs
 	bool		bIsTraining;	//training phase
 	bool		bIsMatching;	//matching phase
+	bool		bUseAllSamples;	//SVM: use all the samples
+	bool		bWhiteList;		//train white list
 
 	bool		bVerification;	//verification mode
 	bool		bUseLBP;		//use LBP features
@@ -131,12 +133,20 @@ typedef struct globalStructure
 	UInt*		IntensityHist;
 
 	//SVM
+	int			magicNumber;		//parameter C
+	int			bias;
 	int			svmNumClasses;		//number of classes in svm
 	int			svmNumSamples;		//svm samples
 	int			svmInterIntraRatio;	//Inter/Intra ratio
 	float**		svmTrainFeatures;	//SVM training buffer
 	int*		svmSampleLabels;	//SVM training labels
 	float*		svmTmpFeature;		//one feature
+	float*		svmModel;			//trained model for matching
+	float*		svmModelTmp;
+
+	//white list
+	int			sizeList;			//white list length
+	int*		whiteList;			
 
 	//Reference centers
 	float**		referCenters;	//reference centers
@@ -176,6 +186,7 @@ typedef struct globalStructure
 	char	referCentersPath[260];	//reference centers binary
 
 	char	svmModelPath[260];		//svm model path
+	char	svmModelDir[260];		//svm model directory
 
 
 	//limitations

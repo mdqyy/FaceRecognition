@@ -36,7 +36,10 @@ void main()
 
 	//--------------------------------------------------//
 	//To do
-	match(&gf, &gcv);
+	if (gf.bWhiteList)
+		checkWhiteList(&gf, &gcv);
+	else
+		match(&gf, &gcv);
 
 
 	//--------------------------------------------------//

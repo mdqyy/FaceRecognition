@@ -22,6 +22,7 @@
 #include <io.h>
 
 using namespace cv;
+using namespace std;
 
 
 void initGlobalCVStruct(gFaceRecoCV* gcv, gFaceReco* gf)
@@ -434,11 +435,14 @@ void train(gFaceReco* gf, gFaceRecoCV* gcv)
 	}
 
 	//write switches first
-	fwrite(&(gf->bUseReferDist), sizeof(bool), 1, pFaceFeatBin);
-	fwrite(&(gf->bUseLBP), sizeof(bool), 1, pFaceFeatBin);
-	fwrite(&(gf->bUseGabor), sizeof(bool), 1, pFaceFeatBin);
-	fwrite(&(gf->bUseIntensity), sizeof(bool), 1, pFaceFeatBin);
-	fwrite(&(gf->featLenTotal), sizeof(int), 1, pFaceFeatBin);
+	if ( gf->bOverWriteBin)
+	{
+		fwrite(&(gf->bUseReferDist), sizeof(bool), 1, pFaceFeatBin);
+		fwrite(&(gf->bUseLBP), sizeof(bool), 1, pFaceFeatBin);
+		fwrite(&(gf->bUseGabor), sizeof(bool), 1, pFaceFeatBin);
+		fwrite(&(gf->bUseIntensity), sizeof(bool), 1, pFaceFeatBin);
+		fwrite(&(gf->featLenTotal), sizeof(int), 1, pFaceFeatBin);
+	}
 
 	//process list
 	processTrainInput(gf, gcv);
@@ -535,6 +539,8 @@ void match(gFaceReco* gf, gFaceRecoCV* gcv)
 	UInt*		correctMatch;
 	UInt*		totalInClass;
 	int			overallCorrect, overallTotal;
+	//debug only
+	FILE*		pSVMDebug = fopen("../../image/svmDebug.txt","w");
 
 	//open result output text file
 	err = fopen_s(&pResultOutput, gf->resultTxtPath, "w");
@@ -604,9 +610,10 @@ void match(gFaceReco* gf, gFaceRecoCV* gcv)
 		}
 		gf->features.id = gf->imageList[i].id;
 
+		
 		if ( gf->bVerification)
 		{
-			matchedID = matchFaceIDVerification(gf);
+			matchedID = matchFaceIDVerification(gf, pSVMDebug);
 		}
 		else
 		{
@@ -654,6 +661,8 @@ void match(gFaceReco* gf, gFaceRecoCV* gcv)
 	free(totalInClass);
 
 
+	//debug
+	fclose(pSVMDebug);
 
 
 }//end match
@@ -663,7 +672,6 @@ void match(gFaceReco* gf, gFaceRecoCV* gcv)
 /* train verification module using SVM */
 void trainVerification(gFaceReco* gf, gFaceRecoCV* gcv)
 {
-	//svm_classifer_clean<int,float> svm;
 	int**	svmPair;
 	int*	list;
 	int		numPairs;
@@ -716,38 +724,66 @@ void trainVerification(gFaceReco* gf, gFaceRecoCV* gcv)
 		}
 	}
 
-	//generate SVM training data
-	assert( (cntIntra >= numIntraSamples) && (cntInter >= numInterSamples) && (cntInter > cntIntra));
+	if ( !gf->bUseAllSamples)	//limited samples
+	{
+		//generate SVM training data
+		assert( (cntIntra >= numIntraSamples) && (cntInter >= numInterSamples) && (cntInter > cntIntra));
 
-	//first pick up intra samples
-	for ( i = 0; i < cntIntra; i++)
-	{
-		list[i] = i;
-	}
-	shuffle(list, cntIntra);
-	for ( i = 0; i < numIntraSamples; i++)
-	{
-		extractAbsDist(gf, &gf->bufferFeatures[svmPair[list[i]][0]], &gf->bufferFeatures[svmPair[list[i]][1]], gf->svmTmpFeature);
-		memcpy(gf->svmTrainFeatures[i], gf->svmTmpFeature, sizeof(float) * gf->featLenTotal);
-		gf->svmSampleLabels[i] = 1;
-	}
+		//first pick up intra samples
+		for ( i = 0; i < cntIntra; i++)
+		{
+			list[i] = i;
+		}
+		shuffle(list, cntIntra);
+		for ( i = 0; i < numIntraSamples; i++)
+		{
+			extractAbsDist(gf, &gf->bufferFeatures[svmPair[list[i]][0]], &gf->bufferFeatures[svmPair[list[i]][1]], gf->svmTmpFeature);
+			memcpy(gf->svmTrainFeatures[i], gf->svmTmpFeature, sizeof(float) * gf->featLenTotal);
+			gf->svmSampleLabels[i] = 2;
+		}
 
-	//then inter samples
-	for ( i = 0; i < cntInter; i++)
-	{
-		list[i] = i + cntIntra;
+		//then inter samples
+		for ( i = 0; i < cntInter; i++)
+		{
+			list[i] = i + cntIntra;
+		}
+		shuffle(list, cntInter);
+		for ( i = 0; i < numInterSamples; i++)
+		{
+			extractAbsDist(gf, &gf->bufferFeatures[svmPair[list[i]][0]], &gf->bufferFeatures[svmPair[list[i]][1]], gf->svmTmpFeature);
+			memcpy(gf->svmTrainFeatures[i+numIntraSamples], gf->svmTmpFeature, sizeof(float) * gf->featLenTotal);
+			gf->svmSampleLabels[i+numIntraSamples] = 1;
+		}
 	}
-	shuffle(list, cntInter);
-	for ( i = 0; i < numInterSamples; i++)
+	else
 	{
-		extractAbsDist(gf, &gf->bufferFeatures[svmPair[list[i]][0]], &gf->bufferFeatures[svmPair[list[i]][1]], gf->svmTmpFeature);
-		memcpy(gf->svmTrainFeatures[i+numIntraSamples], gf->svmTmpFeature, sizeof(float) * gf->featLenTotal);
-		gf->svmSampleLabels[i+numIntraSamples] = -1;
+		//use all the samples
+		gf->svmTrainFeatures = (float**)malloc(sizeof(float*) * numPairs);
+		for ( i = 0; i < numPairs; i++)
+		{
+			gf->svmTrainFeatures[i] = (float*)malloc(sizeof(float) * gf->featLenTotal);
+		}
+		gf->svmSampleLabels = (int*)malloc(sizeof(int) * numPairs);
+		gf->svmNumSamples = numPairs;
+		numSamples = numPairs;
+		for ( i = 0; i < cntIntra; i++)
+		{
+			extractAbsDist(gf, &gf->bufferFeatures[svmPair[i][0]], &gf->bufferFeatures[svmPair[i][1]], gf->svmTmpFeature);
+			memcpy(gf->svmTrainFeatures[i], gf->svmTmpFeature, sizeof(float) * gf->featLenTotal);
+			gf->svmSampleLabels[i] = 2;
+		}
+		for ( i = cntIntra; i < cntIntra + cntInter; i++)
+		{
+			extractAbsDist(gf, &gf->bufferFeatures[svmPair[i][0]], &gf->bufferFeatures[svmPair[i][1]], gf->svmTmpFeature);
+			memcpy(gf->svmTrainFeatures[i], gf->svmTmpFeature, sizeof(float) * gf->featLenTotal);
+			gf->svmSampleLabels[i] = 1;
+		}
+
 	}
 
 
 	//call svm training
-	svmTraining(gf->svmTrainFeatures, numSamples, gf->featLenTotal, gf->svmSampleLabels, gf->svmModelPath);
+	svmTraining(gf->svmTrainFeatures, numSamples, gf->featLenTotal, gf->svmSampleLabels, gf->svmModelPath, gf->magicNumber);
 
 
 	//clean-ups
@@ -768,6 +804,290 @@ void trainVerification(gFaceReco* gf, gFaceRecoCV* gcv)
 
 
 
+/* train white list for several people */
+void trainWhiteList(gFaceReco* gf, gFaceRecoCV* gcv)
+{
+	int			i, j, ptr;
+	int			sizeList, startID, endID;
+	int			numPairs;
+	int*		whiteList = NULL;
+	char		path[260];
+	bool		b1, b2;
+	FILE*		fp;
+	errno_t		err;
+
+	
+	//preprocessing for training information
+	startID = gf->trainStartID;
+	endID = gf->trainEndID;
+	sprintf(path, "%swhiteList.txt", gf->svmModelDir);
+	err = fopen_s(&fp, path, "w");
+	if ( err != 0)
+	{
+		printf("Error opening whiteList.txt to write!\n");
+		system("pause");
+		exit(-1);
+	}
+	printf("---------White List Training---------\n");
+	printf("Training start from ID:%d to ID:%d\n", startID, endID);
+	printf("Please input the number of people in the white list!\n");
+	cin >> sizeList;
+	fprintf(fp, "%d\n", sizeList);
+	if ( sizeList > (endID - startID + 1))
+	{
+		//error
+		printf("Error: number larger than the size of training data!\n");
+		system("pause");
+		fclose(fp);
+		exit(1);
+	}
+	else
+	{
+		whiteList = (int*)malloc(sizeof(int) * sizeList);
+		for ( i = 0; i < sizeList; i++)
+		{
+			printf("Input the ID of %d:\n", i+1);
+			cin >> whiteList[i];
+			fprintf(fp, "%d\n", whiteList[i]);
+			if ( (whiteList[i] < startID) || (whiteList[i] > endID))
+			{
+				printf("Error: input ID exceeds the range of training data!\n");
+				system("pause");
+				fclose(fp);
+				exit(1);
+			}
+		}
+	}
+	fclose(fp);
+	//end preprocessing
+
+	//start training
+	//train(gf, gcv);
+	loadFeatures(gf);
+
+	printf("Features loaded, now start SVM training...\n");
+
+	//SVM
+	//calculate # pairs
+	numPairs = 0;
+	for ( i = 0; i < gf->numLoadedFaces; i++)
+	{
+		for ( j = i + 1; j < gf->numLoadedFaces; j++)
+		{
+			if ( isInList(whiteList, sizeList, gf->loadedFeatures[i].id) || isInList(whiteList, sizeList, gf->loadedFeatures[j].id))
+				numPairs++;
+		}
+	}
+
+	gf->svmNumSamples = numPairs;
+	gf->svmTrainFeatures = (float**)malloc(sizeof(float*) * numPairs);
+	for ( i = 0; i < numPairs; i++)
+	{
+		gf->svmTrainFeatures[i] = (float*)malloc(sizeof(float) * gf->featLenTotal);
+	}
+	gf->svmSampleLabels = (int*)malloc(sizeof(float) * numPairs);
+
+	//prepare SVM training samples
+	ptr = 0;
+	for ( i = 0; i < gf->numLoadedFaces; i++)
+	{
+		for ( j = i+1 ; j < gf->numLoadedFaces; j++)
+		{
+			b1 = isInList(whiteList, sizeList, gf->loadedFeatures[i].id);
+			b2 = isInList(whiteList, sizeList, gf->loadedFeatures[j].id);
+			if ( b1 && b2)
+			{
+				//both in the list
+				extractAbsDist(gf, &gf->loadedFeatures[i], &gf->loadedFeatures[j], gf->svmTmpFeature);
+				memcpy(gf->svmTrainFeatures[ptr], gf->svmTmpFeature, sizeof(float) * gf->featLenTotal);
+				gf->svmSampleLabels[ptr] = 2;
+				ptr++;
+			}
+			else if ( b1 ^ b2)
+			{
+				//one in one out
+				extractAbsDist(gf, &gf->loadedFeatures[i], &gf->loadedFeatures[j], gf->svmTmpFeature);
+				memcpy(gf->svmTrainFeatures[ptr], gf->svmTmpFeature, sizeof(float) * gf->featLenTotal);
+				gf->svmSampleLabels[ptr] = 1;
+				ptr++;
+			}
+		}
+	}
+	assert(ptr == numPairs);
+	sprintf(path, "%swhiteList.model", gf->svmModelDir);
+	svmTraining(gf->svmTrainFeatures, numPairs, gf->featLenTotal, gf->svmSampleLabels, path, gf->magicNumber);
+
+	//train in-list one to the rest models
+	for ( i = 0; i < sizeList; i++)
+	{
+		trainOneToRestModels(gf, whiteList[i], whiteList, sizeList);
+	}
 
 
 
+	//clean-ups
+	if ( whiteList != NULL)
+	{
+		free(whiteList);
+	}
+	whiteList = NULL;
+
+
+
+
+}//end trainWhiteList
+
+/* white list matching */
+void checkWhiteList(gFaceReco* gf, gFaceRecoCV* gcv)
+{
+	int			i, j, k;
+	int			matchedID;
+	bool		bIsInList;
+	IplImage*	pFrame = NULL;
+	FILE*		pResultOutput;
+	errno_t		err;
+	UInt*		correctMatch;
+	UInt*		totalInClass;
+	int			overallCorrect, overallTotal;
+
+	//open result output text file
+	err = fopen_s(&pResultOutput, gf->resultTxtPath, "w");
+	if (err != 0)
+	{
+		printf("Can't open result text file to write!\n");
+		system("pause");
+		exit(-1);
+	}
+
+	//load saved features from binary file
+	loadFeatures(gf);
+
+	//process list
+	processMatchInput(gf, gcv);
+
+	//statistic initilization
+	correctMatch = (UInt*)malloc(sizeof(UInt) * gf->numTags);
+	totalInClass = (UInt*)malloc(sizeof(UInt) * gf->numTags);
+	for ( i = 0; i < gf->numTags; i++)
+	{
+		correctMatch[i] = 0;
+		totalInClass[i] = 0;
+	}
+	overallCorrect = 0;
+	overallTotal = 0;
+
+	matchedID = 0;
+	for ( i = 0; i < gf->numImageInList; i++)
+	{
+		pFrame = cvLoadImage(gf->imageList[i].path, CV_LOAD_IMAGE_COLOR);
+		if ( pFrame == NULL)
+		{
+			printf("Error load image in train list!\n");
+			system("pause");
+			exit(-1);
+		}
+		//run face and eyes detection
+		runFaceAndEyesDetect(pFrame, gf, gcv);
+
+		//face alignment
+		faceAlign(pFrame, gcv->warpedImg, gf);
+		
+
+		//feature extraction
+		if ( gf->bUseLBP)
+		{
+			extractLBPFeatures(gf);
+		}
+		
+		if ( gf->bUseGabor)
+		{
+			extractGaborFeatures(gf);
+		}
+
+		if ( gf->bUseIntensity)
+		{
+			extractIntensityFeatures(gf);
+		}
+
+		if ( gf->bUseReferDist)
+		{
+			extractReferDistFeaturesInMatch(gf);
+		}
+		gf->features.id = gf->imageList[i].id;
+
+		if ( gf->bWhiteList)
+		{
+			bIsInList = matchFaceWhiteList(gf);
+			if ( bIsInList)
+			{
+				float maxProb, tmpProb;
+				//bIsInList == 1 if in list
+				printf("ID: %d IN LIST!   ", gf->features.id);
+				//find out which one it belongs to
+				maxProb = -1;
+				matchedID = 0;
+				for ( j = 0; j < gf->sizeList; j++)
+				{
+					tmpProb = matchOneInList(gf, gf->whiteList[j]);
+					if (tmpProb > maxProb)
+					{
+						maxProb = tmpProb;
+						matchedID = gf->whiteList[j];
+					}
+				}
+				printf("Matched ID: %d\n", matchedID);
+			}
+			else
+			{
+				printf("ID: %d NOT IN LIST!\n", gf->features.id);
+			}
+		}
+		
+
+
+		//Benchmark only
+		if ( bIsInList && isInList(gf->whiteList, gf->sizeList, gf->features.id))
+		{
+			if ( matchedID == gf->features.id)
+			{
+				//correct
+				correctMatch[gf->imageList[i].id - 1] += 1;
+				overallCorrect++;
+			}
+		}
+		else if ( !bIsInList && !(isInList(gf->whiteList, gf->sizeList, gf->features.id)))
+		{
+			//correct
+			correctMatch[gf->imageList[i].id - 1] += 1;
+			overallCorrect++;
+		}
+		totalInClass[gf->imageList[i].id - 1] += 1;
+		overallTotal++;
+
+
+		cvReleaseImage(&pFrame);
+	}//end list
+
+
+	//write benchmark result
+	fprintf(pResultOutput, "Benchmark of match result:\n");
+	fprintf(pResultOutput, "Overall match number: %d, Overall Correct Matches:%d, Accuracy: %.2f\n", 
+		overallTotal, overallCorrect, 100.0*overallCorrect/overallTotal);
+	fprintf(pResultOutput, "------------------------------------------------------\n\n");
+	for ( i = 0; i < gf->numTags; i++)
+	{
+		fprintf(pResultOutput, "ID: %d	%d of %d correct, Accuracy:%.2f\n-------------------------------------\n", 
+			i+1, correctMatch[i], totalInClass[i], 100.0*correctMatch[i]/totalInClass[i]);
+	}
+
+	printf("Overall match number: %d, Overall Correct Matches:%d, Accuracy: %.2f\n", 
+		overallTotal, overallCorrect, 100.0*overallCorrect/overallTotal);
+
+	
+	//clean-ups
+	fclose(pResultOutput);
+	free(correctMatch);
+	free(totalInClass);
+
+
+}//end checkWhiteList

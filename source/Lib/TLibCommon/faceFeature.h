@@ -19,6 +19,7 @@
 
 #include "global.h"
 #include "get_config.h"
+#include "TLibRankSVM/train.h"
 
 void config(gFaceReco* gf, char* configFile);				//configuration
 void initGlobalStruct(gFaceReco* gf);
@@ -39,17 +40,21 @@ void extractIntensityFeatures(gFaceReco* gf);
 int matchFaceID(gFaceReco* gf);
 float matchFeatureDist(float* feature1, float* feature2, int length);
 float matchFeatureHistDist(float* feature1, float* feature2, int length);
-int matchFaceIDVerification(gFaceReco* gf);
+int	matchFaceWhiteList(gFaceReco* gf);
+int matchFaceIDVerification(gFaceReco* gf, FILE* pDebug);
 
 void copyOneFeatureToBuffer(gFaceReco* gf, int idx);
 void extractReferDistFeatures(gFaceReco* gf, FILE* pFaceFeatBin); // for train only
 void extractReferDistFeaturesInMatch(gFaceReco* gf); // for match only
 void extractAbsDist(gFaceReco* gf, featStruct* feature1, featStruct* feature2, float* dist);
 
-void svmTraining(float ** features, int nSample, int featureSize, int * sampleLable, 
-				 char * modelFileName);
+void svmTraining(float ** features, int nSample, int featureSize, int * sampleLable, char * modelFileName, float c);
 void trainmodel(char*docfile,char* modelfile );
 void test(char *docfile,char*modelfile);	//svm test
+
+bool isInList(int* list, int listLength, int queryID);
+void trainOneToRestModels(gFaceReco* gf, int id, int* whiteList, int sizeList);
+float matchOneInList(gFaceReco* gf, int id);
 
 
 #endif //_FACE_FEATURE_H_

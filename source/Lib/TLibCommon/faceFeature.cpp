@@ -17,11 +17,9 @@
 
 #include "faceFeature.h"
 #include "kmean.h"
-#include "svm_classifer_clean.h"
 #include <io.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 
 void config(gFaceReco* gf, char* configFile)
 {
@@ -43,6 +41,8 @@ void config(gFaceReco* gf, char* configFile)
 		LoadParmBool(m, gf->bUniformLBP, "UniformLBP");
 		LoadParmBool(m, gf->bChiDist, "ChiDist");
 		LoadParmBool(m, gf->bOverWriteBin, "OverWriteBin");
+		LoadParmBool(m, gf->bUseAllSamples, "bUseAllSamples");
+		LoadParmBool(m, gf->bWhiteList, "bWhiteList");
 
 		//limits
 		LoadParm(m, gf->maxFaceTags, "maxFaceTags");
@@ -92,6 +92,8 @@ void config(gFaceReco* gf, char* configFile)
 		LoadParm(m, gf->svmNumClasses, "svmNumClasses");
 		LoadParm(m, gf->svmNumSamples, "svmNumSamples");
 		LoadParm(m, gf->svmInterIntraRatio, "svmInterIntraRatio");
+		LoadParm(m, gf->magicNumber, "magicNumber");
+		LoadParm(m, gf->bias, "bias");
 
 
 
@@ -113,6 +115,7 @@ void config(gFaceReco* gf, char* configFile)
 		gf->bUniformLBP = 1;
 		gf->bChiDist = 1;
 		gf->bOverWriteBin = 1;
+		gf->bWhiteList = 0;
 
 		//limits
 		gf->maxFaceTags = 300;
@@ -161,6 +164,9 @@ void config(gFaceReco* gf, char* configFile)
 		gf->svmNumClasses = 2;
 		gf->svmNumSamples = 3000;
 		gf->svmInterIntraRatio = 5;
+		gf->bUseAllSamples = 0;
+		gf->magicNumber = 1;
+		gf->bias = -1;
 
 
 
@@ -181,6 +187,7 @@ void config(gFaceReco* gf, char* configFile)
 	sprintf(gf->cameraCaptureDir, "%s", "../../image/cameraCapture/");
 	sprintf(gf->referCentersPath, "%s", "../../image/referCenters.bin");
 	sprintf(gf->svmModelPath, "%s", "../../image/svmModel.model");
+	sprintf(gf->svmModelDir, "%s", "../../image/models/");
 
 	gf->faceWidth1 = gf->faceWidth / 2;
 	gf->faceWidth2 = gf->faceWidth / 4;
@@ -227,7 +234,10 @@ void config(gFaceReco* gf, char* configFile)
 
 
 
-
+	if ( gf->bWhiteList)
+	{
+		gf->bUseAllSamples = 1;
+	}
 
 	
 
@@ -363,7 +373,7 @@ void initGlobalStruct(gFaceReco* gf)
 		gf->IntensityHist = NULL;
 	}
 
-	if ( (gf->bUseReferDist) || (gf->bVerification))
+	if ( ((gf->bUseReferDist) || (gf->bVerification)) && (gf->bIsTraining))
 	{
 		int i;
 		gf->bufferFeatures = (featStruct*)malloc(sizeof(featStruct) * gf->maxNumImages);
@@ -396,6 +406,17 @@ void initGlobalStruct(gFaceReco* gf)
 		gf->svmSampleLabels = NULL;
 	}
 
+	if ( (gf->bVerification) && (gf->bIsMatching))
+	{
+		gf->svmModel = (float*)malloc(sizeof(int) * gf->featLenTotal);
+		gf->svmModelTmp = (float*)malloc(sizeof(int) * gf->featLenTotal);
+	}
+	else
+	{
+		gf->svmModel = NULL;
+		gf->svmModelTmp = NULL;
+	}
+
 	if ( gf->bVerification)
 	{
 		gf->svmTmpFeature = (float*)malloc(sizeof(int) * gf->featLenTotal);
@@ -404,6 +425,8 @@ void initGlobalStruct(gFaceReco* gf)
 	{
 		gf->svmTmpFeature = NULL;
 	}
+
+	gf->whiteList = NULL;
 
 
 
@@ -536,6 +559,12 @@ void freeGlobalStruct(gFaceReco* gf)
 	{
 		free( gf->svmTmpFeature);
 		gf->svmTmpFeature = NULL;
+	}
+
+	if ( gf->whiteList != NULL)
+	{
+		free(gf->whiteList);
+		gf->whiteList = NULL;
 	}
 
 
@@ -939,6 +968,60 @@ void loadFeatures(gFaceReco* gf)
 		fclose(pWeightBin);
 	}
 
+	//load SVM whitelist model
+	if ( (gf->bWhiteList) && (gf->bIsMatching))
+	{
+		FILE*	pModel;
+		char	tmp[1024];
+		float	temp;
+		int		size;
+		sprintf(tmp, "%swhiteList.model", gf->svmModelDir);
+		err = fopen_s(&pModel, tmp, "r");
+		if (err != 0)
+		{
+			printf("Can't open white list model to read!\n");
+			system("pause");
+			exit(-1);
+		}
+
+		for ( i = 0; i < 5; i++)	//some header info, throw out
+		{
+			fgets(tmp, 100, pModel);
+		}
+
+		for ( i = 0; i < gf->featLenTotal; i++)
+		{
+			fscanf(pModel, "%f \n", &gf->svmModel[i]);
+		}
+
+		assert(fscanf(pModel, "%f", &temp) == EOF);
+
+		fclose(pModel);
+
+		//open white list record
+		sprintf(tmp, "%swhiteList.txt", gf->svmModelDir);
+		err = fopen_s(&pModel, tmp, "r");
+		if (err != 0)
+		{
+			printf("Can't open white list model to read!\n");
+			system("pause");
+			exit(-1);
+		}
+		fscanf(pModel, "%d\n", &size);
+		if ( size > 0)
+		{
+			gf->sizeList = size;
+			gf->whiteList = (int*)malloc(sizeof(int) * size);
+			for ( i = 0; i < size; i++)
+			{
+				fscanf(pModel, "%d\n", &gf->whiteList[i]);
+			}
+		}
+		fclose(pModel);
+
+	}
+
+
 	
 
 	printf("Features loaded!\n");
@@ -1332,8 +1415,55 @@ float matchFeatureHistDist(float* feature1, float* feature2, int length)
 }//end matchFeatureDist
 
 
+/* match face in white list */
+int	matchFaceWhiteList(gFaceReco* gf)
+{
+	int				i, j;
+	int				matchedID;
+	int				numLoadedFaces;
+	featStruct*		loadedFeatures;
+	featStruct*		currFeatures;
+	float*			svmTmpFeatures;
+	float			score;
+	int				voteBin, capBin;
+
+	loadedFeatures	= gf->loadedFeatures;
+	currFeatures	= &gf->features;
+	numLoadedFaces	= gf->numLoadedFaces;
+	svmTmpFeatures	= gf->svmTmpFeature;
+	matchedID		= 0;
+
+	capBin = 0;
+	voteBin = 0;
+	for ( i = 0; i < numLoadedFaces; i++)
+	{
+		if ( isInList(gf->whiteList, gf->sizeList, loadedFeatures[i].id))
+		{
+			score = 0;
+			extractAbsDist(gf, &loadedFeatures[i], currFeatures, svmTmpFeatures);
+			for ( j = 0; j < gf->featLenTotal; j++)
+			{
+				score += svmTmpFeatures[j] * gf->svmModel[j];
+			}
+			if ( score > gf->bias)
+			{
+				voteBin++;
+			}
+			capBin++;
+		}
+	}
+
+	if ( (voteBin / capBin * 1.0) > 0.5)
+		return 1;
+	else
+		return 0;
+
+
+}//end matchFaceWhiteList
+
+
 /* match face ID using verification method */
-int matchFaceIDVerification(gFaceReco* gf)
+int matchFaceIDVerification(gFaceReco* gf, FILE* pDebug)
 {
 	int				i;
 	int				matchedID;
@@ -1342,7 +1472,6 @@ int matchFaceIDVerification(gFaceReco* gf)
 	featStruct*		loadedFeatures;
 	featStruct*		currFeatures;
 	float*			svmTmpFeatures;
-	svm_classifer_clean<int,float> svm;
 	int				fType = 4;
 	float			score;
 	int*			voteBin, *capBin;
@@ -1357,11 +1486,11 @@ int matchFaceIDVerification(gFaceReco* gf)
 	numLoadedFaces	= gf->numLoadedFaces;
 	svmTmpFeatures	= gf->svmTmpFeature;
 	matchedID		= 0;
-	maxVote			= 0;
+	maxVote			= -1;
 	tmpVote			= 0;
 	voteBin			= (int*)malloc(sizeof(int) * gf->maxFaceTags);
 	capBin			= (int*)malloc(sizeof(int) * gf->maxFaceTags);
-	svm.svm_init_clean(gf->svmModelPath);		//load svm model
+	//svm.svm_init_clean(gf->svmModelPath);		//load svm model
 
 	for ( i = 0; i < gf->maxFaceTags; i++)
 	{
@@ -1372,7 +1501,7 @@ int matchFaceIDVerification(gFaceReco* gf)
 	for ( i = 0; i < numLoadedFaces; i++)
 	{
 		extractAbsDist(gf, currFeatures, &(loadedFeatures[i]), svmTmpFeatures);
-		svm.svm_classifier_clean(&fType, svmTmpFeatures, &score, gf->featLenTotal, 1);
+		//svm.svm_classifier_clean(&fType, svmTmpFeatures, &score, gf->featLenTotal, 1);
 		capBin[loadedFeatures[i].id - 1] += 1;
 		if ( score > 0)
 		{
@@ -1380,6 +1509,8 @@ int matchFaceIDVerification(gFaceReco* gf)
 		}
 	}
 
+	//debug
+	fprintf(pDebug, "%d	", currFeatures->id);
 	for ( i = 0; i < gf->maxFaceTags; i++)
 	{
 		if ( capBin[i] > 0)
@@ -1389,12 +1520,12 @@ int matchFaceIDVerification(gFaceReco* gf)
 			if ( i == currFeatures->id - 1)
 			{
 				incorrectMatch += capBin[i] - voteBin[i];
-				printf("%d	Correct: %.2f\n", i+1, tmpVote * 100);
+				fprintf(pDebug, "%.2f	", tmpVote * 100);
 			}
 			else
 			{
 				incorrectMatch += voteBin[i];
-				printf("%d	Incorrect: %.2f\n", i+1, tmpVote*100);
+				fprintf(pDebug, "%.2f	", tmpVote*100);
 			}
 			totalMatch += capBin[i];
 			//end debug
@@ -1407,8 +1538,8 @@ int matchFaceIDVerification(gFaceReco* gf)
 	}
 	
 	//debug only
-	printf("Single match SVM rate: %.2f\n", (1.0 - (float)incorrectMatch/totalMatch)*100);
-	system("pause");
+	fprintf(pDebug, "%.2f\n", (1.0 - (float)incorrectMatch/totalMatch)*100);
+	
 	//
 	//clean-up
 	free(voteBin);
@@ -1637,16 +1768,15 @@ void extractReferDistFeaturesInMatch(gFaceReco* gf)
 /** svm training
 * write features into binary file, then call trainModel and test functions
 **/
-void svmTraining(float ** features, int nSample, int featureSize, int * sampleLable, 
-				 char * modelFileName)
+void svmTraining(float ** features, int nSample, int featureSize, int * sampleLable, char * modelFileName, float c)
 {
-	int i;
+	int i, j;
 	errno_t		err;
 	FILE* fp;
 
-	char *svmTrainFile = "../trainFile";
+	char *svmTrainFile = "../../image/trainFile.dat";
 
-	err = fopen_s(&fp, svmTrainFile, "wb");
+	err = fopen_s(&fp, svmTrainFile, "w");
 	if ( err != 0)
 	{
 		printf("Error opening svm training file to write!\n");
@@ -1654,32 +1784,36 @@ void svmTraining(float ** features, int nSample, int featureSize, int * sampleLa
 		exit(-1);
 	}
 
-	int version = 200;
-	int data_typeid = 4;  //feature default
-	int target_typeid = 3; //target +/-1 int 
-
-	fwrite(&version, sizeof(int), 1, fp);
-	fwrite(&data_typeid, sizeof(int), 1, fp);
-	fwrite(&target_typeid, sizeof(int), 1, fp);
-	fwrite(&nSample, sizeof(int), 1, fp);
-	fwrite(&featureSize, sizeof(int), 1, fp);
-	fclose (fp);
-
-
-	fp = fopen(svmTrainFile,"ab");
-
+	
+	//write to file
+	printf("Prepare to write features, it may take a while depending on disk IO performance...\n");
 	for (i=0;i<nSample;i++)
 	{
-		fwrite(&sampleLable[i], sizeof(int), 1, fp);
-		//printf("%d\n",sampleLable[i]);
-		fwrite(features[i],sizeof(float),featureSize,fp);
+		fprintf(fp, "%d qid:1 ", sampleLable[i]);
+		for ( j = 0; j < featureSize; j++)
+		{
+			fprintf(fp, "%d:%d ", j+1, (int)features[i][j]);
+		}
+		fprintf(fp,"\n");
 	}
 
 	fclose(fp);
+	printf("Finished writing features, will start SVM training...\n");
 
-	trainmodel(svmTrainFile, modelFileName);
+	
 
-	test(svmTrainFile, modelFileName);
+	if ( nSample * featureSize < 8000 * 6000 )
+	{
+		svmMain(c, svmTrainFile, modelFileName);
+	}
+	else
+	{
+		char parameters[500];
+		sprintf(parameters, "..\\..\\ranksvm.exe -c %f %s %s", c, svmTrainFile, modelFileName);
+		//memory limitation, call outside executives
+		system(parameters);
+	}
+
 	unlink(svmTrainFile);
 
 }//end svmTraining
@@ -1748,3 +1882,174 @@ void extractAbsDist(gFaceReco* gf, featStruct* feature1, featStruct* feature2, f
 
 
 }//end extractAbsDist
+
+
+/* return if the query ID is in the list */
+bool isInList(int* list, int listLength, int queryID)
+{
+	int		i;
+	bool	found;
+
+	found = FALSE;
+	for ( i = 0; i < listLength; i++)
+	{
+		if ( list[i] == queryID)
+		{
+			found = TRUE;
+			break;
+		}
+	}
+
+	return found;
+
+
+}//end isInList
+
+
+/* Train one to rest model in white list */
+void trainOneToRestModels(gFaceReco* gf, int id, int* whiteList, int sizeList)
+{
+	int			i, j, k;
+	int			numPairs;
+	int			ptr;
+	char		path[260];
+	bool		b1, b2;
+
+	//calculate # pairs
+	numPairs = 0;
+	for ( i = 0; i < gf->numLoadedFaces; i++)
+	{
+		for ( j = i + 1; j < gf->numLoadedFaces; j++)
+		{
+			b1 = isInList(whiteList, sizeList, gf->loadedFeatures[i].id);
+			b2 = isInList(whiteList, sizeList, gf->loadedFeatures[j].id);
+			if ( b1 && b2 && ( (gf->loadedFeatures[i].id == id) || (gf->loadedFeatures[j].id == id)))
+				numPairs++;
+		}
+	}
+
+	//if # pairs larger than current one, reallocate the memory
+	if (numPairs > gf->svmNumSamples)
+	{
+		gf->svmTrainFeatures = (float**)realloc(gf->svmTrainFeatures, numPairs);
+		for ( k = gf->svmNumSamples; k < numPairs; k++)
+		{
+			gf->svmTrainFeatures[k] = (float*)malloc(sizeof(float) * gf->featLenTotal);
+		}
+		gf->svmSampleLabels = (int*)realloc(gf->svmSampleLabels, numPairs);
+		gf->svmNumSamples = numPairs;
+	}
+
+	//prepare SVM training samples
+	ptr = 0;
+	for ( i = 0; i < gf->numLoadedFaces; i++)
+	{
+		for ( j = i+1 ; j < gf->numLoadedFaces; j++)
+		{
+			b1 = isInList(whiteList, sizeList, gf->loadedFeatures[i].id);
+			b2 = isInList(whiteList, sizeList, gf->loadedFeatures[j].id);
+			if ( b1 && b2)
+			{
+				b1 = ( gf->loadedFeatures[i].id == id);
+				b2 = ( gf->loadedFeatures[j].id == id);
+				if ( b1 && b2)
+				{
+					//both intra
+					extractAbsDist(gf, &gf->loadedFeatures[i], &gf->loadedFeatures[j], gf->svmTmpFeature);
+					memcpy(gf->svmTrainFeatures[ptr], gf->svmTmpFeature, sizeof(float) * gf->featLenTotal);
+					gf->svmSampleLabels[ptr] = 2;
+					ptr++;
+				}
+				else if ( b1 ^ b2)
+				{
+					//one intra one inter
+					extractAbsDist(gf, &gf->loadedFeatures[i], &gf->loadedFeatures[j], gf->svmTmpFeature);
+					memcpy(gf->svmTrainFeatures[ptr], gf->svmTmpFeature, sizeof(float) * gf->featLenTotal);
+					gf->svmSampleLabels[ptr] = 1;
+					ptr++;
+				}
+			}//end both in list
+		}
+	}
+	assert(ptr == numPairs);
+	sprintf(path, "%s%dtoRest.model", gf->svmModelDir, id);
+	svmTraining(gf->svmTrainFeatures, numPairs, gf->featLenTotal, gf->svmSampleLabels, path, gf->magicNumber);
+
+}//end trainOneToRestModels
+
+
+/* match one specific model */
+float matchOneInList(gFaceReco* gf, int id)
+{
+	//load model
+	FILE*			pModel;
+	errno_t			err;
+	char			path[260];
+	char			tmp[1024];
+	float			temp;
+	int				i, j, k;
+	float			score;
+	float			prob;
+	featStruct*		loadedFeatures;
+	featStruct*		currFeatures;
+	float*			svmTmpFeatures;
+	int				voteBin, capBin;
+	int				numLoadedFaces;
+
+	loadedFeatures	= gf->loadedFeatures;
+	currFeatures	= &gf->features;
+	numLoadedFaces	= gf->numLoadedFaces;
+	svmTmpFeatures	= gf->svmTmpFeature;
+
+
+	sprintf(path, "%s%dtoRest.model", gf->svmModelDir, id);
+	err = fopen_s(&pModel, path, "r");
+	if (err != 0)
+	{
+		printf("Can't open specific model to read!\n");
+		system("pause");
+		exit(-1);
+	}
+
+	for ( k = 0; k < 5; k++)	//some header info, throw out
+	{
+		fgets(tmp, 100, pModel);
+	}
+
+	for ( i = 0; i < gf->featLenTotal; i++)
+	{
+		fscanf(pModel, "%f \n", &gf->svmModelTmp[i]);
+	}
+
+	assert(fscanf(pModel, "%f", &temp) == EOF);
+
+	fclose(pModel);
+
+
+	capBin = 0;
+	voteBin = 0;
+	for ( i = 0; i < numLoadedFaces; i++)
+	{
+		if ( loadedFeatures[i].id == id)
+		{
+			score = 0;
+			extractAbsDist(gf, &loadedFeatures[i], currFeatures, svmTmpFeatures);
+			for ( j = 0; j < gf->featLenTotal; j++)
+			{
+				score += svmTmpFeatures[j] * gf->svmModelTmp[j];
+			}
+			if ( score > gf->bias)
+			{
+				voteBin++;
+			}
+			capBin++;
+		}
+	}
+
+	prob = 1.0 * voteBin / capBin;
+
+	return prob;
+
+
+
+}//end matchOneInList

@@ -27,7 +27,7 @@ void main()
 	//initilization
 	gFaceReco		gf;
 	gFaceRecoCV		gcv;
-	gf.bIsTraining = 1;
+	gf.bIsTraining = 0;
 	gf.bIsMatching = 0;
 
 	config(&gf, "../../image/config.cfg");
@@ -38,10 +38,9 @@ void main()
 
 	//--------------------------------------------------//
 	//To do
-	//if (gf.bVerification)
-		//trainVerification(&gf, &gcv);
-	//else
-		train(&gf, &gcv);
+	
+	trainWhiteList(&gf, &gcv);
+	
 
 	//--------------------------------------------------//
 
