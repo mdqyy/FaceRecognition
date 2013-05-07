@@ -1809,7 +1809,7 @@ void svmTraining(float ** features, int nSample, int featureSize, int * sampleLa
 	else
 	{
 		char parameters[500];
-		sprintf(parameters, "..\\..\\ranksvm.exe -c %f %s %s", c, svmTrainFile, modelFileName);
+		sprintf(parameters, "..\\..\\ranksvm64.exe -c %f %s %s", c, svmTrainFile, modelFileName);
 		//memory limitation, call outside executives
 		system(parameters);
 	}
