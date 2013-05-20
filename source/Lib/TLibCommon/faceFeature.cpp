@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* global configuration */
 void config(gFaceReco* gf, char* configFile)
 {
 
@@ -43,6 +44,9 @@ void config(gFaceReco* gf, char* configFile)
 		LoadParmBool(m, gf->bOverWriteBin, "OverWriteBin");
 		LoadParmBool(m, gf->bUseAllSamples, "bUseAllSamples");
 		LoadParmBool(m, gf->bWhiteList, "bWhiteList");
+		LoadParmBool(m, gf->bUseBlockDist, "UseBlockDist");
+		LoadParmBool(m, gf->bUseBlockCS, "UseBlockCS");
+		LoadParmBool(m, gf->bUseLFW, "UseLFW");
 
 		//limits
 		LoadParm(m, gf->maxFaceTags, "maxFaceTags");
@@ -116,6 +120,9 @@ void config(gFaceReco* gf, char* configFile)
 		gf->bChiDist = 1;
 		gf->bOverWriteBin = 1;
 		gf->bWhiteList = 0;
+		gf->bUseBlockDist = 0;
+		gf->bUseBlockCS = 0;
+		gf->bUseLFW = 0;
 
 		//limits
 		gf->maxFaceTags = 300;
@@ -188,6 +195,9 @@ void config(gFaceReco* gf, char* configFile)
 	sprintf(gf->referCentersPath, "%s", "../../image/referCenters.bin");
 	sprintf(gf->svmModelPath, "%s", "../../image/svmModel.model");
 	sprintf(gf->svmModelDir, "%s", "../../image/models/");
+	sprintf(gf->lfwDir, "%s", "../../image/lfw/");
+	sprintf(gf->lfwPairsTrain, "%s", "../../image/lfw/pairsDevTrain.txt");
+	sprintf(gf->lfwPairsTest, "%s", "../../image/lfw/pairsDevTest.txt");
 
 	gf->faceWidth1 = gf->faceWidth / 2;
 	gf->faceWidth2 = gf->faceWidth / 4;
@@ -239,14 +249,30 @@ void config(gFaceReco* gf, char* configFile)
 		gf->bUseAllSamples = 1;
 	}
 
+	if ( gf->bUseBlockDist || gf->bUseBlockCS)
+	{
+		gf->svmFeatureLen = 0;
+		if ( gf->bUseLBP)
+			gf->svmFeatureLen += gf->numHistsLBP;
+		if ( gf->bUseGabor)
+			gf->svmFeatureLen += gf->numHistsGabor;
+		if ( gf->bUseIntensity)
+			gf->svmFeatureLen += gf->numHistsIntensity;
+	}
+	else
+	{
+		gf->svmFeatureLen = gf->featLenTotal;
+	}
+
 	
 
 
 
 
-}
+}//end config
 
 
+/* initialize global struct */
 void initGlobalStruct(gFaceReco* gf)
 {
 	gf->face = (UChar*)malloc(sizeof(int) * gf->faceWidth * gf->faceHeight);
@@ -389,7 +415,7 @@ void initGlobalStruct(gFaceReco* gf)
 
 	gf->referCenters = NULL;
 
-	if ( (gf->bVerification) && (gf->bIsTraining))
+	if ( (gf->bVerification) && (gf->bIsTraining) && (!gf->bUseAllSamples))
 	{
 		int	i;
 		//init svm buffer
@@ -406,7 +432,7 @@ void initGlobalStruct(gFaceReco* gf)
 		gf->svmSampleLabels = NULL;
 	}
 
-	if ( (gf->bVerification) && (gf->bIsMatching))
+	if (gf->bVerification)
 	{
 		gf->svmModel = (float*)malloc(sizeof(int) * gf->featLenTotal);
 		gf->svmModelTmp = (float*)malloc(sizeof(int) * gf->featLenTotal);
@@ -431,8 +457,9 @@ void initGlobalStruct(gFaceReco* gf)
 
 
 
-}
+}//end initGlobalStruct
 
+/* release memory */
 void freeGlobalStruct(gFaceReco* gf)
 {
 	int i;
@@ -569,8 +596,9 @@ void freeGlobalStruct(gFaceReco* gf)
 
 
 
-}
+}//end freeGlobalStruct
 
+/* allocate one feature structure */
 void initOneFeature(featStruct* fst, gFaceReco* gf)
 {
 	if (gf->bUseLBP)
@@ -609,8 +637,9 @@ void initOneFeature(featStruct* fst, gFaceReco* gf)
 		fst->featReferDist = NULL;
 	}
 
-}
+}//end initOneFeature
 
+/* release one feature structure */
 void freeOneFeature(featStruct* fst)
 {
 	if ( fst != NULL)
@@ -636,18 +665,19 @@ void freeOneFeature(featStruct* fst)
 			fst->featReferDist = NULL;
 		}
 	}
-}
+}//end freeOneFeature
 
 
 
 /* reset histogram */
 inline void resetHist(UInt* hist, int n)
 {
-	int		i;
-	for ( i = 0; i < n; i++)
-	{
-		hist[i] = 0;
-	}
+	//int		i;
+	//for ( i = 0; i < n; i++)
+	//{
+	//	hist[i] = 0;
+	//}
+	memset(hist, 0, sizeof(UInt) * n);
 }
 
 /* shuffle array to randomly select group members */
@@ -989,14 +1019,17 @@ void loadFeatures(gFaceReco* gf)
 			fgets(tmp, 100, pModel);
 		}
 
-		for ( i = 0; i < gf->featLenTotal; i++)
+		for ( i = 0; i < gf->svmFeatureLen; i++)
 		{
-			fscanf(pModel, "%f \n", &gf->svmModel[i]);
+			fscanf(pModel, "%lf ", &gf->svmModel[i]);
 		}
 
-		assert(fscanf(pModel, "%f", &temp) == EOF);
+		assert(fscanf(pModel, "%lf", &temp) == EOF);
 
 		fclose(pModel);
+
+		for ( i = gf->svmFeatureLen; i < gf->featLenTotal; i++)
+			gf->svmModel[i] = 0;
 
 		//open white list record
 		sprintf(tmp, "%swhiteList.txt", gf->svmModelDir);
@@ -1453,7 +1486,7 @@ int	matchFaceWhiteList(gFaceReco* gf)
 		}
 	}
 
-	if ( (voteBin / capBin * 1.0) > 0.5)
+	if ( (voteBin / capBin * 1.0) > 0.8)
 		return 1;
 	else
 		return 0;
@@ -1768,11 +1801,13 @@ void extractReferDistFeaturesInMatch(gFaceReco* gf)
 /** svm training
 * write features into binary file, then call trainModel and test functions
 **/
-void svmTraining(float ** features, int nSample, int featureSize, int * sampleLable, char * modelFileName, float c)
+void svmTraining(float ** features, int nSample, int featureSize, int * sampleLabel, char * modelFileName, float c)
 {
 	int i, j;
 	errno_t		err;
 	FILE* fp;
+	char parameters[500];
+	char path[260];
 
 	char *svmTrainFile = "../../image/trainFile.dat";
 
@@ -1787,12 +1822,14 @@ void svmTraining(float ** features, int nSample, int featureSize, int * sampleLa
 	
 	//write to file
 	printf("Prepare to write features, it may take a while depending on disk IO performance...\n");
+	printf("# Features: %d, Feature Size: %d\n", nSample, featureSize);
 	for (i=0;i<nSample;i++)
 	{
-		fprintf(fp, "%d qid:1 ", sampleLable[i]);
+		fprintf(fp, "%d qid:1 ", sampleLabel[i]);
 		for ( j = 0; j < featureSize; j++)
 		{
-			fprintf(fp, "%d:%d ", j+1, (int)features[i][j]);
+			if ( features[i][j] != 0)
+				fprintf(fp, "%d:%f ", j+1, features[i][j]);
 		}
 		fprintf(fp,"\n");
 	}
@@ -1808,21 +1845,29 @@ void svmTraining(float ** features, int nSample, int featureSize, int * sampleLa
 	}
 	else
 	{
-		char parameters[500];
 		sprintf(parameters, "..\\..\\ranksvm64.exe -c %f %s %s", c, svmTrainFile, modelFileName);
 		//memory limitation, call outside executives
 		system(parameters);
 	}
 
-	unlink(svmTrainFile);
+	//test
+	sprintf(path, "../../image/predict.txt");
+	sprintf(parameters, "..\\..\\predict.exe %s %s %s",svmTrainFile, modelFileName, path);
+	system(parameters);
+
+	//unlink(svmTrainFile);
+	//unlink(path);
 
 }//end svmTraining
 
 /* computer absolute distance between two features */
 void extractAbsDist(gFaceReco* gf, featStruct* feature1, featStruct* feature2, float* dist)
 {
-	int		i, ptr;
-	float	h1, h2, tmp;
+	int		i, j, ptr, ptrFeat;
+	float	h1, h2, tmp, sum, d1, d2;
+
+	//reset
+	memset(dist, 0, sizeof(float) * gf->featLenTotal);
 
 	if ( gf->bUseReferDist)
 	{
@@ -1836,7 +1881,131 @@ void extractAbsDist(gFaceReco* gf, featStruct* feature1, featStruct* feature2, f
 			dist[i] = tmp;
 		}
 	}
-	else
+	else if (gf->bUseBlockCS)		//block cosine similarity
+	{
+		ptr = 0;
+		if ( gf->bUseLBP)
+		{
+			for ( i = 0; i < gf->numHistsLBP; i++)
+			{
+				for ( j = 0; j < gf->numBinsLBP; j++)
+				{
+					sum = 0;
+					d1 = 0;
+					d2 = 0;
+					ptrFeat = i * gf->numBinsLBP + j;
+					h1 = feature1->featLBP[ptrFeat];
+					h2 = feature2->featLBP[ptrFeat];
+					sum += h1 * h2;
+					d1 += h1 * h1;
+					d2 += h2 * h2;
+				}
+				dist[ptr] = sum/(d1 * d2);
+				ptr++;
+			}
+		}
+		if ( gf->bUseGabor)
+		{
+			for ( i = 0; i < gf->numHistsGabor; i++)
+			{
+				for ( j = 0; j < gf->numBinsGabor; j++)
+				{
+					sum = 0;
+					d1 = 0;
+					d2 = 0;
+					ptrFeat = i * gf->numBinsGabor + j;
+					h1 = feature1->featGabor[ptrFeat];
+					h2 = feature2->featGabor[ptrFeat];
+					sum += h1 * h2;
+					d1 += h1 * h1;
+					d2 += h2 * h2;
+				}
+				dist[ptr] = sum/(d1 * d2);
+				ptr++;
+			}
+		}
+		if ( gf->bUseIntensity)
+		{
+			for ( i = 0; i < gf->numHistsIntensity; i++)
+			{
+				for ( j = 0; j < gf->numBinsIntensity; j++)
+				{
+					sum = 0;
+					ptrFeat = i * gf->numBinsIntensity + j;
+					h1 = feature1->featIntensity[ptrFeat];
+					h2 = feature2->featIntensity[ptrFeat];
+					sum += h1 * h2;
+					d1 += h1 * h1;
+					d2 += h2 * h2;
+				}
+				dist[ptr] = sum/(d1 * d2);
+				ptr++;
+			}
+		}
+
+	}
+	else if (gf->bUseBlockDist)		//block distance
+	{
+		ptr = 0;
+		if ( gf->bUseLBP)
+		{
+			for ( i = 0; i < gf->numHistsLBP; i++)
+			{
+				for ( j = 0; j < gf->numBinsLBP; j++)
+				{
+					sum = 0;
+					ptrFeat = i * gf->numBinsLBP + j;
+					h1 = feature1->featLBP[ptrFeat];
+					h2 = feature2->featLBP[ptrFeat];
+					tmp = h1 - h2;
+					if ( tmp < 0)
+						tmp = 0 - tmp;
+					sum += tmp;
+				}
+				dist[ptr] = sum;
+				ptr++;
+			}
+		}
+		if ( gf->bUseGabor)
+		{
+			for ( i = 0; i < gf->numHistsGabor; i++)
+			{
+				for ( j = 0; j < gf->numBinsGabor; j++)
+				{
+					sum = 0;
+					ptrFeat = i * gf->numBinsGabor + j;
+					h1 = feature1->featGabor[ptrFeat];
+					h2 = feature2->featGabor[ptrFeat];
+					tmp = h1 - h2;
+					if ( tmp < 0)
+						tmp = 0 - tmp;
+					sum += tmp;
+				}
+				dist[ptr] = sum;
+				ptr++;
+			}
+		}
+		if ( gf->bUseIntensity)
+		{
+			for ( i = 0; i < gf->numHistsIntensity; i++)
+			{
+				for ( j = 0; j < gf->numBinsIntensity; j++)
+				{
+					sum = 0;
+					ptrFeat = i * gf->numBinsIntensity + j;
+					h1 = feature1->featIntensity[ptrFeat];
+					h2 = feature2->featIntensity[ptrFeat];
+					tmp = h1 - h2;
+					if ( tmp < 0)
+						tmp = 0 - tmp;
+					sum += tmp;
+				}
+				dist[ptr] = sum;
+				ptr++;
+			}
+		}
+	}
+	else	//single distance
 	{
 		ptr = 0;
 		if ( gf->bUseLBP)
@@ -1848,7 +2017,7 @@ void extractAbsDist(gFaceReco* gf, featStruct* feature1, featStruct* feature2, f
 				tmp = h1 - h2;
 				if ( tmp < 0)
 					tmp = 0 - tmp;
-				dist[ptr] = tmp;
+				dist[ptr] = tmp / ( h1 + h2 + 1);
 				ptr++;
 			}
 		}
@@ -1861,7 +2030,7 @@ void extractAbsDist(gFaceReco* gf, featStruct* feature1, featStruct* feature2, f
 				tmp = h1 - h2;
 				if ( tmp < 0)
 					tmp = 0 - tmp;
-				dist[ptr] = tmp;
+				dist[ptr] = tmp / ( h1 + h2 + 1);
 				ptr++;
 			}
 		}
@@ -1874,7 +2043,7 @@ void extractAbsDist(gFaceReco* gf, featStruct* feature1, featStruct* feature2, f
 				tmp = h1 - h2;
 				if ( tmp < 0)
 					tmp = 0 - tmp;
-				dist[ptr] = tmp;
+				dist[ptr] = tmp / ( h1 + h2 + 1);
 				ptr++;
 			}
 		}
@@ -1973,7 +2142,7 @@ void trainOneToRestModels(gFaceReco* gf, int id, int* whiteList, int sizeList)
 	}
 	assert(ptr == numPairs);
 	sprintf(path, "%s%dtoRest.model", gf->svmModelDir, id);
-	svmTraining(gf->svmTrainFeatures, numPairs, gf->featLenTotal, gf->svmSampleLabels, path, gf->magicNumber);
+	svmTraining(gf->svmTrainFeatures, numPairs, gf->svmFeatureLen, gf->svmSampleLabels, path, gf->magicNumber);
 
 }//end trainOneToRestModels
 
@@ -2053,3 +2222,87 @@ float matchOneInList(gFaceReco* gf, int id)
 
 
 }//end matchOneInList
+
+
+/* get the vote decision of a pool */
+int	getVotePool(int* pool, int min, int max, int size)
+{
+	int		i;
+	int*	vote;
+	int		voteRange;
+	int		maxVote = -1;
+	int		val = 0;
+
+	voteRange = max - min + 1;
+	vote = (int*)malloc(sizeof(int) * voteRange);
+	memset(vote, 0, sizeof(int) * voteRange);
+
+	for ( i = 0; i < size; i++)
+	{
+		vote[pool[i]]++;
+	}
+
+	for ( i = 0; i < voteRange; i++)
+	{
+		if ( vote[i] > maxVote)
+		{
+			maxVote = vote[i];
+			val = min + i;
+		}
+	}
+
+	return val;
+
+
+}//end getVotePool
+
+
+/* svm test */
+void svmTest(float ** features, int nSample, int featureSize, int * sampleLabel, char * modelFileName)
+{
+	int i, j;
+	errno_t		err;
+	FILE* fp;
+	char parameters[500];
+	char path[260];
+
+	char *svmTestFile = "../../image/testFile.dat";
+
+	err = fopen_s(&fp, svmTestFile, "w");
+	if ( err != 0)
+	{
+		printf("Error opening svm testing file to write!\n");
+		system("pause");
+		exit(-1);
+	}
+
+	
+	//write to file
+	printf("Prepare to write features, it may take a while depending on disk IO performance...\n");
+	printf("# Features: %d, Feature Size: %d\n", nSample, featureSize);
+	for (i=0;i<nSample;i++)
+	{
+		fprintf(fp, "%d qid:1 ", sampleLabel[i]);
+		for ( j = 0; j < featureSize; j++)
+		{
+			if ( features[i][j] != 0)
+				fprintf(fp, "%d:%f ", j+1, features[i][j]);
+		}
+		fprintf(fp,"\n");
+	}
+
+	fclose(fp);
+	printf("Finished writing features, will start SVM testing...\n");
+
+	
+	//test
+	sprintf(path, "../../image/predict.txt");
+	sprintf(parameters, "..\\..\\predict.exe %s %s %s",svmTestFile, modelFileName, path);
+	system(parameters);
+
+	//unlink(svmTestFile);
+
+
+
+
+}//end svmTest

@@ -36,8 +36,8 @@ void main()
 
 	//--------------------------------------------------//
 	//To do
-	if (gf.bWhiteList)
-		checkWhiteList(&gf, &gcv);
+	if (gf.bUseLFW)
+		testLFWVerification(&gf, &gcv);
 	else
 		match(&gf, &gcv);
 

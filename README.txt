@@ -69,3 +69,11 @@ ONLY ALGORITHM CHANGES WILL BE DISPLAYED HERE!
 4/10
 
 - Add SVM Testing 
+
+4/20
+
+- Finished Verification
+
+5/6
+
+- Add WhiteList modules

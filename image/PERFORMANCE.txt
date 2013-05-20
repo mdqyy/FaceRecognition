@@ -67,3 +67,12 @@ RECORD OF BEST PERFORMANCE:
 
 -4/26/2013
 (OWN: GABORLBP 76%)
+
+----------------------------------------------------------------------------------------
+- 5/20/2013
+LFW Dataset
+Linear SVM(ranksvm)
+74.7% verification accuracy by set c extreamly small
+(update)
+fixed a bug.
+75.5%

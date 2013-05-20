@@ -1,0 +1,24 @@
+%script file: lfwTrain.m
+
+clear all
+close all
+clc
+
+%
+path = 'D:\Zhi\lfw';
+file = 'D:\Zhi\lfw\pairsDevTrain.txt';
+fid = fopen(file,'r');
+numPairs = fscanf(fid,'%d');
+
+[name, idx] = fscanf(fid,'%s\t
+
+
+for ii = 1:numPairs
+end
+
+
+
+fclose(fid);
+
+
+

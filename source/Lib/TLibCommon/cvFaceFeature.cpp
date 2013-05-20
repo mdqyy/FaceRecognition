@@ -238,7 +238,6 @@ void faceAlign(IplImage* src, IplImage* dst, gFaceReco* gf)
 void cameraCapture(gFaceReco* gf, gFaceRecoCV* gcv)
 {
 	char		key;
-	char		assignName[260];
 	char		path[260];
 	int			assignID;
 	int			frame;
@@ -261,29 +260,27 @@ void cameraCapture(gFaceReco* gf, gFaceRecoCV* gcv)
 
 		if ( key == 'r')
 		{
-			printf("\n-----------------\nInput Name:\n");
-			gets(assignName);
 			printf("Input ID:\n");
 			cin >> assignID;
 		}
 
-		if ( assignID != 0)
+		if ( assignID > 0)
 		{
 			if ( gcv->faceDet->runFaceDetector(pFrame))
 			{
 				//face detected
-				sprintf(path, "%s%d/%d.jpg", gf->cameraCaptureDir, assignID, frame);
+				sprintf(path, "%s%d/%d_%d.jpg", gf->cameraCaptureDir, assignID, assignID, frame);
 				cvSaveImage(path, pFrame);
 				printf(".");
 			}
 		}
 
 		frame++;
-		cvReleaseImage(&pFrame);
 	}//end while
 
 	cvDestroyWindow("Camera Input");
 	cvDestroyWindow("Face");
+	cvReleaseCapture(&capture);
 
 	system("pause");
 
@@ -338,25 +335,17 @@ void processTrainInput(gFaceReco* gf, gFaceRecoCV* gcv)
 	gf->numImageInList = numImages;	//save # image in list
 
 }//end processTrainIput
-						
+			
 
-/* process test input */
-void processMatchInput(gFaceReco* gf, gFaceRecoCV* gcv)
+/* load tagged faces*/
+void loadTagFaces(gFaceReco* gf, gFaceRecoCV* gcv)
 {
-	int			numImages;
+	int			i;
 	char		path[260];
-	char		to_search[260];
-	int			i, j;
 	int			numTags;
-	long		handle;                             //search handle
-	struct		_finddata_t fileinfo;               // file info struct
-	pathStruct*	list;
-
-	numImages	= 0;
-	numTags		= 0;
-	list		= gf->imageList;
 
 
+	numTags = 0;
 	//load tagged images
 	for ( i = 1; i <= gf->maxFaceTags; i++)
 	{
@@ -369,6 +358,26 @@ void processMatchInput(gFaceReco* gf, gFaceRecoCV* gcv)
 	}
 	printf("Number of loaded face tags: %d\n", numTags);
 	gf->numTags = numTags;
+
+}//end loadTagFaces
+
+/* process test input */
+void processMatchInput(gFaceReco* gf, gFaceRecoCV* gcv)
+{
+	int			numImages;
+	char		path[260];
+	char		to_search[260];
+	int			i, j;
+	long		handle;                             //search handle
+	struct		_finddata_t fileinfo;               // file info struct
+	pathStruct*	list;
+
+	numImages	= 0;
+	list		= gf->imageList;
+
+
+	//load tagged faces
+	loadTagFaces(gf, gcv);
 
 	//load testing images to list
 	if ( access(gf->matchImageDir, 4) != -1)
@@ -763,9 +772,10 @@ void trainVerification(gFaceReco* gf, gFaceRecoCV* gcv)
 		{
 			gf->svmTrainFeatures[i] = (float*)malloc(sizeof(float) * gf->featLenTotal);
 		}
-		gf->svmSampleLabels = (int*)malloc(sizeof(int) * numPairs);
+		gf->svmSampleLabels = (int*)malloc(sizeof(float*) * numPairs);
 		gf->svmNumSamples = numPairs;
 		numSamples = numPairs;
+
 		for ( i = 0; i < cntIntra; i++)
 		{
 			extractAbsDist(gf, &gf->bufferFeatures[svmPair[i][0]], &gf->bufferFeatures[svmPair[i][1]], gf->svmTmpFeature);
@@ -783,7 +793,7 @@ void trainVerification(gFaceReco* gf, gFaceRecoCV* gcv)
 
 
 	//call svm training
-	svmTraining(gf->svmTrainFeatures, numSamples, gf->featLenTotal, gf->svmSampleLabels, gf->svmModelPath, gf->magicNumber);
+	svmTraining(gf->svmTrainFeatures, numSamples, gf->svmFeatureLen, gf->svmSampleLabels, gf->svmModelPath, gf->magicNumber);
 
 
 	//clean-ups
@@ -915,12 +925,15 @@ void trainWhiteList(gFaceReco* gf, gFaceRecoCV* gcv)
 	}
 	assert(ptr == numPairs);
 	sprintf(path, "%swhiteList.model", gf->svmModelDir);
-	svmTraining(gf->svmTrainFeatures, numPairs, gf->featLenTotal, gf->svmSampleLabels, path, gf->magicNumber);
+	svmTraining(gf->svmTrainFeatures, numPairs, gf->svmFeatureLen, gf->svmSampleLabels, path, gf->magicNumber);
 
 	//train in-list one to the rest models
-	for ( i = 0; i < sizeList; i++)
+	if ( sizeList > 1)
 	{
-		trainOneToRestModels(gf, whiteList[i], whiteList, sizeList);
+		for ( i = 0; i < sizeList; i++)
+		{
+			trainOneToRestModels(gf, whiteList[i], whiteList, sizeList);
+		}
 	}
 
 
@@ -1023,17 +1036,24 @@ void checkWhiteList(gFaceReco* gf, gFaceRecoCV* gcv)
 				float maxProb, tmpProb;
 				//bIsInList == 1 if in list
 				printf("ID: %d IN LIST!   ", gf->features.id);
-				//find out which one it belongs to
-				maxProb = -1;
-				matchedID = 0;
-				for ( j = 0; j < gf->sizeList; j++)
+				if ( gf->sizeList > 1)
 				{
-					tmpProb = matchOneInList(gf, gf->whiteList[j]);
-					if (tmpProb > maxProb)
+					//find out which one it belongs to
+					maxProb = -1;
+					matchedID = 0;
+					for ( j = 0; j < gf->sizeList; j++)
 					{
-						maxProb = tmpProb;
-						matchedID = gf->whiteList[j];
+						tmpProb = matchOneInList(gf, gf->whiteList[j]);
+						if (tmpProb > maxProb)
+						{
+							maxProb = tmpProb;
+							matchedID = gf->whiteList[j];
+						}
 					}
+				}
+				else
+				{
+					matchedID = gf->whiteList[0];
 				}
 				printf("Matched ID: %d\n", matchedID);
 			}
@@ -1091,3 +1111,459 @@ void checkWhiteList(gFaceReco* gf, gFaceRecoCV* gcv)
 
 
 }//end checkWhiteList
+
+
+/* Do matching using live camera */
+void cameraMatch(gFaceReco* gf, gFaceRecoCV* gcv)
+{
+	char		key;
+	int			matchedID;
+	int			frame;
+	int			pool[20];
+	int			poolSize = 20;
+	int			cutOff = 50;
+	int			decision;
+	int			sFrame;
+	int			cnt;
+	int			i;
+	//init capture
+	CvCapture*	capture = cvCaptureFromCAM(0);
+	IplImage*	pFrame;
+	cvNamedWindow("Camera Input", CV_WINDOW_AUTOSIZE);
+	cvNamedWindow("Matched Face", CV_WINDOW_AUTOSIZE);
+
+
+	//init
+	//load saved features from binary file
+	loadFeatures(gf);
+
+	//process list
+	loadTagFaces(gf, gcv);
+
+	//start
+	printf("Start Matching, press 'q' to exit...\n");
+
+
+	frame = 0;
+	matchedID = 0;
+	decision = 0;
+	sFrame = 0;
+	cnt = 0;
+	memset(pool, 0, sizeof(int) * poolSize);
+	while((key = cvWaitKey(10)) != 'q')
+	{
+		pFrame = cvQueryFrame(capture);
+		cvShowImage("Camera Input", pFrame);
+
+		//make desicion
+		if ( ((frame - sFrame) > cutOff) || (cnt >= poolSize))
+		{
+			decision = getVotePool(pool, 0, gf->numTags, cnt);
+
+			if ( decision > 0)
+				cvShowImage("Matched Face", gcv->faceTags[decision-1]);
+			else
+				printf("No matched Face!\n");
+
+			sFrame = frame;
+			cnt = 0;
+			decision = 0;
+			memset(pool, 0, sizeof(int) * poolSize);
+		}
+
+
+
+		//run face and eyes detection
+		runFaceAndEyesDetect(pFrame, gf, gcv);
+
+		//face alignment
+		faceAlign(pFrame, gcv->warpedImg, gf);
+		
+
+		//feature extraction
+		if ( gf->bUseLBP)
+		{
+			extractLBPFeatures(gf);
+		}
+		
+		if ( gf->bUseGabor)
+		{
+			extractGaborFeatures(gf);
+		}
+
+		if ( gf->bUseIntensity)
+		{
+			extractIntensityFeatures(gf);
+		}
+
+		if ( gf->bUseReferDist)
+		{
+			extractReferDistFeaturesInMatch(gf);
+		}
+		
+		matchedID = matchFaceID(gf);
+
+		pool[cnt] = matchedID;
+		cnt++;
+		frame++;
+		printf(".");
+		
+	}//end while
+
+	cvDestroyWindow("Camera Input");
+	cvDestroyWindow("Matched Face");
+	cvReleaseCapture(&capture);
+
+	system("pause");
+
+}//end cameraMatch
+
+
+
+/* LFW verification training procedure */
+void trainLFWVerification(gFaceReco* gf, gFaceRecoCV* gcv)
+{
+	
+	int			i;
+	int			numPairs;
+	int			numValidPairs;
+	bool		validPair;
+	IplImage*	pFrame = NULL;
+	FILE*		pList;
+	errno_t		err;
+	char		name[100];
+	char		path[260];
+	int			index;
+
+
+	err = fopen_s(&pList, gf->lfwPairsTrain, "r");
+
+	if (err != 0)
+	{
+		printf("Can't open LFW pairsDevTrain.txt to read!\n");
+		system("pause");
+		exit(-1);
+	}
+
+	
+
+	//main procedure
+	numValidPairs = 0;
+	printf("Start...\n");
+	fscanf(pList, "%d\n", &numPairs);
+	gf->svmTrainFeatures = (float**)malloc(sizeof(float*) * numPairs * 2);
+	for ( i = 0; i < numPairs * 2; i++)
+	{
+		gf->svmTrainFeatures[i] = (float*)malloc(sizeof(float) * gf->featLenTotal);
+	}
+	gf->svmSampleLabels = (int*)malloc(sizeof(int) * numPairs * 2);
+	gf->svmNumSamples = numPairs;
+
+	for ( i = 0; i < numPairs * 2; i++)
+	{
+		validPair = TRUE;
+		printf("%d/%d\n", i+1, numPairs * 2);
+		//--------------------------------scan first image--------------------------------------//
+		fscanf(pList,"%s\t%d\t", &name, &index);
+		sprintf(path, "%s%s/%s_%04d.jpg", gf->lfwDir, name, name, index);
+		pFrame = cvLoadImage(path, CV_LOAD_IMAGE_COLOR);
+		if ( pFrame == NULL)
+		{
+			printf("Error load image %s in train list!\n", path);
+			system("pause");
+			exit(-1);
+		}
+
+		//run face and eyes detection
+		if (runFaceAndEyesDetect(pFrame, gf, gcv))
+		{
+			//face alignment
+			faceAlign(pFrame, gcv->warpedImg, gf);
+			//cvSaveImage("C:/Users/Zhi/Desktop/face.jpg", gcv->warpedImg);
+
+			//feature extraction
+			if ( gf->bUseLBP)
+			{
+				extractLBPFeatures(gf);
+			}
+			
+			if ( gf->bUseGabor)
+			{
+				extractGaborFeatures(gf);
+			}
+
+			if ( gf->bUseIntensity)
+			{
+				extractIntensityFeatures(gf);
+			}
+
+			copyOneFeatureToBuffer(gf, 0);
+
+
+		}//end face detected
+		else
+		{
+			validPair = FALSE;
+			printf("WARNING: no face detected in %s\n", path);
+		}
+
+		cvReleaseImage(&pFrame);
+
+		//----------------------------load second image--------------------------------//
+		if ( i < numPairs)
+		{
+			fscanf(pList, "%d\n", &index);
+		}
+		else
+		{
+			fscanf(pList, "%s\t%d\n", &name, &index);
+		}
+
+		sprintf(path, "%s%s/%s_%04d.jpg", gf->lfwDir, name, name, index);
+		pFrame = cvLoadImage(path, CV_LOAD_IMAGE_COLOR);
+		if ( pFrame == NULL)
+		{
+			printf("Error load image %s in train list!\n", path);
+			system("pause");
+			exit(-1);
+		}
+
+		//run face and eyes detection
+		if (runFaceAndEyesDetect(pFrame, gf, gcv))
+		{
+			//face alignment
+			faceAlign(pFrame, gcv->warpedImg, gf);
+			//cvSaveImage("C:/Users/Zhi/Desktop/face.jpg", gcv->warpedImg);
+
+			//feature extraction
+			if ( gf->bUseLBP)
+			{
+				extractLBPFeatures(gf);
+			}
+			
+			if ( gf->bUseGabor)
+			{
+				extractGaborFeatures(gf);
+			}
+
+			if ( gf->bUseIntensity)
+			{
+				extractIntensityFeatures(gf);
+			}
+
+			copyOneFeatureToBuffer(gf, 1);
+
+
+		}//end face detected
+		else
+		{
+			validPair = FALSE;
+			printf("WARNING: no face detected in %s\n", path);
+		}
+
+		cvReleaseImage(&pFrame);
+
+		if ( validPair)
+		{
+			extractAbsDist(gf, &gf->bufferFeatures[0], &gf->bufferFeatures[1], gf->svmTmpFeature);
+			memcpy(gf->svmTrainFeatures[numValidPairs], gf->svmTmpFeature, sizeof(float) * gf->featLenTotal);
+			if ( i < numPairs)
+				gf->svmSampleLabels[numValidPairs] = 2;
+			else
+				gf->svmSampleLabels[numValidPairs] = 1;
+
+			numValidPairs++;
+		}
+
+	}//end list
+
+	svmTraining(gf->svmTrainFeatures, numValidPairs, gf->svmFeatureLen, gf->svmSampleLabels, gf->svmModelPath, 1.0);
+	//svmTest(gf->svmTrainFeatures, numValidPairs, gf->svmFeatureLen, gf->svmSampleLabels, gf->svmModelPath, gf);
+
+
+
+	//close binary file
+	fclose(pList);
+
+}//end trainLFWVerification
+
+
+
+/* test LFW verification */
+void testLFWVerification(gFaceReco* gf, gFaceRecoCV* gcv)
+{
+	int			i;
+	int			numPairs;
+	int			numValidPairs;
+	bool		validPair;
+	IplImage*	pFrame = NULL;
+	FILE*		pList;
+	errno_t		err;
+	char		name[100];
+	char		path[260];
+	int			index;
+
+
+	err = fopen_s(&pList, gf->lfwPairsTest, "r");
+
+	if (err != 0)
+	{
+		printf("Can't open LFW pairsDevTest.txt to read!\n");
+		system("pause");
+		exit(-1);
+	}
+
+	
+
+	//main procedure
+	numValidPairs = 0;
+	printf("Start...\n");
+	fscanf(pList, "%d\n", &numPairs);
+
+	//memory allocation
+	gf->svmTrainFeatures = (float**)malloc(sizeof(float*) * numPairs * 2);
+	for ( i = 0; i < numPairs * 2; i++)
+	{
+		gf->svmTrainFeatures[i] = (float*)malloc(sizeof(float) * gf->featLenTotal);
+	}
+	gf->svmSampleLabels = (int*)malloc(sizeof(int) * numPairs * 2);
+	gf->svmNumSamples = numPairs;
+	gf->bufferFeatures = (featStruct*)malloc(sizeof(featStruct) * 2);
+	for ( i = 0; i < 2; i++)
+	{
+		initOneFeature(&(gf->bufferFeatures[i]), gf);
+	}
+
+	for ( i = 0; i < numPairs * 2; i++)
+	{
+		validPair = TRUE;
+		printf("%d/%d\n", i+1, numPairs * 2);
+		//--------------------------------scan first image--------------------------------------//
+		fscanf(pList,"%s\t%d\t", &name, &index);
+		sprintf(path, "%s%s/%s_%04d.jpg", gf->lfwDir, name, name, index);
+		pFrame = cvLoadImage(path, CV_LOAD_IMAGE_COLOR);
+		if ( pFrame == NULL)
+		{
+			printf("Error load image %s in train list!\n", path);
+			system("pause");
+			exit(-1);
+		}
+
+		//run face and eyes detection
+		if (runFaceAndEyesDetect(pFrame, gf, gcv))
+		{
+			//face alignment
+			faceAlign(pFrame, gcv->warpedImg, gf);
+			//cvSaveImage("C:/Users/Zhi/Desktop/face.jpg", gcv->warpedImg);
+
+			//feature extraction
+			if ( gf->bUseLBP)
+			{
+				extractLBPFeatures(gf);
+			}
+			
+			if ( gf->bUseGabor)
+			{
+				extractGaborFeatures(gf);
+			}
+
+			if ( gf->bUseIntensity)
+			{
+				extractIntensityFeatures(gf);
+			}
+
+			copyOneFeatureToBuffer(gf, 0);
+
+
+		}//end face detected
+		else
+		{
+			validPair = FALSE;
+			printf("WARNING: no face detected in %s\n", path);
+		}
+
+		cvReleaseImage(&pFrame);
+
+		//----------------------------load second image--------------------------------//
+		if ( i < numPairs)
+		{
+			fscanf(pList, "%d\n", &index);
+		}
+		else
+		{
+			fscanf(pList, "%s\t%d\n", &name, &index);
+		}
+
+		sprintf(path, "%s%s/%s_%04d.jpg", gf->lfwDir, name, name, index);
+		pFrame = cvLoadImage(path, CV_LOAD_IMAGE_COLOR);
+		if ( pFrame == NULL)
+		{
+			printf("Error load image %s in train list!\n", path);
+			system("pause");
+			exit(-1);
+		}
+
+		//run face and eyes detection
+		if (runFaceAndEyesDetect(pFrame, gf, gcv))
+		{
+			//face alignment
+			faceAlign(pFrame, gcv->warpedImg, gf);
+			//cvSaveImage("C:/Users/Zhi/Desktop/face.jpg", gcv->warpedImg);
+
+			//feature extraction
+			if ( gf->bUseLBP)
+			{
+				extractLBPFeatures(gf);
+			}
+			
+			if ( gf->bUseGabor)
+			{
+				extractGaborFeatures(gf);
+			}
+
+			if ( gf->bUseIntensity)
+			{
+				extractIntensityFeatures(gf);
+			}
+
+			copyOneFeatureToBuffer(gf, 1);
+
+
+		}//end face detected
+		else
+		{
+			validPair = FALSE;
+			printf("WARNING: no face detected in %s\n", path);
+		}
+
+		cvReleaseImage(&pFrame);
+
+		if ( validPair)
+		{
+			extractAbsDist(gf, &gf->bufferFeatures[0], &gf->bufferFeatures[1], gf->svmTmpFeature);
+			memcpy(gf->svmTrainFeatures[numValidPairs], gf->svmTmpFeature, sizeof(float) * gf->featLenTotal);
+			if ( i < numPairs)
+				gf->svmSampleLabels[numValidPairs] = 2;
+			else
+				gf->svmSampleLabels[numValidPairs] = 1;
+
+			numValidPairs++;
+		}
+
+	}//end list
+
+	svmTest(gf->svmTrainFeatures, numValidPairs, gf->svmFeatureLen, gf->svmSampleLabels, gf->svmModelPath);
+
+
+
+	//close binary file
+	fclose(pList);
+
+	//clean-ups
+	freeOneFeature(&gf->bufferFeatures[0]);
+	freeOneFeature(&gf->bufferFeatures[1]);
+	free(gf->bufferFeatures);
+	gf->bufferFeatures = NULL;
+
+
+}//end testLFWVerification

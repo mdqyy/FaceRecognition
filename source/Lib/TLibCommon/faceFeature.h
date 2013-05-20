@@ -48,13 +48,15 @@ void extractReferDistFeatures(gFaceReco* gf, FILE* pFaceFeatBin); // for train o
 void extractReferDistFeaturesInMatch(gFaceReco* gf); // for match only
 void extractAbsDist(gFaceReco* gf, featStruct* feature1, featStruct* feature2, float* dist);
 
-void svmTraining(float ** features, int nSample, int featureSize, int * sampleLable, char * modelFileName, float c);
+void svmTraining(float ** features, int nSample, int featureSize, int * sampleLabel, char * modelFileName, float c);
 void trainmodel(char*docfile,char* modelfile );
 void test(char *docfile,char*modelfile);	//svm test
 
 bool isInList(int* list, int listLength, int queryID);
+int	getVotePool(int* pool, int min, int max, int size);
 void trainOneToRestModels(gFaceReco* gf, int id, int* whiteList, int sizeList);
 float matchOneInList(gFaceReco* gf, int id);
+void svmTest(float ** features, int nSample, int featureSize, int * sampleLabel, char * modelFileName);
 
 
 #endif //_FACE_FEATURE_H_

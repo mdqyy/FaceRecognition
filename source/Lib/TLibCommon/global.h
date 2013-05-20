@@ -51,6 +51,8 @@ typedef struct globalStructure
 	bool		bIsMatching;	//matching phase
 	bool		bUseAllSamples;	//SVM: use all the samples
 	bool		bWhiteList;		//train white list
+	bool		bUseBlockDist;	//use block distance as SVM features
+	bool		bUseBlockCS;	//block cosine similarity
 
 	bool		bVerification;	//verification mode
 	bool		bUseLBP;		//use LBP features
@@ -67,6 +69,7 @@ typedef struct globalStructure
 	bool		bChiDist;		//use chi-square distance
 
 	bool		bOverWriteBin;	//overwrite feature binary file
+	bool		bUseLFW;		//use LFW dataset
 
 	//feature parameters
 	int			featLenTotal;	//overall feature length
@@ -143,6 +146,7 @@ typedef struct globalStructure
 	float*		svmTmpFeature;		//one feature
 	float*		svmModel;			//trained model for matching
 	float*		svmModelTmp;
+	int			svmFeatureLen;		//svm feature length
 
 	//white list
 	int			sizeList;			//white list length
@@ -187,6 +191,10 @@ typedef struct globalStructure
 
 	char	svmModelPath[260];		//svm model path
 	char	svmModelDir[260];		//svm model directory
+
+	char	lfwDir[260];
+	char	lfwPairsTrain[260];
+	char	lfwPairsTest[260];		
 
 
 	//limitations

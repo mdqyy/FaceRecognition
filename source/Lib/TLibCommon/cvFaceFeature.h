@@ -30,7 +30,9 @@ bool runFaceAndEyesDetect(IplImage* pFrame, gFaceReco* gf, gFaceRecoCV* gcv);	//
 void faceAlign(IplImage* src, IplImage* dst, gFaceReco* gf);	//face alignment
 
 void cameraCapture(gFaceReco* gf, gFaceRecoCV* gcv);
+void cameraMatch(gFaceReco* gf, gFaceRecoCV* gcv);
 void processTrainInput(gFaceReco* gf, gFaceRecoCV* gcv);		//train input 
+void loadTagFaces(gFaceReco* gf, gFaceRecoCV* gcv);				//face tags
 void processMatchInput(gFaceReco* gf, gFaceRecoCV* gcv);		//test input
 
 void train(gFaceReco* gf, gFaceRecoCV* gcv);
@@ -38,6 +40,9 @@ void trainVerification(gFaceReco* gf, gFaceRecoCV* gcv);
 void trainWhiteList(gFaceReco* gf, gFaceRecoCV* gcv);
 void match(gFaceReco* gf, gFaceRecoCV* gcv);
 void checkWhiteList(gFaceReco* gf, gFaceRecoCV* gcv);
+
+void trainLFWVerification(gFaceReco* gf, gFaceRecoCV* gcv);
+void testLFWVerification(gFaceReco* gf, gFaceRecoCV* gcv);
 
 
 

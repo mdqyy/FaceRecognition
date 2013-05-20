@@ -1,0 +1,41 @@
+To do:
+----------------------------------------------------------------------
+
+1. (Capture images)
+
+bin\Release\TAppCameraCapture.exe
+
+Press r to record, and input id.
+Press q to quit.
+
+The captured images will be stored in image\cameraCapture\id\
+Select the images, copy to or replace the images in image\train\id\
+
+----------------------------------------------------------------------
+
+2. (train features)
+
+bin\Release\TAppTrain.exe
+
+If the trained images were not changed, this step can be skiped.
+
+----------------------------------------------------------------------
+
+3. train white list
+
+bin\Release\TAppWhiteList.exe
+
+Input the number of people in the list, and their id one by one.
+
+----------------------------------------------------------------------
+
+4. Test
+
+bin\Release\TAppMatch.exe
+
+
+//Note
+The performances of people whose id > 18 are bad, others should be good.
+Larger than 2 people is slow( > 10000 pairs)
+3 people in the list will make 40000 pairs SVM, more than 5GB memory is required.
+

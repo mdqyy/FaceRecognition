@@ -41,6 +41,9 @@ void main()
 	//if (gf.bVerification)
 		//trainVerification(&gf, &gcv);
 	//else
+	if ( gf.bUseLFW)
+		trainLFWVerification(&gf, &gcv);
+	else
 		train(&gf, &gcv);
 
 	//--------------------------------------------------//
